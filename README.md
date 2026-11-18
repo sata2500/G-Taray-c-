@@ -5,7 +5,7 @@
 G-Tarayıcı, Mozilla'nın **GeckoView** motoru üzerine kuruludur. Amacı, kurduğunuz anda hiçbir ayar yapmadan
 sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
-> Durum: **v0.3.0** — yol haritasındaki ana özelliklerin ilk sürümleri hazır; cihaz üzerinde kapsamlı test sürüyor.
+> Durum: **v0.4.0** — yol haritasındaki ana özelliklerin ilk sürümleri hazır; cihaz üzerinde kapsamlı test sürüyor.
 
 ## Özellikler
 
@@ -33,8 +33,8 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 ### Medya ve YouTube
 - **Arka planda oynatma:** uygulamadan çıkınca veya ekran kapanınca YouTube çalmaya devam eder
 - Bildirim ve kilit ekranında medya kontrolleri
-- **Resim içinde resim:** video oynarken uygulamadan çıkınca (tam ekran gerekmeden) küçük pencerede devam eder;
-  pencerede önceki / oynat-duraklat / sonraki düğmeleri
+- **Resim içinde resim:** video oynarken uygulamadan çıkınca (tam ekran gerekmeden) küçük pencerede yalnızca video
+  gösterilir; pencerede önceki / oynat-duraklat / sonraki düğmeleri. Yüklü web uygulamalarında (WebAPK) da çalışır.
 - Bildirim ve kilit ekranında YouTube için **önceki/sonraki** düğmeleri; oynatma listesinde ekran kapalıyken sonraki videoya geçiş
 - **SponsorBlock:** sponsor ve tanıtım bölümlerini otomatik atlar (video kimliği gizlilik korumalı sorgulanır)
 - **YouTube video/ses indirme:** 1080p'ye kadar MP4 (görüntü + ses cihazda birleştirilir), M4A veya Opus ses
@@ -47,10 +47,12 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
 ### Tarayıcı VPN'i
 - Yalnızca G-Tarayıcı'nın trafiği şifrelenir; cihaz VPN izni gerekmez, diğer uygulamalar ve VPN'ler etkilenmez
+- **OpenVPN** (.ovpn; kullanıcı adı/parola, tls-auth, tls-crypt, comp-lzo dahil): gerçek OpenVPN 2.7 istemcisi,
+  telefonun VPN izni yerine kullanıcı alanı ağ yığınına (gVisor) bağlanır
 - Dahili sing-box çekirdeği: **VLESS (Reality dahil), VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard,
   SOCKS5 ve HTTP(S) vekil**
-- Paylaşım bağlantısı veya abonelik içeriği yapıştırarak ya da WireGuard `.conf` dosyasını içe aktararak sunucu ekleme
-- Desteklenmeyenler: IKEv2/IPsec, OpenVPN, L2TP, PPTP
+- Paylaşım bağlantısı veya abonelik içeriği yapıştırarak ya da `.ovpn` / `.conf` dosyasını içe aktararak sunucu ekleme
+- Desteklenmeyenler: IKEv2/IPsec, L2TP, PPTP, OpenVPN TAP
 - Bağlantı testi (çıkış IP'si, ülke, gecikme), günlük görüntüleme
 - Bağlantı koparsa trafik doğrudan internete düşmez (sızıntı koruması)
 
@@ -84,7 +86,7 @@ WebAPK yüklemek için G-Tarayıcı'ya bir kez "bilinmeyen uygulamaları yüklem
 | Dil | Kotlin 2.4 |
 | Arayüz | Jetpack Compose (BOM 2026.09) + Material 3 |
 | Veritabanı | Room 2.8 |
-| VPN çekirdeği | sing-box 1.14 |
+| VPN çekirdeği | sing-box 1.14, OpenVPN 2.7.8 (OpenSSL 3.5 LTS) + Go/gVisor köprüsü |
 | YouTube çözümleme | NewPipe Extractor 0.26 |
 | Reklam engelleme | uBlock Origin (hazır kurulu) |
 | Derleme | Gradle 9.9, Android Gradle Plugin 9.5 |
@@ -116,6 +118,7 @@ app/src/main/assets/extensions/
 ├── ublock_origin.xpi         # Hazır kurulu reklam engelleyici (imzalı, AMO)
 └── helper/                   # Arka planda oynatma, resim içinde resim, medya kontrolleri, SponsorBlock
 webapk-shell/                 # Cihazda kişiselleştirilen 8 KB'lık WebAPK şablonu (saf Java)
+native/ovpn-bridge/           # OpenVPN ↔ kullanıcı alanı ağ yığını ↔ SOCKS5 köprüsü (Go)
 ```
 
 ## Derleme
@@ -123,8 +126,9 @@ webapk-shell/                 # Cihazda kişiselleştirilen 8 KB'lık WebAPK şa
 Gereksinimler: JDK 21, Android SDK (platform 37.2, build-tools 37) ve VPN çekirdeği için Go 1.25+.
 
 ```bash
-# VPN çekirdeğini (sing-box) bir kez derleyin; ikili dosyalar repoya eklenmez
+# VPN çekirdeklerini bir kez derleyin; ikili dosyalar repoya eklenmez
 ./scripts/build-singbox.sh
+ANDROID_NDK_ROOT=/yol/android-ndk ./scripts/build-openvpn.sh   # OpenVPN + köprü (NDK gerekir)
 ```
 
 ```bash
@@ -156,4 +160,5 @@ Anahtar bulunamazsa release sürümü yalnızca deneme amaçlı olarak debug ana
 ## Lisans
 
 G-Tarayıcı, [GNU Genel Kamu Lisansı v3.0](LICENSE) (GPL-3.0-or-later) ile lisanslanmış özgür bir yazılımdır.
-GeckoView ve Mozilla Android Components MPL-2.0; sing-box, NewPipe Extractor ve uBlock Origin GPL-3.0 lisanslıdır.
+GeckoView ve Mozilla Android Components MPL-2.0; sing-box, NewPipe Extractor ve uBlock Origin GPL-3.0;
+OpenVPN GPL-2.0 (OpenSSL istisnasıyla; uygulamayla birleştirilmez, ayrı bir program olarak çalıştırılır), OpenSSL Apache-2.0, WireGuard-go/gVisor MIT/Apache-2.0 lisanslıdır.

@@ -34,11 +34,16 @@ import mozilla.components.lib.state.ext.flow
  * - Küçük pencerede önceki / oynat-duraklat / sonraki düğmeleri bulunur.
  * - Küçük pencere kapatılınca oynatma duraklatılır.
  */
-class PipController(private val activity: ComponentActivity, private val components: Components) {
+class PipController(
+    private val activity: ComponentActivity,
+    private val components: Components,
+    /** Yüklü web uygulaması penceresi gibi tek bir sekmeye bağlıysa o sekmenin kimliği. */
+    private val fixedTabId: String? = null,
+) {
     private data class MediaInfo(val tabId: String, val playing: Boolean, val features: Long, val width: Long, val height: Long)
 
     private var media: MediaInfo? = null
-    private var forcedFullscreen = false
+    private var videoMode = false
     private val supported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
 
     private val receiver = object : BroadcastReceiver() {
@@ -84,15 +89,15 @@ class PipController(private val activity: ComponentActivity, private val compone
     fun onPictureInPictureModeChanged(inPip: Boolean) {
         val tab = mediaTab()
         if (inPip) {
-            if (tab != null && tab.content.fullScreen.not()) {
-                forcedFullscreen = true
-                components.extensions.requestVideoFullscreen()
+            // Sayfa zaten tam ekran video gösteriyorsa dokunulmaz; değilse yalnızca video gösterilir.
+            if (tab != null && !tab.content.fullScreen) {
+                videoMode = true
+                components.extensions.enterVideoPip()
             }
         } else {
-            if (forcedFullscreen) {
-                forcedFullscreen = false
-                components.extensions.exitVideoFullscreen()
-                tab?.let { components.sessionUseCases.exitFullscreen(it.id) }
+            if (videoMode) {
+                videoMode = false
+                components.extensions.exitVideoPip()
             }
             // Küçük pencere kapatıldıysa (etkinlik görünür değil) oynatmayı durdur.
             if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
@@ -156,11 +161,16 @@ class PipController(private val activity: ComponentActivity, private val compone
 
     private fun mediaTab(): SessionState? {
         val id = media?.tabId ?: return null
-        return components.store.state.tabs.firstOrNull { it.id == id }
+        val state = components.store.state
+        return state.tabs.firstOrNull { it.id == id } ?: state.customTabs.firstOrNull { it.id == id }
     }
 
     private fun BrowserState.mediaInfo(): MediaInfo? {
-        val candidates = listOfNotNull(selectedTab) + tabs
+        val candidates: List<SessionState> = if (fixedTabId != null) {
+            listOfNotNull(tabs.firstOrNull { it.id == fixedTabId } ?: customTabs.firstOrNull { it.id == fixedTabId })
+        } else {
+            listOfNotNull(selectedTab) + tabs
+        }
         val tab = candidates.firstOrNull { it.mediaSessionState?.playbackState == MediaSession.PlaybackState.PLAYING }
             ?: candidates.firstOrNull { it.mediaSessionState?.playbackState == MediaSession.PlaybackState.PAUSED }
             ?: return null

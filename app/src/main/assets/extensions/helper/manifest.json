@@ -1,14 +1,13 @@
 {
   "manifest_version": 2,
   "name": "G-Tarayıcı Yardımcısı",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Arka planda oynatma, resim içinde resim, medya kontrolleri ve SponsorBlock desteği.",
   "browser_specific_settings": {
     "gecko": { "id": "helper@gtarayici.app" }
   },
   "permissions": [
     "nativeMessaging",
-    "tabs",
     "<all_urls>",
     "https://sponsor.ajay.app/*"
   ],

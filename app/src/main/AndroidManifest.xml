@@ -90,6 +90,8 @@
         <activity
             android:name=".webapp.WebAppActivity"
             android:exported="true"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
             android:taskAffinity=""
             android:documentLaunchMode="intoExisting"
             android:persistableMode="persistNever"

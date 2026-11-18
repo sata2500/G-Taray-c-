@@ -12,24 +12,38 @@ browser.runtime.onMessage.addListener((message) => {
   return undefined;
 });
 
-// Uygulamadan gelen komutlar (ör. resim içinde resim için videoyu tam ekran yap).
-let port = null;
-function connect() {
-  try {
-    port = browser.runtime.connectNative("gtarayici");
-    port.onMessage.addListener(async (message) => {
-      if (!message || !message.type) return;
-      const tabs = await browser.tabs.query({});
-      for (const tab of tabs) {
-        browser.tabs.sendMessage(tab.id, { type: message.type }).catch(() => {});
-      }
-    });
-    port.onDisconnect.addListener(() => {
-      port = null;
-      setTimeout(connect, 2000);
-    });
-  } catch (e) {
-    setTimeout(connect, 5000);
+// Video oynatan sayfalar bu bağlantıları açar (sekmeler, gizli sekmeler ve yüklü web uygulamaları).
+const mediaPorts = new Set();
+browser.runtime.onConnect.addListener((port) => {
+  if (port.name !== "gt-media") return;
+  mediaPorts.add(port);
+  port.onDisconnect.addListener(() => mediaPorts.delete(port));
+});
+
+function broadcast(type) {
+  for (const port of mediaPorts) {
+    try {
+      port.postMessage({ type });
+    } catch (e) {
+      mediaPorts.delete(port);
+    }
   }
 }
-connect();
+
+// Uygulamadan gelen komutlar (ör. resim içinde resim başlıyor/bitiyor).
+let nativePort = null;
+function connectNative() {
+  try {
+    nativePort = browser.runtime.connectNative("gtarayici");
+    nativePort.onMessage.addListener((message) => {
+      if (message && message.type) broadcast(message.type);
+    });
+    nativePort.onDisconnect.addListener(() => {
+      nativePort = null;
+      setTimeout(connectNative, 2000);
+    });
+  } catch (e) {
+    setTimeout(connectNative, 5000);
+  }
+}
+connectNative();

@@ -182,7 +182,7 @@
     <!-- VPN -->
     <string name="menu_vpn">VPN</string>
     <string name="vpn_title">Tarayıcı VPN\'i</string>
-    <string name="vpn_info">VPN yalnızca G-Tarayıcı\'nın trafiğini şifreler; diğer uygulamalar ve telefonunuzdaki başka VPN\'ler etkilenmez. VLESS, VMess, Trojan, Shadowsocks, Hysteria2, TUIC ve WireGuard desteklenir.</string>
+    <string name="vpn_info">VPN yalnızca G-Tarayıcı\'nın trafiğini şifreler; telefonun VPN izni gerekmez, diğer uygulamalar ve telefonunuzdaki başka VPN\'ler etkilenmez. OpenVPN, WireGuard, VLESS, VMess, Trojan, Shadowsocks, Hysteria2, TUIC, SOCKS5 ve HTTP vekil desteklenir.</string>
     <string name="vpn_add">Sunucu ekle</string>
     <string name="vpn_add_hint">vless://… , vmess://… , ss://… , trojan://… , hy2://… , WireGuard yapılandırması veya abonelik içeriği</string>
     <string name="vpn_paste">Panodan yapıştır</string>
@@ -225,7 +225,12 @@
     <string name="pip_previous">Önceki</string>
     <string name="vpn_import_file">Dosyadan</string>
     <string name="vpn_help_title">Sunucu nasıl eklenir?</string>
-    <string name="vpn_help_body">1. VPN sağlayıcınızın sitesinde veya hesap panelinde "elle kurulum" (manual setup) bölümünü açın.\n2. Bir <b>WireGuard yapılandırma dosyası</b> (.conf) indirin ya da bir paylaşım bağlantısı (vless://, vmess://, ss://, trojan://, hy2://, tuic://) kopyalayın.\n3. Burada "Sunucu ekle"ye dokunun; bağlantıyı yapıştırın veya "Dosyadan" ile .conf dosyasını seçin.\n4. Sunucuyu seçip "Bağlan"a dokunun, ardından "Bağlantıyı test et" ile çıkış IP\'nizi kontrol edin.\n\nSOCKS5 ve HTTP vekil sunucuları da eklenebilir (socks5://kullanıcı:parola@sunucu:port).\n\nŞu an desteklenmeyenler: IKEv2/IPsec (strongSwan), OpenVPN, L2TP ve PPTP. Sağlayıcınız WireGuard sunuyorsa onu tercih edin.</string>
+    <string name="vpn_help_body">1. VPN sağlayıcınızın sitesinde veya hesap panelinde "elle kurulum" (manual setup) bölümünü açın.
+2. Bir <b>OpenVPN</b> (.ovpn) veya <b>WireGuard</b> (.conf) yapılandırma dosyası indirin ya da bir paylaşım bağlantısı (vless://, vmess://, ss://, trojan://, hy2://, tuic://) kopyalayın.
+3. Burada "Sunucu ekle"ye dokunun; bağlantıyı yapıştırın veya "Dosyadan" ile dosyayı seçin. OpenVPN sunucuları için VPN hesabınızın kullanıcı adı ve parolası istenir (bunlar çoğu sağlayıcıda web sitesine giriş bilgilerinden farklıdır; hesap panelinde "service credentials" / "manual setup" bölümünde yazar).
+4. Sunucuyu seçip "Bağlan"a dokunun, ardından "Bağlantıyı test et" ile çıkış IP\'nizi kontrol edin.
+
+Şu an desteklenmeyenler: IKEv2/IPsec (strongSwan), L2TP, PPTP ve OpenVPN TAP bağlantıları.</string>
     <string name="webapk_option_app">Uygulama olarak yükle</string>
     <string name="webapk_option_app_summary">Uygulama çekmecesinde kendi simgesiyle görünür, kendi penceresinde açılır ve ayarlardan normal bir uygulama gibi kaldırılabilir</string>
     <string name="webapk_option_app_summary_site">Bu site bir web uygulaması bildirimi sunmuyor; yine de kendi penceresinde açılan bir uygulama olarak yüklenebilir</string>
@@ -234,4 +239,8 @@
     <string name="webapk_permission">Uygulama yükleyebilmek için açılan ekranda G-Tarayıcı\'ya "Bu kaynaktan izin ver" iznini verin, sonra tekrar deneyin</string>
     <string name="webapk_installed">%1$s yüklendi</string>
     <string name="webapk_failed">Uygulama yüklenemedi: %1$s</string>
+    <string name="vpn_openvpn_detected">OpenVPN yapılandırması algılandı</string>
+    <string name="vpn_username">VPN kullanıcı adı</string>
+    <string name="vpn_password">VPN parolası</string>
+    <string name="vpn_credentials_required">Bu OpenVPN sunucusu kullanıcı adı ve parola istiyor</string>
 </resources>

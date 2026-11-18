@@ -23,7 +23,6 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.MessageHandler
 import mozilla.components.concept.engine.webextension.Port
-import com.gtarayici.browser.engine.GeckoPrefs
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONObject
@@ -52,22 +51,13 @@ class ExtensionManager(
 
     @Volatile private var helperPort: Port? = null
 
-    /**
-     * Oynayan videoyu tam ekrana alır (resim içinde resim için). Tam ekran normalde kullanıcı
-     * dokunuşu gerektirir; bu kısıtlama yalnızca birkaç saniyeliğine kaldırılır.
-     */
-    fun requestVideoFullscreen() {
-        val port = helperPort ?: return
-        GeckoPrefs.set(PREF_TRUSTED_FULLSCREEN, false)
-        port.postMessage(JSONObject().put("type", "pip-fullscreen"))
-        scope.launch {
-            kotlinx.coroutines.delay(3000)
-            GeckoPrefs.set(PREF_TRUSTED_FULLSCREEN, true)
-        }
+    /** Oynayan videoyu sayfanın tamamını kaplayacak şekilde büyütür (resim içinde resim için). */
+    fun enterVideoPip() {
+        helperPort?.postMessage(JSONObject().put("type", "pip-enter"))
     }
 
-    fun exitVideoFullscreen() {
-        helperPort?.postMessage(JSONObject().put("type", "pip-exit-fullscreen"))
+    fun exitVideoPip() {
+        helperPort?.postMessage(JSONObject().put("type", "pip-exit"))
     }
 
     fun start() {
@@ -200,7 +190,6 @@ class ExtensionManager(
 
     companion object {
         const val HELPER_ID = "helper@gtarayici.app"
-        private const val PREF_TRUSTED_FULLSCREEN = "full-screen-api.allow-trusted-requests-only"
         const val UBLOCK_ID = "uBlock0@raymondhill.net"
         const val NATIVE_APP = "gtarayici"
         const val AMO_ANDROID_URL = "https://addons.mozilla.org/android/"

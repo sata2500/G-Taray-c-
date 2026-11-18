@@ -42,6 +42,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.gtarayici.browser.MainActivity
 import com.gtarayici.browser.R
 import com.gtarayici.browser.components
+import com.gtarayici.browser.media.PipController
 import com.gtarayici.browser.search.UrlInput
 import com.gtarayici.browser.ui.components.observe
 import com.gtarayici.browser.ui.theme.GTarayiciTheme
@@ -65,6 +66,8 @@ class WebAppActivity : AppCompatActivity() {
     private lateinit var engineView: EngineView
     private var tabId: String? = null
     private var fullscreen by mutableStateOf(false)
+    private var inPip by mutableStateOf(false)
+    private var pip: PipController? = null
 
     private val sessionFeature = ViewBoundFeatureWrapper<SessionFeature>()
     private val promptFeature = ViewBoundFeatureWrapper<PromptFeature>()
@@ -134,6 +137,7 @@ class WebAppActivity : AppCompatActivity() {
             view,
         )
         manifest?.let { lifecycle.addObserver(WebAppActivityFeature(this, components.icons, it)) }
+        pip = PipController(this, components, fixedTabId = id).also { it.start() }
 
         val scope = manifest?.scope ?: manifest?.startUrl
         setContent {
@@ -142,8 +146,8 @@ class WebAppActivity : AppCompatActivity() {
             val outOfScope = scope != null && url.isNotBlank() && !url.startsWith(scope)
             GTarayiciTheme(mode = themeMode) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-                    Column(Modifier.fillMaxSize().then(if (fullscreen) Modifier else Modifier.systemBarsPadding()).imePadding()) {
-                        if (outOfScope && !fullscreen) {
+                    Column(Modifier.fillMaxSize().then(if (fullscreen || inPip) Modifier else Modifier.systemBarsPadding()).imePadding()) {
+                        if (outOfScope && !fullscreen && !inPip) {
                             Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
                                 Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(onClick = { finish() }) { Icon(Icons.Filled.Close, stringResource(R.string.action_close)) }
@@ -171,6 +175,18 @@ class WebAppActivity : AppCompatActivity() {
         }
     }
 
+    /** Video oynarken uygulamadan çıkılınca küçük pencereye geçilir (tarayıcıdaki gibi). */
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        pip?.onUserLeaveHint()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        inPip = isInPictureInPictureMode
+        pip?.onPictureInPictureModeChanged(isInPictureInPictureMode)
+    }
+
     private fun openInBrowser(url: String) {
         startActivity(Intent(Intent.ACTION_VIEW, url.toUri(), this, MainActivity::class.java))
     }
@@ -191,5 +207,6 @@ class WebAppActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         if (::engineView.isInitialized) engineView.setActivityContext(null)
+        pip?.stop()
     }
 }

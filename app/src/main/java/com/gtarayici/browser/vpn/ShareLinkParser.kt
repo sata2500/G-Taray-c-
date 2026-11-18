@@ -30,7 +30,7 @@ object ShareLinkParser {
             Regex("^socks[45h]?://", RegexOption.IGNORE_CASE).containsMatchIn(text) -> parseSocks(text)
             text.startsWith("http://", true) || text.startsWith("https://", true) -> parseHttpProxy(text)
             else -> throw ParseException(
-                "Tanınmayan biçim. IKEv2/IPsec (strongSwan), OpenVPN, L2TP ve PPTP şu an desteklenmiyor.",
+                "Tanınmayan biçim. IKEv2/IPsec (strongSwan), L2TP ve PPTP şu an desteklenmiyor.",
             )
         }
     }

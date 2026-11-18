@@ -57,7 +57,9 @@ import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.R
 import com.gtarayici.browser.components
 import com.gtarayici.browser.ui.components.OverlayScaffold
+import com.gtarayici.browser.vpn.OpenVpnConfig
 import com.gtarayici.browser.vpn.VpnStatus
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import kotlinx.coroutines.launch
 
 @Composable
@@ -69,6 +71,8 @@ fun VpnScreen(onBack: () -> Unit) {
     val log by vpn.log.collectAsState()
     val scope = rememberCoroutineScope()
     var adding by remember { mutableStateOf(false) }
+    // Dosyadan gelen ve kullanıcı adı/parola isteyen OpenVPN yapılandırması, ekleme penceresinde açılır.
+    var pendingText by remember { mutableStateOf("") }
     var testResult by remember { mutableStateOf<String?>(null) }
     var showLog by remember { mutableStateOf(false) }
     var selectedId by remember { mutableStateOf(vpn.activeServerId) }
@@ -78,6 +82,11 @@ fun VpnScreen(onBack: () -> Unit) {
         val text = runCatching {
             context.contentResolver.openInputStream(uri)?.use { it.bufferedReader().readText() }
         }.getOrNull().orEmpty()
+        if (OpenVpnConfig.looksLike(text) && OpenVpnConfig.needsCredentials(text)) {
+            pendingText = text
+            adding = true
+            return@rememberLauncherForActivityResult
+        }
         vpn.addServer(text)
             .onSuccess { selectedId = it.id; helpOpen = false }
             .onFailure { Toast.makeText(context, context.getString(R.string.vpn_invalid, it.message ?: ""), Toast.LENGTH_LONG).show() }
@@ -219,10 +228,14 @@ fun VpnScreen(onBack: () -> Unit) {
     }
 
     if (adding) {
-        var text by remember { mutableStateOf("") }
+        var text by remember { mutableStateOf(pendingText) }
+        var username by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
         var error by remember { mutableStateOf<String?>(null) }
+        val isOpenVpn = OpenVpnConfig.looksLike(text)
+        val close = { adding = false; pendingText = "" }
         AlertDialog(
-            onDismissRequest = { adding = false },
+            onDismissRequest = close,
             title = { Text(stringResource(R.string.vpn_add)) },
             text = {
                 Column {
@@ -231,11 +244,36 @@ fun VpnScreen(onBack: () -> Unit) {
                         onValueChange = { text = it; error = null },
                         placeholder = { Text(stringResource(R.string.vpn_add_hint)) },
                         minLines = 4,
-                        maxLines = 10,
+                        maxLines = if (isOpenVpn) 4 else 10,
                         isError = error != null,
                         supportingText = error?.let { { Text(it) } },
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    if (isOpenVpn) {
+                        Text(
+                            stringResource(R.string.vpn_openvpn_detected),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(vertical = 4.dp),
+                        )
+                        if (OpenVpnConfig.needsCredentials(text)) {
+                            OutlinedTextField(
+                                value = username,
+                                onValueChange = { username = it; error = null },
+                                singleLine = true,
+                                label = { Text(stringResource(R.string.vpn_username)) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            OutlinedTextField(
+                                value = password,
+                                onValueChange = { password = it; error = null },
+                                singleLine = true,
+                                label = { Text(stringResource(R.string.vpn_password)) },
+                                visualTransformation = PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            )
+                        }
+                    }
                     Row {
                         TextButton(onClick = {
                             val clip = context.getSystemService(ClipboardManager::class.java).primaryClip
@@ -245,7 +283,7 @@ fun VpnScreen(onBack: () -> Unit) {
                             Text(stringResource(R.string.vpn_paste), modifier = Modifier.padding(start = 8.dp))
                         }
                         TextButton(onClick = {
-                            adding = false
+                            close()
                             importFile.launch(arrayOf("*/*"))
                         }) {
                             Icon(Icons.Filled.FileOpen, null)
@@ -256,15 +294,19 @@ fun VpnScreen(onBack: () -> Unit) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    vpn.addServer(text)
+                    if (isOpenVpn && OpenVpnConfig.needsCredentials(text) && username.isBlank()) {
+                        error = context.getString(R.string.vpn_credentials_required)
+                        return@TextButton
+                    }
+                    vpn.addServer(text, username, password)
                         .onSuccess { added ->
                             selectedId = added.id
-                            adding = false
+                            close()
                         }
                         .onFailure { error = context.getString(R.string.vpn_invalid, it.message ?: "") }
                 }) { Text(stringResource(R.string.profile_save)) }
             },
-            dismissButton = { TextButton(onClick = { adding = false }) { Text(stringResource(R.string.action_cancel)) } },
+            dismissButton = { TextButton(onClick = close) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 }

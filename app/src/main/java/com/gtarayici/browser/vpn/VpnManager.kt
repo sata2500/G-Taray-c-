@@ -26,7 +26,18 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Kullanıcının eklediği bir VPN sunucusu. [link] paylaşım bağlantısı, WireGuard metni veya JSON'dur. */
-data class VpnServer(val id: String, val name: String, val protocol: String, val link: String)
+data class VpnServer(
+    val id: String,
+    val name: String,
+    val protocol: String,
+    val link: String,
+    val username: String = "",
+    val password: String = "",
+) {
+    val isOpenVpn: Boolean get() = protocol == OPENVPN
+}
+
+const val OPENVPN = "OpenVPN"
 
 sealed interface VpnStatus {
     data object Off : VpnStatus
@@ -78,7 +89,21 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         }
     }
 
-    fun addServer(input: String): Result<VpnServer> = runCatching {
+    fun addServer(input: String, username: String = "", password: String = ""): Result<VpnServer> = runCatching {
+        if (OpenVpnConfig.looksLike(input)) {
+            OpenVpnConfig.sanitize(input) // Desteklenmeyen yapılandırmayı (ör. TAP) eklerken bildir.
+            val server = VpnServer(
+                UUID.randomUUID().toString(),
+                OpenVpnConfig.displayName(input),
+                OPENVPN,
+                input.trim(),
+                username.trim(),
+                password,
+            )
+            _servers.value = _servers.value + server
+            saveServers()
+            return@runCatching server
+        }
         val entries = splitInput(input)
         require(entries.isNotEmpty()) { "Bağlantı bulunamadı" }
         val added = entries.map { raw ->
@@ -144,29 +169,82 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
 
     // --- Süreç yönetimi ------------------------------------------------------------------
 
-    private suspend fun startProcess(server: VpnServer): Int {
+    private suspend fun startProcess(server: VpnServer): Int =
+        if (server.isOpenVpn) startOpenVpn(server) else startSingBox(server)
+
+    /**
+     * OpenVPN: gerçek OpenVPN istemcisi + kullanıcı alanı ağ yığını köprüsü. Köprü, bağlantı kurulunca
+     * "GTOVPN READY" yazar; kimlik hatası "GTOVPN AUTH_FAILED" olarak bildirilir.
+     */
+    private suspend fun startOpenVpn(server: VpnServer): Int {
+        val libDir = File(context.applicationInfo.nativeLibraryDir)
+        val bridge = File(libDir, "libovpnbridge.so")
+        val openvpn = File(libDir, "libopenvpn.so")
+        check(bridge.exists() && openvpn.exists()) { "OpenVPN bu cihaz mimarisi için bulunamadı" }
+        val dir = File(workDir, "openvpn").apply { deleteRecursively(); mkdirs() }
+        val config = File(dir, "config.ovpn").apply { writeText(OpenVpnConfig.sanitize(server.link)) }
+        val auth = File(dir, "auth.txt")
+        if (OpenVpnConfig.needsCredentials(server.link)) {
+            check(server.username.isNotBlank()) { "Bu OpenVPN sunucusu kullanıcı adı ve parola istiyor" }
+            auth.writeText(server.username + "\n" + server.password + "\n")
+            auth.setReadable(false, false)
+            auth.setReadable(true, true)
+        }
+        val port = ServerSocket(0).use { it.localPort }
+        val ready = kotlinx.coroutines.CompletableDeferred<Result<Int>>()
+        val command = buildList {
+            add(bridge.absolutePath)
+            add("-openvpn"); add(openvpn.absolutePath)
+            add("-config"); add(config.absolutePath)
+            add("-workdir"); add(dir.absolutePath)
+            add("-socks"); add("127.0.0.1:$port")
+            if (auth.exists()) { add("-auth"); add(auth.absolutePath) }
+        }
+        launch(command) { line ->
+            when {
+                line.startsWith("GTOVPN READY") -> ready.complete(Result.success(port))
+                line.startsWith("GTOVPN AUTH_FAILED") -> ready.complete(Result.failure(IllegalStateException("Kullanıcı adı veya parola hatalı")))
+                line.startsWith("GTOVPN FATAL") -> ready.complete(Result.failure(IllegalStateException(line.removePrefix("GTOVPN FATAL").trim())))
+                line.startsWith("GTOVPN EXIT") -> ready.complete(Result.failure(IllegalStateException(lastError() ?: "OpenVPN durdu")))
+            }
+        }
+        return kotlinx.coroutines.withTimeoutOrNull(OPENVPN_TIMEOUT_MS) { ready.await() }?.getOrThrow()
+            ?: error("OpenVPN sunucusuna bağlanılamadı (zaman aşımı)")
+    }
+
+    private fun lastError(): String? =
+        log.value.lastOrNull { it.contains("AUTH_FAILED") || it.contains("FATAL") || it.contains("ERROR") || it.contains("error", true) }
+
+    /** Süreci başlatır, çıktısını günlüğe yazar ve beklenmedik şekilde durursa sızıntıyı engeller. */
+    private fun launch(command: List<String>, onLine: (String) -> Unit = {}): Process {
+        val started = ProcessBuilder(command).redirectErrorStream(true).start()
+        process = started
+        Thread {
+            started.inputStream.bufferedReader().forEachLine { line ->
+                appendLog(line)
+                onLine(line)
+            }
+            val code = runCatching { started.waitFor() }.getOrDefault(-1)
+            onLine("GTOVPN EXIT")
+            if (process === started) {
+                process = null
+                scope.launch {
+                    applyProxy(DEAD_PORT)
+                    _status.value = VpnStatus.Error(lastError() ?: "VPN çekirdeği durdu (kod $code)")
+                }
+            }
+        }.apply { isDaemon = true }.start()
+        return started
+    }
+
+    private suspend fun startSingBox(server: VpnServer): Int {
         val binary = File(context.applicationInfo.nativeLibraryDir, "libsingbox.so")
         check(binary.exists()) { "VPN çekirdeği bu cihaz mimarisi için bulunamadı" }
         val port = ServerSocket(0).use { it.localPort }
         val config = File(workDir, "config.json")
         config.writeText(buildConfig(server, port, systemDns()).toString(2))
 
-        val started = ProcessBuilder(binary.absolutePath, "run", "-c", config.absolutePath, "-D", workDir.absolutePath)
-            .redirectErrorStream(true)
-            .start()
-        process = started
-        Thread {
-            started.inputStream.bufferedReader().forEachLine { line -> appendLog(line) }
-            val code = runCatching { started.waitFor() }.getOrDefault(-1)
-            if (process === started) {
-                process = null
-                scope.launch {
-                    applyProxy(DEAD_PORT)
-                    val reason = log.value.lastOrNull { it.contains("FATAL") || it.contains("ERROR") }
-                    _status.value = VpnStatus.Error(reason ?: "VPN çekirdeği durdu (kod $code)")
-                }
-            }
-        }.apply { isDaemon = true }.start()
+        val started = launch(listOf(binary.absolutePath, "run", "-c", config.absolutePath, "-D", workDir.absolutePath))
 
         // Yerel port dinlemeye başlayana kadar bekle.
         repeat(50) {
@@ -181,6 +259,7 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         val current = process ?: return
         process = null
         current.destroy()
+        File(workDir, "openvpn/auth.txt").delete()
     }
 
     private fun appendLog(line: String) {
@@ -227,14 +306,24 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         val array = JSONArray(prefs.getString(KEY_SERVERS, "[]"))
         (0 until array.length()).map { i ->
             val o = array.getJSONObject(i)
-            VpnServer(o.getString("id"), o.getString("name"), o.getString("protocol"), o.getString("link"))
+            VpnServer(
+                o.getString("id"),
+                o.getString("name"),
+                o.getString("protocol"),
+                o.getString("link"),
+                o.optString("username"),
+                o.optString("password"),
+            )
         }
     }.getOrDefault(emptyList())
 
     private fun saveServers() {
         val array = JSONArray()
         _servers.value.forEach {
-            array.put(JSONObject().put("id", it.id).put("name", it.name).put("protocol", it.protocol).put("link", it.link))
+            array.put(
+                JSONObject().put("id", it.id).put("name", it.name).put("protocol", it.protocol).put("link", it.link)
+                    .put("username", it.username).put("password", it.password),
+            )
         }
         prefs.edit { putString(KEY_SERVERS, array.toString()) }
     }
@@ -248,6 +337,7 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         private const val PROXY_MANUAL = 1
         private const val DEAD_PORT = 9
         private const val FALLBACK_DNS = "1.1.1.1"
+        private const val OPENVPN_TIMEOUT_MS = 60_000L
 
         /** sing-box yapılandırması: yerel "mixed" (SOCKS5/HTTP) giriş, seçilen sunucu çıkış. */
         fun buildConfig(server: VpnServer, port: Int, dnsServer: String): JSONObject {
