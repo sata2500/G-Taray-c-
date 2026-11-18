@@ -1,6 +1,0 @@
-{
-  "name": "G-Tarayıcı",
-  "description": "Gelişmiş dahili video oynatıcılı, eklenti ve DNS destekli, biyometrik korumalı gizli tarayıcı ve yt-dlp entegrasyonlu indirme yöneticisi.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
