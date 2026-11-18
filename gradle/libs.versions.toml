@@ -1,0 +1,55 @@
+[versions]
+agp = "9.5.1"
+kotlin = "2.4.21"
+ksp = "2.3.14"
+# Mozilla Android Components ve GeckoView aynı ana sürümde tutulmalıdır.
+mozilla-components = "160.0.1"
+compose-bom = "2026.09.00"
+activity = "1.13.0"
+appcompat = "1.8.0"
+core = "1.19.1"
+lifecycle = "2.11.0"
+room = "2.8.5"
+coroutines = "1.11.0"
+material = "1.14.0"
+
+[libraries]
+# Mozilla
+mozilla-browser-engine-gecko = { module = "org.mozilla.components:browser-engine-gecko", version.ref = "mozilla-components" }
+mozilla-browser-state = { module = "org.mozilla.components:browser-state", version.ref = "mozilla-components" }
+mozilla-browser-session-storage = { module = "org.mozilla.components:browser-session-storage", version.ref = "mozilla-components" }
+mozilla-browser-icons = { module = "org.mozilla.components:browser-icons", version.ref = "mozilla-components" }
+mozilla-concept-engine = { module = "org.mozilla.components:concept-engine", version.ref = "mozilla-components" }
+mozilla-concept-fetch = { module = "org.mozilla.components:concept-fetch", version.ref = "mozilla-components" }
+mozilla-feature-session = { module = "org.mozilla.components:feature-session", version.ref = "mozilla-components" }
+mozilla-feature-tabs = { module = "org.mozilla.components:feature-tabs", version.ref = "mozilla-components" }
+mozilla-feature-downloads = { module = "org.mozilla.components:feature-downloads", version.ref = "mozilla-components" }
+mozilla-feature-prompts = { module = "org.mozilla.components:feature-prompts", version.ref = "mozilla-components" }
+mozilla-feature-contextmenu = { module = "org.mozilla.components:feature-contextmenu", version.ref = "mozilla-components" }
+mozilla-feature-sitepermissions = { module = "org.mozilla.components:feature-sitepermissions", version.ref = "mozilla-components" }
+mozilla-support-base = { module = "org.mozilla.components:support-base", version.ref = "mozilla-components" }
+mozilla-support-ktx = { module = "org.mozilla.components:support-ktx", version.ref = "mozilla-components" }
+mozilla-support-utils = { module = "org.mozilla.components:support-utils", version.ref = "mozilla-components" }
+
+# AndroidX
+androidx-core = { module = "androidx.core:core-ktx", version.ref = "core" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-compose-material-icons = { module = "androidx.compose.material:material-icons-extended" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+google-material = { module = "com.google.android.material:material", version.ref = "material" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

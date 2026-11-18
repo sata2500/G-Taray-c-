@@ -1,0 +1,18 @@
+# Gradle / Android Studio
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# İmzalama anahtarları ve gizli bilgiler asla repoya girmez
+*.jks
+*.keystore
+keystore.properties
+.env
+
+.DS_Store

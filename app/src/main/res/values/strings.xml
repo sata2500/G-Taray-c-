@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">G-Tarayıcı</string>
+    <string name="app_tagline">Gizli. Hızlı. Sade.</string>
+
+    <!-- Araç çubuğu -->
+    <string name="search_hint">Ara veya adres gir</string>
+    <string name="private_search_hint">Gizli arama yap veya adres gir</string>
+    <string name="action_back">Geri</string>
+    <string name="action_forward">İleri</string>
+    <string name="action_reload">Yenile</string>
+    <string name="action_stop">Durdur</string>
+    <string name="action_share">Paylaş</string>
+    <string name="action_tabs">Sekmeler</string>
+    <string name="action_menu">Menü</string>
+    <string name="action_clear">Temizle</string>
+    <string name="action_close">Kapat</string>
+    <string name="action_delete">Sil</string>
+    <string name="action_open">Aç</string>
+    <string name="action_cancel">Vazgeç</string>
+    <string name="action_ok">Tamam</string>
+    <string name="secure_connection">Güvenli bağlantı</string>
+    <string name="insecure_connection">Güvenli olmayan bağlantı</string>
+
+    <!-- Menü -->
+    <string name="menu_new_tab">Yeni sekme</string>
+    <string name="menu_new_private_tab">Yeni gizli sekme</string>
+    <string name="menu_bookmarks">Yer imleri</string>
+    <string name="menu_history">Geçmiş</string>
+    <string name="menu_downloads">İndirilenler</string>
+    <string name="menu_settings">Ayarlar</string>
+    <string name="menu_desktop_site">Masaüstü sitesi</string>
+    <string name="menu_add_bookmark">Yer imlerine ekle</string>
+    <string name="menu_remove_bookmark">Yer iminden kaldır</string>
+    <string name="menu_copy_link">Bağlantıyı kopyala</string>
+    <string name="link_copied">Bağlantı kopyalandı</string>
+
+    <!-- Ana sayfa -->
+    <string name="home_shortcuts">Kısayollar</string>
+    <string name="home_private_title">Gizli sekmedesiniz</string>
+    <string name="home_private_body">Bu sekmeyi kapattığınızda geçmiş, çerezler ve site verileri silinir. İndirdiğiniz dosyalar ve eklediğiniz yer imleri korunur.</string>
+
+    <!-- Sekmeler -->
+    <string name="tabs_normal">Sekmeler</string>
+    <string name="tabs_private">Gizli</string>
+    <string name="tabs_empty">Açık sekme yok</string>
+    <string name="tabs_close_all">Tümünü kapat</string>
+    <string name="tab_untitled">Yeni sekme</string>
+
+    <!-- Geçmiş, yer imleri, indirilenler -->
+    <string name="history_empty">Henüz geçmiş yok</string>
+    <string name="history_clear_all">Geçmişi temizle</string>
+    <string name="history_clear_confirm">Tüm tarama geçmişi silinsin mi?</string>
+    <string name="bookmarks_empty">Henüz yer imi yok. Bir sayfayı menüden yer imlerine ekleyebilirsiniz.</string>
+    <string name="downloads_empty">Henüz indirilen dosya yok</string>
+    <string name="download_completed">Tamamlandı</string>
+    <string name="download_failed">Başarısız</string>
+    <string name="download_cancelled">İptal edildi</string>
+    <string name="download_paused">Duraklatıldı</string>
+    <string name="download_in_progress">İndiriliyor</string>
+    <string name="download_open_failed">Bu dosyayı açabilecek bir uygulama bulunamadı</string>
+    <string name="search_in_list">Ara</string>
+
+    <!-- Ayarlar -->
+    <string name="settings_general">Genel</string>
+    <string name="settings_search_engine">Arama motoru</string>
+    <string name="settings_theme">Tema</string>
+    <string name="theme_system">Sistem varsayılanı</string>
+    <string name="theme_light">Açık</string>
+    <string name="theme_dark">Koyu</string>
+    <string name="settings_default_browser">Varsayılan tarayıcı yap</string>
+    <string name="settings_default_browser_summary">Bağlantılar G-Tarayıcı ile açılsın</string>
+    <string name="settings_privacy">Gizlilik ve güvenlik</string>
+    <string name="settings_strict_tracking">Sıkı izleyici koruması</string>
+    <string name="settings_strict_tracking_summary">İzleyicileri, parmak izi toplayıcıları ve kripto madencilerini engeller. Nadiren bazı siteler bozulabilir.</string>
+    <string name="settings_https_only">Yalnızca HTTPS</string>
+    <string name="settings_https_only_summary">Tüm bağlantıları şifreli HTTPS\'ye yükseltir</string>
+    <string name="settings_gpc">Global Privacy Control</string>
+    <string name="settings_gpc_summary">Sitelere verilerinizi satmamalarını ve paylaşmamalarını söyler</string>
+    <string name="settings_clear_data">Tarama verilerini temizle</string>
+    <string name="settings_clear_data_summary">Geçmiş, çerezler, önbellek ve site verileri</string>
+    <string name="settings_clear_data_confirm">Geçmiş, çerezler, önbellek ve tüm site verileri silinecek. Açık sekmeler kapatılacak.</string>
+    <string name="settings_data_cleared">Tarama verileri temizlendi</string>
+    <string name="settings_about">Hakkında</string>
+    <string name="settings_version">Sürüm</string>
+    <string name="settings_engine">Tarayıcı motoru</string>
+    <string name="settings_license">Lisans</string>
+    <string name="settings_license_value">Açık kaynak · GPL-3.0</string>
+</resources>
