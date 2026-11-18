@@ -17,8 +17,8 @@ android {
         // GeckoView, Android 8.0 (API 26) ve üzerini destekler.
         minSdk = 26
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.2.0"
     }
 
     // Kalıcı imza anahtarı keystore.properties (repoya girmez) veya ortam değişkenlerinden okunur.
@@ -104,6 +104,11 @@ dependencies {
     implementation(libs.mozilla.feature.prompts)
     implementation(libs.mozilla.feature.contextmenu)
     implementation(libs.mozilla.feature.sitepermissions)
+    implementation(libs.mozilla.feature.media)
+    implementation(libs.mozilla.feature.pwa)
+    implementation(libs.mozilla.feature.intent)
+    implementation(libs.mozilla.feature.privatemode)
+    implementation(libs.mozilla.support.webextensions)
     implementation(libs.mozilla.support.base)
     implementation(libs.mozilla.support.ktx)
     implementation(libs.mozilla.support.utils)
@@ -125,6 +130,13 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.google.material)
+    implementation(libs.androidx.biometric)
+
+    // YouTube video çözümleme (GPL-3.0)
+    implementation(libs.newpipe.extractor)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.json)
 }
 
 // GeckoView, glean-native kütüphanesini kendi içinde barındırır; çakışmada GeckoView seçilir.

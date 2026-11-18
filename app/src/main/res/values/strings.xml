@@ -87,4 +87,116 @@
     <string name="settings_engine">Tarayıcı motoru</string>
     <string name="settings_license">Lisans</string>
     <string name="settings_license_value">Açık kaynak · GPL-3.0</string>
+
+    <!-- Profiller -->
+    <string name="profile_default_name">Kişisel</string>
+    <string name="menu_profiles">Profiller</string>
+    <string name="profiles_title">Profiller</string>
+    <string name="profiles_info">Her profilin çerezleri, oturumları, geçmişi, yer imleri ve sekmeleri birbirinden tamamen ayrıdır. Örneğin bir profilde iş hesaplarınız, diğerinde kişisel hesaplarınız açık kalabilir.</string>
+    <string name="profile_add">Profil ekle</string>
+    <string name="profile_edit">Profili düzenle</string>
+    <string name="profile_name">Profil adı</string>
+    <string name="profile_lock">Biyometrik kilit</string>
+    <string name="profile_lock_summary">Bu profile geçerken ve uygulamaya her dönüşte parmak izi, yüz veya ekran kilidi istenir</string>
+    <string name="profile_delete">Profili sil</string>
+    <string name="profile_delete_confirm">"%1$s" profili; sekmeleri, geçmişi, yer imleri, çerezleri ve site verileriyle birlikte kalıcı olarak silinecek.</string>
+    <string name="profile_active">Etkin</string>
+    <string name="profile_switch">Profil değiştir</string>
+    <string name="profile_save">Kaydet</string>
+    <string name="profile_locked">Kilitli</string>
+
+    <!-- Kilit -->
+    <string name="lock_title_profile">"%1$s" profili kilitli</string>
+    <string name="lock_title_private">Gizli sekmeler kilitli</string>
+    <string name="lock_subtitle">Devam etmek için kimliğinizi doğrulayın</string>
+    <string name="lock_unlock">Kilidi aç</string>
+    <string name="lock_no_screen_lock">Kilidi kullanmak için cihazınızda bir ekran kilidi (PIN, desen veya parmak izi) ayarlayın</string>
+    <string name="settings_lock_private">Gizli sekmeleri kilitle</string>
+    <string name="settings_lock_private_summary">Gizli sekmelere dönerken biyometrik doğrulama istenir</string>
+    <string name="settings_secure_private">Gizli sekmelerde ekran görüntüsünü engelle</string>
+    <string name="settings_secure_private_summary">Gizli sekmeler ekran görüntüsünde ve son uygulamalar listesinde görünmez</string>
+
+    <!-- Eklentiler -->
+    <string name="menu_extensions">Eklentiler</string>
+    <string name="extensions_title">Eklentiler</string>
+    <string name="extensions_get_more">Daha fazla eklenti bul</string>
+    <string name="extensions_get_more_summary">Firefox Eklentileri sitesinden yüzlerce eklenti kurabilirsiniz</string>
+    <string name="extensions_empty">Kurulu eklenti yok</string>
+    <string name="extension_settings">Eklenti ayarları</string>
+    <string name="extension_private">Gizli sekmelerde çalıştır</string>
+    <string name="extension_remove">Kaldır</string>
+    <string name="extension_install_title">"%1$s" eklensin mi?</string>
+    <string name="extension_permissions">Bu eklenti şunlara erişmek istiyor:</string>
+    <string name="extension_no_permissions">Bu eklenti özel bir izin istemiyor.</string>
+    <string name="extension_add">Ekle</string>
+    <string name="extension_installed">%1$s eklendi</string>
+    <string name="extension_install_failed">Eklenti yüklenemedi</string>
+    <string name="extension_allow_private">Gizli sekmelerde de çalışsın</string>
+    <string name="extension_builtin">Hazır gelen</string>
+
+    <!-- DNS ve çerez pencereleri -->
+    <string name="settings_dns">Güvenli DNS (DNS-over-HTTPS)</string>
+    <string name="settings_dns_custom_hint">https://ornek.com/dns-query</string>
+    <string name="settings_dns_custom_title">Özel DNS adresi</string>
+    <string name="settings_dns_strict">Katı DNS modu</string>
+    <string name="settings_dns_strict_summary">Güvenli DNS çalışmazsa sistemin DNS\'ine geri dönülmez</string>
+    <string name="settings_cookie_banner">Çerez pencerelerini otomatik reddet</string>
+    <string name="settings_cookie_banner_summary">Desteklenen sitelerde çerez onay pencereleri sizin yerinize reddedilir</string>
+
+    <!-- Medya -->
+    <string name="settings_media">Medya ve YouTube</string>
+    <string name="settings_background_play">Arka planda oynatma</string>
+    <string name="settings_background_play_summary">Uygulamadan çıkınca veya ekran kapanınca YouTube ve diğer videolar çalmaya devam eder</string>
+    <string name="settings_sponsorblock">SponsorBlock</string>
+    <string name="settings_sponsorblock_summary">YouTube videolarındaki sponsor ve tanıtım bölümlerini otomatik atlar</string>
+    <string name="settings_auto_pip">Otomatik resim içinde resim</string>
+    <string name="settings_auto_pip_summary">Tam ekran video oynarken ana ekrana dönünce küçük pencerede devam eder</string>
+
+    <!-- YouTube indirme -->
+    <string name="menu_download_video">Videoyu indir</string>
+    <string name="yt_title">Videoyu indir</string>
+    <string name="yt_loading">Video bilgileri alınıyor…</string>
+    <string name="yt_error">Video bilgileri alınamadı: %1$s</string>
+    <string name="yt_notice">Yalnızca indirme hakkına sahip olduğunuz içerikleri indirin. YouTube\'un kullanım şartları ve telif hakları kullanıcının sorumluluğundadır.</string>
+    <string name="yt_started">İndirme başladı, bildirimden takip edebilirsiniz</string>
+    <string name="yt_channel_name">Video indirmeleri</string>
+    <string name="yt_waiting">Sırada</string>
+    <string name="yt_downloading">İndiriliyor</string>
+    <string name="yt_merging">Görüntü ve ses birleştiriliyor</string>
+    <string name="yt_done">%1$s indirildi</string>
+    <string name="yt_failed">İndirme başarısız: %1$s</string>
+
+    <!-- PWA -->
+    <string name="menu_install_app">Uygulamayı yükle</string>
+    <string name="menu_add_to_home">Ana ekrana ekle</string>
+    <string name="webapp_added">Ana ekrana eklendi</string>
+    <string name="webapp_not_supported">Başlatıcınız ana ekrana kısayol eklemeyi desteklemiyor</string>
+    <string name="webapp_open_in_browser">Tarayıcıda aç</string>
+
+    <!-- Sayfada bul -->
+    <string name="menu_find_in_page">Sayfada bul</string>
+    <string name="find_hint">Sayfada bul</string>
+    <string name="find_previous">Önceki</string>
+    <string name="find_next">Sonraki</string>
+
+    <!-- VPN -->
+    <string name="menu_vpn">VPN</string>
+    <string name="vpn_title">Tarayıcı VPN\'i</string>
+    <string name="vpn_info">VPN yalnızca G-Tarayıcı\'nın trafiğini şifreler; diğer uygulamalar ve telefonunuzdaki başka VPN\'ler etkilenmez. VLESS, VMess, Trojan, Shadowsocks, Hysteria2, TUIC ve WireGuard desteklenir.</string>
+    <string name="vpn_add">Sunucu ekle</string>
+    <string name="vpn_add_hint">vless://… , vmess://… , ss://… , trojan://… , hy2://… , WireGuard yapılandırması veya abonelik içeriği</string>
+    <string name="vpn_paste">Panodan yapıştır</string>
+    <string name="vpn_empty">Henüz sunucu eklenmedi</string>
+    <string name="vpn_off">Kapalı</string>
+    <string name="vpn_connecting">Bağlanıyor…</string>
+    <string name="vpn_connected">Bağlı: %1$s</string>
+    <string name="vpn_error">Bağlantı hatası: %1$s</string>
+    <string name="vpn_error_blocked">Güvenliğiniz için VPN kapatılana veya yeniden bağlanana kadar internet trafiği engellendi.</string>
+    <string name="vpn_connect">Bağlan</string>
+    <string name="vpn_disconnect">Bağlantıyı kes</string>
+    <string name="vpn_test">Bağlantıyı test et</string>
+    <string name="vpn_test_result">Çıkış IP: %1$s (%2$s) · %3$d ms</string>
+    <string name="vpn_test_failed">Test başarısız: %1$s</string>
+    <string name="vpn_invalid">Bağlantı okunamadı: %1$s</string>
+    <string name="vpn_logs">Günlük</string>
 </resources>

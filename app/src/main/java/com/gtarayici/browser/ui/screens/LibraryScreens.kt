@@ -52,7 +52,8 @@ import mozilla.components.browser.state.state.content.DownloadState
 fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val dao = context.components.database.history()
-    val entries by remember { dao.recent() }.collectAsState(initial = emptyList())
+    val profileId = context.components.profiles.active.collectAsState().value.id
+    val entries by remember(profileId) { dao.recent(profileId) }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var filter by remember { mutableStateOf("") }
     var confirmClear by remember { mutableStateOf(false) }
@@ -92,7 +93,7 @@ fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
                                 )
                             },
                             trailingContent = {
-                                IconButton(onClick = { scope.launch(Dispatchers.IO) { dao.delete(entry.url) } }) {
+                                IconButton(onClick = { scope.launch(Dispatchers.IO) { dao.delete(profileId, entry.url) } }) {
                                     Icon(Icons.Filled.Close, stringResource(R.string.action_delete))
                                 }
                             },
@@ -111,7 +112,7 @@ fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     confirmClear = false
-                    scope.launch(Dispatchers.IO) { dao.clear() }
+                    scope.launch(Dispatchers.IO) { dao.clear(profileId) }
                 }) { Text(stringResource(R.string.action_delete)) }
             },
             dismissButton = {
@@ -125,7 +126,8 @@ fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
 fun BookmarksScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val dao = context.components.database.bookmarks()
-    val bookmarks by remember { dao.all() }.collectAsState(initial = emptyList())
+    val profileId = context.components.profiles.active.collectAsState().value.id
+    val bookmarks by remember(profileId) { dao.all(profileId) }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var filter by remember { mutableStateOf("") }
 
@@ -147,7 +149,7 @@ fun BookmarksScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
                                 Text(UrlInput.displayUrl(bookmark.url), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             },
                             trailingContent = {
-                                IconButton(onClick = { scope.launch(Dispatchers.IO) { dao.deleteByUrl(bookmark.url) } }) {
+                                IconButton(onClick = { scope.launch(Dispatchers.IO) { dao.deleteByUrl(profileId, bookmark.url) } }) {
                                     Icon(Icons.Filled.Delete, stringResource(R.string.action_delete))
                                 }
                             },

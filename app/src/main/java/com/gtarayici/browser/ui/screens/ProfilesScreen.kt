@@ -1,0 +1,311 @@
+package com.gtarayici.browser.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.gtarayici.browser.R
+import com.gtarayici.browser.components
+import com.gtarayici.browser.data.DEFAULT_PROFILE_ID
+import com.gtarayici.browser.data.Profile
+import com.gtarayici.browser.profiles.PROFILE_COLORS
+import com.gtarayici.browser.ui.BrowserController
+import com.gtarayici.browser.ui.components.OverlayScaffold
+
+fun profileColor(profile: Profile) = Color(PROFILE_COLORS[profile.colorIndex.mod(PROFILE_COLORS.size)])
+
+@Composable
+fun ProfileAvatar(profile: Profile, size: Dp = 32.dp, selected: Boolean = false) {
+    Box(
+        Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(profileColor(profile))
+            .then(if (selected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            profile.name.firstOrNull()?.uppercase() ?: "?",
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = (size.value * 0.45f).sp,
+        )
+    }
+}
+
+@Composable
+fun ProfilesScreen(controller: BrowserController, onBack: () -> Unit) {
+    val components = LocalContext.current.components
+    val profiles by components.profiles.profiles.collectAsState()
+    val active by components.profiles.active.collectAsState()
+    var editing by remember { mutableStateOf<Profile?>(null) }
+    var creating by remember { mutableStateOf(false) }
+
+    OverlayScaffold(
+        title = stringResource(R.string.profiles_title),
+        onBack = onBack,
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { creating = true },
+                icon = { Icon(Icons.Filled.Add, null) },
+                text = { Text(stringResource(R.string.profile_add)) },
+            )
+        },
+    ) { modifier ->
+        LazyColumn(modifier) {
+            item {
+                Text(
+                    stringResource(R.string.profiles_info),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+            items(profiles, key = { it.id }) { profile ->
+                ListItem(
+                    leadingContent = { ProfileAvatar(profile, 40.dp, selected = profile.id == active.id) },
+                    headlineContent = { Text(profile.name) },
+                    supportingContent = {
+                        val parts = listOfNotNull(
+                            stringResource(R.string.profile_active).takeIf { profile.id == active.id },
+                            stringResource(R.string.profile_locked).takeIf { profile.locked },
+                        )
+                        if (parts.isNotEmpty()) Text(parts.joinToString(" · "))
+                    },
+                    trailingContent = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (profile.locked) Icon(Icons.Filled.Lock, null, modifier = Modifier.size(18.dp))
+                            IconButton(onClick = { editing = profile }) {
+                                Icon(Icons.Filled.Edit, stringResource(R.string.profile_edit))
+                            }
+                        }
+                    },
+                    modifier = Modifier.clickable { controller.switchProfile(profile) },
+                )
+            }
+            item { Spacer(Modifier.height(96.dp)) }
+        }
+    }
+
+    if (creating) {
+        ProfileEditor(
+            initial = null,
+            onSave = { name, color, locked ->
+                creating = false
+                val created = components.profiles.create(name, color, locked)
+                controller.switchProfile(created)
+            },
+            onDelete = null,
+            onDismiss = { creating = false },
+        )
+    }
+    editing?.let { profile ->
+        ProfileEditor(
+            initial = profile,
+            onSave = { name, color, locked ->
+                editing = null
+                components.profiles.update(profile.copy(name = name.ifBlank { profile.name }, colorIndex = color, locked = locked))
+            },
+            onDelete = if (profile.id != DEFAULT_PROFILE_ID) {
+                {
+                    editing = null
+                    controller.deleteProfile(profile)
+                }
+            } else {
+                null
+            },
+            onDismiss = { editing = null },
+        )
+    }
+}
+
+@Composable
+private fun ProfileEditor(
+    initial: Profile?,
+    onSave: (String, Int, Boolean) -> Unit,
+    onDelete: (() -> Unit)?,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(initial?.name.orEmpty()) }
+    var color by remember { mutableStateOf(initial?.colorIndex ?: (1 until PROFILE_COLORS.size).random()) }
+    var locked by remember { mutableStateOf(initial?.locked ?: false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(if (initial == null) R.string.profile_add else R.string.profile_edit)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.profile_name)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(16.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PROFILE_COLORS.forEachIndexed { index, value ->
+                        Box(
+                            Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color(value))
+                                .clickable { color = index },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (index == color) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                ListItem(
+                    leadingContent = { Icon(Icons.Filled.Fingerprint, null) },
+                    headlineContent = { Text(stringResource(R.string.profile_lock)) },
+                    supportingContent = { Text(stringResource(R.string.profile_lock_summary)) },
+                    trailingContent = { Switch(checked = locked, onCheckedChange = { locked = it }) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clickable { locked = !locked },
+                )
+                if (onDelete != null) {
+                    TextButton(onClick = { confirmDelete = true }) {
+                        Text(stringResource(R.string.profile_delete), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSave(name, color, locked) }) { Text(stringResource(R.string.profile_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+
+    if (confirmDelete && initial != null && onDelete != null) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            text = { Text(stringResource(R.string.profile_delete_confirm, initial.name)) },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = false; onDelete() }) {
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+}
+
+/** Araç çubuğundaki profil simgesine dokununca açılan hızlı profil değiştirici. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileSwitcherSheet(controller: BrowserController) {
+    val components = LocalContext.current.components
+    val profiles by components.profiles.profiles.collectAsState()
+    val active by components.profiles.active.collectAsState()
+    ModalBottomSheet(onDismissRequest = { controller.profileSwitcherOpen = false }) {
+        Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
+            Text(
+                stringResource(R.string.profile_switch),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            profiles.forEach { profile ->
+                ListItem(
+                    leadingContent = { ProfileAvatar(profile, 36.dp, selected = profile.id == active.id) },
+                    headlineContent = { Text(profile.name) },
+                    trailingContent = {
+                        when {
+                            profile.id == active.id -> Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary)
+                            profile.locked -> Icon(Icons.Filled.Lock, null)
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clickable { controller.switchProfile(profile) },
+                )
+            }
+            ListItem(
+                leadingContent = { Icon(Icons.Filled.Edit, null) },
+                headlineContent = { Text(stringResource(R.string.menu_profiles)) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable {
+                    controller.profileSwitcherOpen = false
+                    controller.open(com.gtarayici.browser.ui.Overlay.PROFILES)
+                },
+            )
+        }
+    }
+}
+
+/** Kilitli profil veya gizli sekmeler için içeriği tamamen örten kilit ekranı. */
+@Composable
+fun LockScreen(title: String, onUnlock: () -> Unit) {
+    Box(
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).clickable(onClick = onUnlock),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+            Icon(Icons.Filled.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp))
+            Spacer(Modifier.height(16.dp))
+            Text(title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.lock_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(24.dp))
+            FilledTonalButton(onClick = onUnlock) {
+                Icon(Icons.Filled.Fingerprint, null)
+                Text(stringResource(R.string.lock_unlock), modifier = Modifier.padding(start = 8.dp))
+            }
+        }
+    }
+}

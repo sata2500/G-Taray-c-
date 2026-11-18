@@ -74,6 +74,7 @@ fun SearchScreen(
 ) {
     val context = LocalContext.current
     val db = context.components.database
+    val profileId = context.components.profiles.activeProfile.id
     var value by remember {
         mutableStateOf(TextFieldValue(initialUrl, selection = TextRange(0, initialUrl.length)))
     }
@@ -95,10 +96,10 @@ fun SearchScreen(
         }
         list += Suggestion(Icons.Filled.Search, query, engine.title, engine.searchUrl(query))
         if (!private) {
-            db.bookmarks().search(query).forEach {
+            db.bookmarks().search(profileId, query).forEach {
                 list += Suggestion(Icons.Filled.Bookmark, it.title, UrlInput.displayUrl(it.url), it.url)
             }
-            db.history().search(query).forEach { h ->
+            db.history().search(profileId, query).forEach { h ->
                 if (list.none { it.target == h.url }) {
                     list += Suggestion(Icons.Filled.History, h.title.ifBlank { h.url }, UrlInput.displayUrl(h.url), h.url)
                 }

@@ -18,6 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material3.OutlinedTextField
+import com.gtarayici.browser.settings.DnsProvider
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.OpenInBrowser
@@ -63,6 +66,17 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     val strict by settings.strictTracking.collectAsState()
     val httpsOnly by settings.httpsOnly.collectAsState()
     val gpc by settings.globalPrivacyControl.collectAsState()
+    val cookieBanner by settings.cookieBannerReject.collectAsState()
+    val dnsProvider by settings.dnsProvider.collectAsState()
+    val dnsCustom by settings.dnsCustomUrl.collectAsState()
+    val dnsStrict by settings.dnsStrict.collectAsState()
+    val lockPrivate by settings.lockPrivateTabs.collectAsState()
+    val securePrivate by settings.securePrivateTabs.collectAsState()
+    val backgroundPlay by settings.backgroundPlay.collectAsState()
+    val sponsorBlock by settings.sponsorBlock.collectAsState()
+    val autoPip by settings.autoPictureInPicture.collectAsState()
+    var dnsDialog by remember { mutableStateOf(false) }
+    var dnsCustomDialog by remember { mutableStateOf(false) }
 
     var isDefault by remember { mutableStateOf(isDefaultBrowser(context)) }
     // Rol isteği penceresi startActivityForResult ile açılmazsa Android onu sessizce kapatır.
@@ -125,11 +139,62 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
                 settings.setGlobalPrivacyControl(it)
                 components.applyPrivacySettings()
             }
+            SwitchRow(
+                stringResource(R.string.settings_cookie_banner),
+                stringResource(R.string.settings_cookie_banner_summary),
+                cookieBanner,
+            ) {
+                settings.setCookieBannerReject(it)
+                components.applyPrivacySettings()
+            }
+            ClickRow(
+                Icons.Filled.Dns,
+                stringResource(R.string.settings_dns),
+                if (dnsProvider == DnsProvider.CUSTOM) dnsCustom.ifBlank { dnsProvider.title } else dnsProvider.title,
+            ) { dnsDialog = true }
+            if (dnsProvider != DnsProvider.OFF) {
+                SwitchRow(
+                    stringResource(R.string.settings_dns_strict),
+                    stringResource(R.string.settings_dns_strict_summary),
+                    dnsStrict,
+                ) {
+                    settings.setDnsStrict(it)
+                    components.applyPrivacySettings()
+                }
+            }
+            SwitchRow(
+                stringResource(R.string.settings_lock_private),
+                stringResource(R.string.settings_lock_private_summary),
+                lockPrivate,
+            ) { settings.setLockPrivateTabs(it) }
+            SwitchRow(
+                stringResource(R.string.settings_secure_private),
+                stringResource(R.string.settings_secure_private_summary),
+                securePrivate,
+            ) { settings.setSecurePrivateTabs(it) }
             ClickRow(
                 Icons.Filled.CleaningServices,
                 stringResource(R.string.settings_clear_data),
                 stringResource(R.string.settings_clear_data_summary),
             ) { clearDialog = true }
+
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            SectionTitle(stringResource(R.string.settings_media))
+            SwitchRow(
+                stringResource(R.string.settings_background_play),
+                stringResource(R.string.settings_background_play_summary),
+                backgroundPlay,
+            ) { settings.setBackgroundPlay(it) }
+            SwitchRow(
+                stringResource(R.string.settings_sponsorblock),
+                stringResource(R.string.settings_sponsorblock_summary),
+                sponsorBlock,
+            ) { settings.setSponsorBlock(it) }
+            SwitchRow(
+                stringResource(R.string.settings_auto_pip),
+                stringResource(R.string.settings_auto_pip_summary),
+                autoPip,
+            ) { settings.setAutoPictureInPicture(it) }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SectionTitle(stringResource(R.string.settings_about))
@@ -150,6 +215,46 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
             selected = engine,
             onSelect = { settings.setSearchEngine(it); engineDialog = false },
             onDismiss = { engineDialog = false },
+        )
+    }
+    if (dnsDialog) {
+        ChoiceDialog(
+            title = stringResource(R.string.settings_dns),
+            options = DnsProvider.entries.map { it to it.title },
+            selected = dnsProvider,
+            onSelect = {
+                dnsDialog = false
+                settings.setDnsProvider(it)
+                if (it == DnsProvider.CUSTOM) dnsCustomDialog = true else components.applyPrivacySettings()
+            },
+            onDismiss = { dnsDialog = false },
+        )
+    }
+    if (dnsCustomDialog) {
+        var value by remember { mutableStateOf(dnsCustom) }
+        AlertDialog(
+            onDismissRequest = { dnsCustomDialog = false },
+            title = { Text(stringResource(R.string.settings_dns_custom_title)) },
+            text = {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    singleLine = true,
+                    placeholder = { Text(stringResource(R.string.settings_dns_custom_hint)) },
+                    isError = value.isNotBlank() && !value.trim().startsWith("https://"),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = value.trim().startsWith("https://"),
+                    onClick = {
+                        settings.setDnsCustomUrl(value)
+                        components.applyPrivacySettings()
+                        dnsCustomDialog = false
+                    },
+                ) { Text(stringResource(R.string.profile_save)) }
+            },
+            dismissButton = { TextButton(onClick = { dnsCustomDialog = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
     if (themeDialog) {

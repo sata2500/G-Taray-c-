@@ -14,6 +14,9 @@ dependencyResolutionManagement {
         maven("https://maven.mozilla.org/maven2/") {
             content { includeGroupByRegex("org\\.mozilla(\\..*)?") }
         }
+        maven("https://jitpack.io") {
+            content { includeGroupByRegex("com\\.github\\.TeamNewPipe.*") }
+        }
     }
 }
 

@@ -22,6 +22,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.gtarayici.browser.downloads.DownloadService
 import com.gtarayici.browser.ui.BrowserApp
 import com.gtarayici.browser.ui.BrowserController
+import com.gtarayici.browser.ui.Overlay
+import android.content.res.Configuration
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.concept.engine.EngineView
@@ -30,7 +32,9 @@ import mozilla.components.feature.contextmenu.ContextMenuFeature
 import mozilla.components.feature.downloads.DownloadsFeature
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.prompts.PromptFeature
+import mozilla.components.feature.privatemode.feature.SecureWindowFeature
 import mozilla.components.feature.session.FullScreenFeature
+import mozilla.components.feature.session.PictureInPictureFeature
 import mozilla.components.feature.session.SessionFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
@@ -46,6 +50,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var controller: BrowserController
 
     private var fullscreen by mutableStateOf(false)
+    private var inPictureInPicture by mutableStateOf(false)
+    private var pipFeature: PictureInPictureFeature? = null
 
     private val sessionFeature = ViewBoundFeatureWrapper<SessionFeature>()
     private val fullScreenFeature = ViewBoundFeatureWrapper<FullScreenFeature>()
@@ -78,7 +84,12 @@ class MainActivity : AppCompatActivity() {
         engineView.setActivityContext(this)
         setupFeatures()
 
-        setContent { BrowserApp(controller, engineView.asView(), fullscreen) }
+        pipFeature = PictureInPictureFeature(components.store, this)
+        if (components.settings.securePrivateTabs.value) {
+            lifecycle.addObserver(SecureWindowFeature(window, components.store))
+        }
+
+        setContent { BrowserApp(controller, engineView.asView(), fullscreen || inPictureInPicture, inPictureInPicture) }
 
         onBackPressedDispatcher.addCallback(this) {
             val handled = fullScreenFeature.onBackPressed() || promptFeature.onBackPressed() || controller.handleBack()
@@ -97,6 +108,26 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         engineView.setActivityContext(null)
+    }
+
+    /** Ana ekran tuşuna basıldığında tam ekran video oynuyorsa resim içinde resme geçer. */
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (components.settings.autoPictureInPicture.value) pipFeature?.onHomePressed()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        inPictureInPicture = isInPictureInPictureMode
+        pipFeature?.onPictureInPictureModeChanged(isInPictureInPictureMode)
+    }
+
+    /** Uygulama arka plana geçince kilitli profiller ve gizli sekmeler yeniden kilitlenir. */
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations && !components.appLock.authenticating && !inPictureInPicture) {
+            components.appLock.lockAll()
+        }
     }
 
     @Deprecated("PromptFeature dosya seçici sonuçlarını bu yolla alır.")
@@ -238,9 +269,9 @@ class MainActivity : AppCompatActivity() {
         when (intent.action) {
             Intent.ACTION_VIEW -> {
                 val url = intent.dataString ?: return
-                components.tabsUseCases.addTab(url, selectTab = true)
-                controller.closeOverlay()
+                controller.loadUrl(url, inNewTab = true, private = false)
             }
+            ACTION_OPEN_DOWNLOADS -> controller.open(Overlay.DOWNLOADS)
             Intent.ACTION_WEB_SEARCH -> {
                 val query = intent.getStringExtra(SearchManager.QUERY) ?: return
                 controller.loadUrl(components.settings.searchEngine.value.searchUrl(query), inNewTab = true)
@@ -271,4 +302,8 @@ class MainActivity : AppCompatActivity() {
 
     private val registerNotificationLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    companion object {
+        const val ACTION_OPEN_DOWNLOADS = "com.gtarayici.browser.OPEN_DOWNLOADS"
+    }
 }

@@ -5,45 +5,69 @@
 G-Tarayıcı, Mozilla'nın **GeckoView** motoru üzerine kuruludur. Amacı, kurduğunuz anda hiçbir ayar yapmadan
 sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
-> Durum: **Aşama 1 (temel tarayıcı)** tamamlandı. Proje aktif geliştirme aşamasındadır.
+> Durum: **v0.2.0** — yol haritasındaki ana özelliklerin ilk sürümleri hazır; cihaz üzerinde kapsamlı test sürüyor.
 
 ## Özellikler
 
-### Şu an çalışanlar (v0.1.0)
+### Gizlilik (kurduğunuz anda açık)
+- **uBlock Origin hazır kurulu** gelir (internetsiz, paketle birlikte); gizli sekmelerde de çalışır
+- Sıkı izleyici ve parmak izi koruması, yalnızca HTTPS, Global Privacy Control
+- **Çerez onay pencerelerini otomatik reddetme**
+- URL'lerdeki izleme parametrelerinin temizlenmesi
+- **Güvenli DNS (DNS-over-HTTPS):** Cloudflare, Quad9, AdGuard, Mullvad, NextDNS veya özel adres; katı mod
+- WebRTC IP sızıntısı koruması
+- Gizlilik dostu varsayılan arama motoru (DuckDuckGo)
 
-- GeckoView (Firefox) motoru: modern web uyumluluğu, Firefox güvenlik güncellemeleri
-- **Varsayılan olarak açık gizlilik:**
-  - Sıkı izleyici koruması (izleyiciler, parmak izi toplayıcılar, kripto madencileri, sosyal izleyiciler)
-  - Yalnızca HTTPS modu
-  - Global Privacy Control (GPC)
-  - URL'lerdeki izleme parametrelerinin temizlenmesi
-  - Gizlilik dostu varsayılan arama motoru (DuckDuckGo)
-- Tek elle kullanım için **alttan adres çubuğu**
-- Sekmeler ve **gizli sekmeler** (kapatınca iz bırakmaz, mor tema ile ayırt edilir)
-- Başlangıç sayfası ve yer imi kısayolları
-- Geçmiş ve yer imleri (arama, silme)
-- Yer imleri ve geçmişten anlık adres önerileri
-- İndirme yöneticisi (bildirimli, arka planda indirme)
-- Site izinleri (kamera, mikrofon, konum, bildirim) için soran diyaloglar
-- Uzun basma menüsü (yeni sekmede aç, bağlantıyı kopyala, resmi indir…)
-- Dosya yükleme, giriş/onay diyalogları ve diğer web istemleri
-- Tam ekran video
-- Masaüstü sitesi modu
-- Açık, koyu ve sistem teması (Android 12+ cihazlarda dinamik renkler)
-- Varsayılan tarayıcı olarak ayarlanabilme
-- Uygulama yeniden açıldığında sekmelerin geri yüklenmesi
+### Profiller ve kilit
+- **Kullanıcı profilleri:** her profilin çerezleri, oturumları, sekmeleri, geçmişi ve yer imleri tamamen ayrıdır
+- Araç çubuğundan tek dokunuşla profil değiştirme
+- **Biyometrik kilitli profiller** (parmak izi, yüz veya ekran kilidi)
+- İsteğe bağlı **kilitli gizli sekmeler**; gizli sekmelerde ekran görüntüsü engeli
+
+### Eklentiler
+- Firefox Eklentileri (addons.mozilla.org) sitesinden doğrudan eklenti kurma
+- Eklenti yönetimi: aç/kapat, gizli sekmelerde çalıştır, ayarlar, kaldır; günlük otomatik güncelleme
+- Eklenti panelleri (ör. uBlock Origin) menüden alttan açılan sayfada
+
+### Medya ve YouTube
+- **Arka planda oynatma:** uygulamadan çıkınca veya ekran kapanınca YouTube çalmaya devam eder
+- Bildirim ve kilit ekranında medya kontrolleri
+- **Resim içinde resim:** tam ekran videoda ana ekrana dönünce küçük pencerede devam eder
+- **SponsorBlock:** sponsor ve tanıtım bölümlerini otomatik atlar (video kimliği gizlilik korumalı sorgulanır)
+- **YouTube video/ses indirme:** 1080p'ye kadar MP4 (görüntü + ses cihazda birleştirilir), M4A veya Opus ses
+
+### Web uygulamaları (PWA)
+- "Uygulamayı yükle": web uygulamaları ana ekrana kendi simgesiyle eklenir, tarayıcı arayüzü olmadan
+  kendi penceresinde açılır ve son uygulamalar listesinde ayrı görünür
+- Web uygulaması olmayan siteler için "Ana ekrana ekle" kısayolu
+
+### Tarayıcı VPN'i
+- Yalnızca G-Tarayıcı'nın trafiği şifrelenir; cihaz VPN izni gerekmez, diğer uygulamalar ve VPN'ler etkilenmez
+- Dahili sing-box çekirdeği: **VLESS (Reality dahil), VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard**
+- Paylaşım bağlantısı, WireGuard yapılandırması veya abonelik içeriği yapıştırarak sunucu ekleme
+- Bağlantı testi (çıkış IP'si, ülke, gecikme), günlük görüntüleme
+- Bağlantı koparsa trafik doğrudan internete düşmez (sızıntı koruması)
+
+### Temel tarama
+- Tek elle kullanım için alttan adres çubuğu; yer imleri ve geçmişten anlık öneriler
+- Önizlemeli sekme ekranı, gizli sekmeler, sayfada bul, masaüstü sitesi modu
+- Geçmiş, yer imleri, indirme yöneticisi; site izinleri, dosya yükleme, tam ekran video
+- Açık/koyu/sistem teması (Android 12+ dinamik renkler), varsayılan tarayıcı olabilme
 
 ## Yol haritası
 
 | Aşama | İçerik | Durum |
 |---|---|---|
-| 1. Temel | GeckoView, sekmeler, alttan adres çubuğu, geçmiş, yer imleri, gizli mod, indirmeler | ✅ Tamamlandı |
-| 2. Profiller | Ayrı çerez, depolama ve geçmişe sahip kullanıcı profilleri; biyometrik kilitli profiller ve gizli sekmeler | ⏳ Sırada |
-| 3. Gizlilik | Hazır kurulu uBlock Origin, eklenti (Firefox Add-ons) desteği, çerez onay pencerelerini otomatik reddetme, özel DNS (DNS-over-HTTPS) | ⏳ |
-| 4. Medya ve YouTube | Resim içinde resim, arka planda oynatma, YouTube video ve ses indirme, SponsorBlock | ⏳ |
-| 5. PWA | Web uygulamalarını yükleme: önce kısayol, sonra cihaz üzerinde üretilen gerçek APK | ⏳ |
-| 6. VPN | Tarayıcıya ve profile özel VPN (sing-box: WireGuard, Shadowsocks, VLESS, VMess, Trojan, Hysteria) | ⏳ |
-| 7. Kullanışlılık | Okuma modu, cihaz üzerinde çeviri, QR okuyucu, kullanıcı betikleri, sekme grupları, kendi kendini güncelleme | ⏳ |
+| 1. Temel | GeckoView, sekmeler, adres çubuğu, geçmiş, yer imleri, gizli mod, indirmeler | ✅ |
+| 2. Profiller | Ayrı veri alanlı profiller, biyometrik kilit | ✅ |
+| 3. Gizlilik | uBlock Origin, eklentiler, çerez pencereleri, güvenli DNS | ✅ |
+| 4. Medya | Arka planda oynatma, resim içinde resim, YouTube indirme, SponsorBlock | ✅ |
+| 5. PWA | Kısayol ve bağımsız pencere | ✅ · Cihazda gerçek APK üretimi ⏳ |
+| 6. VPN | sing-box ile tarayıcıya özel VPN | ✅ · Profile özel VPN ⏳ |
+| 7. Kullanışlılık | Sayfada bul ✅ · Okuma modu, çeviri, QR okuyucu, kullanıcı betikleri, sekme grupları, otomatik güncelleme ⏳ | 🚧 |
+
+**Bilinen sınırlamalar:** VPN ve DNS ayarları tüm profiller için ortaktır (GeckoView tek bir ağ yapılandırması kullanır).
+Resim içinde resim, Firefox'ta olduğu gibi video tam ekrandayken çalışır.
 
 ## Teknoloji
 
@@ -54,6 +78,9 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 | Dil | Kotlin 2.4 |
 | Arayüz | Jetpack Compose (BOM 2026.09) + Material 3 |
 | Veritabanı | Room 2.8 |
+| VPN çekirdeği | sing-box 1.14 |
+| YouTube çözümleme | NewPipe Extractor 0.26 |
+| Reklam engelleme | uBlock Origin (hazır kurulu) |
 | Derleme | Gradle 9.9, Android Gradle Plugin 9.5 |
 | Android | En az Android 8.0 (API 26), hedef Android 17 (API 37) |
 
@@ -64,16 +91,33 @@ app/src/main/java/com/gtarayici/browser/
 ├── GTarayiciApplication.kt   # Uygulama başlangıcı, sekmelerin geri yüklenmesi
 ├── Components.kt             # Motor, durum deposu ve kullanım senaryoları (tek örnek)
 ├── MainActivity.kt           # Tarayıcı özellikleri (oturum, indirme, istemler, izinler…)
-├── data/                     # Room veritabanı: geçmiş ve yer imleri
+├── data/                     # Room veritabanı: profiller, geçmiş, yer imleri
 ├── downloads/                # Arka plan indirme servisi
+├── engine/                   # Gecko tercihleri
+├── extensions/               # Eklenti yönetimi (uBlock Origin, AMO)
+├── media/                    # Medya bildirimi ve arka planda oynatma servisi
+├── profiles/                 # Profil yönetimi
 ├── search/                   # Arama motorları ve adres çubuğu girdisi
+├── security/                 # Biyometrik kilit
 ├── settings/                 # Uygulama ayarları
+├── thumbnails/               # Sekme önizlemeleri
+├── vpn/                      # sing-box tabanlı tarayıcı VPN'i ve bağlantı ayrıştırıcı
+├── webapp/                   # Yüklenen web uygulamaları (PWA) penceresi
+├── youtube/                  # YouTube indirme ve birleştirme
 └── ui/                       # Compose arayüzü (araç çubuğu, menü, ekranlar, tema)
+app/src/main/assets/extensions/
+├── ublock_origin.xpi         # Hazır kurulu reklam engelleyici (imzalı, AMO)
+└── helper/                   # Arka planda oynatma ve SponsorBlock yardımcı eklentisi
 ```
 
 ## Derleme
 
-Gereksinimler: JDK 21 ve Android SDK (platform 37.2, build-tools 37).
+Gereksinimler: JDK 21, Android SDK (platform 37.2, build-tools 37) ve VPN çekirdeği için Go 1.25+.
+
+```bash
+# VPN çekirdeğini (sing-box) bir kez derleyin; ikili dosyalar repoya eklenmez
+./scripts/build-singbox.sh
+```
 
 ```bash
 # Hata ayıklama sürümü
@@ -104,4 +148,4 @@ Anahtar bulunamazsa release sürümü yalnızca deneme amaçlı olarak debug ana
 ## Lisans
 
 G-Tarayıcı, [GNU Genel Kamu Lisansı v3.0](LICENSE) (GPL-3.0-or-later) ile lisanslanmış özgür bir yazılımdır.
-GeckoView ve Mozilla Android Components, Mozilla Public License 2.0 ile lisanslıdır.
+GeckoView ve Mozilla Android Components MPL-2.0; sing-box, NewPipe Extractor ve uBlock Origin GPL-3.0 lisanslıdır.

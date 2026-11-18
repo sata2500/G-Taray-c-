@@ -5,8 +5,15 @@ import androidx.core.app.NotificationManagerCompat
 import com.gtarayici.browser.data.AppDatabase
 import com.gtarayici.browser.data.HistoryRecorder
 import com.gtarayici.browser.downloads.DownloadService
+import com.gtarayici.browser.engine.GeckoPrefs
+import com.gtarayici.browser.extensions.ExtensionManager
+import com.gtarayici.browser.media.MediaSessionService
+import com.gtarayici.browser.profiles.ProfileManager
+import com.gtarayici.browser.security.AppLock
 import com.gtarayici.browser.settings.AppSettings
 import com.gtarayici.browser.thumbnails.TabThumbnails
+import com.gtarayici.browser.vpn.VpnManager
+import com.gtarayici.browser.youtube.YouTubeDownloader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,11 +36,17 @@ import mozilla.components.feature.downloads.DownloadEstimator
 import mozilla.components.feature.downloads.DownloadMiddleware
 import mozilla.components.feature.downloads.DownloadsUseCases
 import mozilla.components.feature.downloads.FileSizeFormatter
+import mozilla.components.feature.media.MediaSessionFeature
 import mozilla.components.feature.prompts.PromptMiddleware
 import mozilla.components.feature.prompts.file.FileUploadsDirCleaner
+import mozilla.components.feature.pwa.ManifestStorage
+import mozilla.components.feature.pwa.WebAppShortcutManager
+import mozilla.components.feature.pwa.WebAppUseCases
+import mozilla.components.feature.pwa.intent.WebAppIntentProcessor
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.session.middleware.LastAccessMiddleware
 import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
+import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.utils.DefaultDateTimeProvider
@@ -50,11 +63,18 @@ class Components(private val context: Context) {
 
     val settings by lazy { AppSettings(context) }
     val database by lazy { AppDatabase.create(context) }
+    val profiles by lazy {
+        ProfileManager(context, database, applicationScope, context.getString(R.string.profile_default_name))
+    }
+    val appLock by lazy { AppLock() }
 
-    private val runtime: GeckoRuntime by lazy {
+    val runtime: GeckoRuntime by lazy {
         val runtimeSettings = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(true)
             .consoleOutput(BuildConfig.DEBUG)
+            .extensionsProcessEnabled(true)
+            // addons.mozilla.org sitesinden doğrudan eklenti kurulabilsin.
+            .extensionsWebAPIEnabled(true)
             .build()
         GeckoRuntime.create(context, runtimeSettings)
     }
@@ -70,6 +90,9 @@ class Components(private val context: Context) {
             supportMultipleWindows = true
             javaScriptCanOpenWindowsAutomatically = false
             remoteDebuggingEnabled = BuildConfig.DEBUG
+            // Arka planda oynatma için sekme arka plandayken medya askıya alınmaz.
+            suspendMediaWhenInactive = false
+            applyDns(this)
         }
     }
 
@@ -114,16 +137,57 @@ class Components(private val context: Context) {
 
     val sessionUseCases by lazy { SessionUseCases(store) }
     val tabsUseCases by lazy { TabsUseCases(store) }
+    val customTabsUseCases by lazy { CustomTabsUseCases(store, sessionUseCases.loadUrl) }
     val downloadsUseCases by lazy { DownloadsUseCases(store, downloadFileUtils) }
     val contextMenuUseCases by lazy { ContextMenuUseCases(store) }
 
-    val historyRecorder by lazy { HistoryRecorder(store, database.history(), applicationScope) }
+    val historyRecorder by lazy {
+        HistoryRecorder(store, database.history(), applicationScope) { contextId -> profiles.byContextId(contextId)?.id }
+    }
+
+    val extensions by lazy { ExtensionManager(context, engine, store, settings, applicationScope) }
+
+    val mediaSessionFeature by lazy { MediaSessionFeature(context, MediaSessionService::class.java, store) }
+
+    // PWA (ana ekrana yüklenen web uygulamaları)
+    val manifestStorage by lazy { ManifestStorage(context) }
+    val webAppShortcutManager by lazy { WebAppShortcutManager(context, client, manifestStorage) }
+    val webAppUseCases by lazy { WebAppUseCases(context, store, webAppShortcutManager) }
+    val webAppIntentProcessor by lazy {
+        WebAppIntentProcessor(store, customTabsUseCases.addWebApp, sessionUseCases.loadUrl, manifestStorage)
+    }
+
+    val vpn by lazy { VpnManager(context, applicationScope) }
+    val youtube by lazy { YouTubeDownloader(context, this) }
 
     /** Ayar ekranındaki değişiklikleri çalışan motora anında uygular. */
     fun applyPrivacySettings() {
         engine.settings.trackingProtectionPolicy = trackingPolicy(settings.strictTracking.value)
         engine.settings.httpsOnlyMode = httpsMode(settings.httpsOnly.value)
         engine.settings.globalPrivacyControlEnabled = settings.globalPrivacyControl.value
+        applyDns(engine.settings)
+        applyGeckoPrefs()
+    }
+
+    /** Motor ayarlarında karşılığı olmayan Gecko tercihleri (çerez pencereleri vb.). */
+    fun applyGeckoPrefs() {
+        val cookieMode = if (settings.cookieBannerReject.value) COOKIE_BANNER_REJECT else COOKIE_BANNER_DISABLED
+        GeckoPrefs.set("cookiebanners.service.mode", cookieMode)
+        GeckoPrefs.set("cookiebanners.service.mode.privateBrowsing", cookieMode)
+        // WebRTC'nin VPN/vekil sunucuyu atlayıp gerçek IP'yi sızdırmasını önler.
+        GeckoPrefs.set("media.peerconnection.ice.proxy_only_if_behind_proxy", true)
+        GeckoPrefs.set("media.peerconnection.ice.default_address_only", true)
+    }
+
+    private fun applyDns(target: mozilla.components.concept.engine.Settings) {
+        val url = settings.dohUrl()
+        if (url == null) {
+            target.dohSettingsMode = Engine.DohSettingsMode.DEFAULT
+        } else {
+            target.dohProviderUrl = url
+            target.dohSettingsMode =
+                if (settings.dnsStrict.value) Engine.DohSettingsMode.MAX else Engine.DohSettingsMode.INCREASED
+        }
     }
 
     private fun trackingPolicy(strict: Boolean) =
@@ -131,4 +195,9 @@ class Components(private val context: Context) {
 
     private fun httpsMode(enabled: Boolean) =
         if (enabled) Engine.HttpsOnlyMode.ENABLED else Engine.HttpsOnlyMode.DISABLED
+
+    private companion object {
+        const val COOKIE_BANNER_DISABLED = 0
+        const val COOKIE_BANNER_REJECT = 1
+    }
 }

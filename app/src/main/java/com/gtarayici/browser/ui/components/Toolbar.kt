@@ -20,6 +20,9 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.VpnKey
+import com.gtarayici.browser.data.Profile
+import com.gtarayici.browser.ui.screens.ProfileAvatar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -44,7 +47,11 @@ data class ToolbarState(
     val secure: Boolean?,
     val tabCount: Int,
     val private: Boolean,
+    val profile: Profile? = null,
+    val vpn: VpnIndicator = VpnIndicator.OFF,
 )
+
+enum class VpnIndicator { OFF, ON, ERROR }
 
 /** Tek elle kullanım için ekranın altında duran adres çubuğu. */
 @Composable
@@ -54,6 +61,8 @@ fun BottomToolbar(
     onReloadOrStop: () -> Unit,
     onTabsClick: () -> Unit,
     onMenuClick: () -> Unit,
+    onProfileClick: () -> Unit = {},
+    onVpnClick: () -> Unit = {},
 ) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
         Column {
@@ -70,7 +79,19 @@ fun BottomToolbar(
                 Modifier.fillMaxWidth().padding(start = 8.dp, end = 2.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                state.profile?.let { profile ->
+                    IconButton(onClick = onProfileClick) { ProfileAvatar(profile, 28.dp) }
+                }
                 UrlPill(state, onUrlClick, onReloadOrStop, Modifier.weight(1f))
+                if (state.vpn != VpnIndicator.OFF) {
+                    IconButton(onClick = onVpnClick) {
+                        Icon(
+                            Icons.Filled.VpnKey,
+                            contentDescription = stringResource(R.string.menu_vpn),
+                            tint = if (state.vpn == VpnIndicator.ON) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
                 TabCounter(state.tabCount, onTabsClick)
                 IconButton(onClick = onMenuClick) {
                     Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.action_menu))

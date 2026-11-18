@@ -16,8 +16,9 @@ class HistoryRecorder(
     private val store: BrowserStore,
     private val dao: HistoryDao,
     private val scope: CoroutineScope,
+    private val profileIdFor: (contextId: String?) -> String?,
 ) {
-    private data class Visit(val tabId: String, val url: String, val title: String)
+    private data class Visit(val tabId: String, val profileId: String, val url: String, val title: String)
 
     private val lastRecorded = mutableMapOf<String, Visit>()
 
@@ -27,7 +28,10 @@ class HistoryRecorder(
                 .map { state ->
                     state.tabs
                         .filter { !it.content.private && !it.content.loading }
-                        .map { Visit(it.id, it.content.url, it.content.title) }
+                        .mapNotNull { tab ->
+                            val profileId = profileIdFor(tab.contextId) ?: return@mapNotNull null
+                            Visit(tab.id, profileId, tab.content.url, tab.content.title)
+                        }
                         .filter { isRecordable(it.url) }
                 }
                 .distinctUntilChanged()
@@ -42,12 +46,13 @@ class HistoryRecorder(
         scope.launch(Dispatchers.IO) {
             if (previous?.url == visit.url) {
                 // Aynı sayfa: yalnızca başlık güncellendi.
-                if (visit.title.isNotBlank()) dao.updateTitle(visit.url, visit.title)
+                if (visit.title.isNotBlank()) dao.updateTitle(visit.profileId, visit.url, visit.title)
                 return@launch
             }
-            val existing = dao.find(visit.url)
+            val existing = dao.find(visit.profileId, visit.url)
             dao.upsert(
                 HistoryEntry(
+                    profileId = visit.profileId,
                     url = visit.url,
                     title = visit.title.ifBlank { existing?.title.orEmpty() },
                     lastVisited = System.currentTimeMillis(),

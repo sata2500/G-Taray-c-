@@ -16,3 +16,6 @@ keystore.properties
 .env
 
 .DS_Store
+
+# sing-box ikili dosyaları büyüktür; scripts/build-singbox.sh ile üretilir.
+app/src/main/jniLibs/*/libsingbox.so
