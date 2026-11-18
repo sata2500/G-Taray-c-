@@ -25,7 +25,11 @@ enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS
 /**
  * Arayüzün tarayıcı üzerinde yaptığı tüm işlemleri tek bir yerde toplar.
  */
-class BrowserController(private val context: Context, private val components: Components) {
+class BrowserController(
+    private val context: Context,
+    private val components: Components,
+    private val captureThumbnail: () -> Unit = {},
+) {
     var overlay by mutableStateOf(Overlay.NONE)
     var menuOpen by mutableStateOf(false)
 
@@ -37,6 +41,7 @@ class BrowserController(private val context: Context, private val components: Co
 
     fun open(overlay: Overlay) {
         menuOpen = false
+        if (overlay == Overlay.TABS) captureThumbnail()
         this.overlay = overlay
     }
 

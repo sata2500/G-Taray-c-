@@ -22,6 +22,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.gtarayici.browser.downloads.DownloadService
 import com.gtarayici.browser.ui.BrowserApp
 import com.gtarayici.browser.ui.BrowserController
+import mozilla.components.browser.thumbnails.BrowserThumbnails
+import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.contextmenu.ContextMenuCandidate
 import mozilla.components.feature.contextmenu.ContextMenuFeature
@@ -51,6 +53,7 @@ class MainActivity : AppCompatActivity() {
     private val promptFeature = ViewBoundFeatureWrapper<PromptFeature>()
     private val contextMenuFeature = ViewBoundFeatureWrapper<ContextMenuFeature>()
     private val sitePermissionsFeature = ViewBoundFeatureWrapper<SitePermissionsFeature>()
+    private val thumbnailsFeature = ViewBoundFeatureWrapper<BrowserThumbnails>()
 
     private var pendingPermissionFeature: (() -> PermissionsFeature?)? = null
     private val permissionLauncher =
@@ -68,7 +71,9 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        controller = BrowserController(this, components)
+        controller = BrowserController(this, components) {
+            thumbnailsFeature.get()?.requestScreenshot(BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK)
+        }
         engineView = components.engine.createView(this)
         engineView.setActivityContext(this)
         setupFeatures()
@@ -172,6 +177,12 @@ class MainActivity : AppCompatActivity() {
                 engineView = engineView,
                 useCases = components.contextMenuUseCases,
             ),
+            owner = this,
+            view = view,
+        )
+
+        thumbnailsFeature.set(
+            feature = BrowserThumbnails(this, engineView, store),
             owner = this,
             view = view,
         )

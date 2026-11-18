@@ -1,9 +1,14 @@
 package com.gtarayici.browser.ui.screens
 
 import android.app.role.RoleManager
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -59,6 +64,24 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     val httpsOnly by settings.httpsOnly.collectAsState()
     val gpc by settings.globalPrivacyControl.collectAsState()
 
+    var isDefault by remember { mutableStateOf(isDefaultBrowser(context)) }
+    // Rol isteği penceresi startActivityForResult ile açılmazsa Android onu sessizce kapatır.
+    val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        isDefault = isDefaultBrowser(context)
+    }
+    val requestDefaultBrowser = {
+        val roleManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) context.getSystemService<RoleManager>() else null
+        val canRequestRole = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && roleManager != null &&
+            roleManager.isRoleAvailable(RoleManager.ROLE_BROWSER) && !roleManager.isRoleHeld(RoleManager.ROLE_BROWSER)
+        if (canRequestRole) {
+            roleLauncher.launch(roleManager!!.createRequestRoleIntent(RoleManager.ROLE_BROWSER))
+        } else {
+            // Zaten varsayılansa veya rol isteği desteklenmiyorsa sistem ayarı açılır.
+            runCatching { roleLauncher.launch(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)) }
+                .onFailure { runCatching { roleLauncher.launch(Intent(Settings.ACTION_SETTINGS)) } }
+        }
+    }
+
     var engineDialog by remember { mutableStateOf(false) }
     var themeDialog by remember { mutableStateOf(false) }
     var clearDialog by remember { mutableStateOf(false) }
@@ -75,22 +98,10 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
             ClickRow(
                 Icons.Filled.OpenInBrowser,
                 stringResource(R.string.settings_default_browser),
-                stringResource(R.string.settings_default_browser_summary),
-            ) {
-                val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val roleManager = context.getSystemService<RoleManager>()
-                    if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_BROWSER) &&
-                        !roleManager.isRoleHeld(RoleManager.ROLE_BROWSER)
-                    ) {
-                        roleManager.createRequestRoleIntent(RoleManager.ROLE_BROWSER)
-                    } else {
-                        Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
-                    }
-                } else {
-                    Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
-                }
-                runCatching { context.startActivity(intent) }
-            }
+                stringResource(
+                    if (isDefault) R.string.settings_default_browser_active else R.string.settings_default_browser_summary,
+                ),
+            ) { requestDefaultBrowser() }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SectionTitle(stringResource(R.string.settings_privacy))
@@ -165,6 +176,15 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
             },
         )
     }
+}
+
+private fun isDefaultBrowser(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        context.getSystemService<RoleManager>()?.let { return it.isRoleHeld(RoleManager.ROLE_BROWSER) }
+    }
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com"))
+    val info = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+    return info?.activityInfo?.packageName == context.packageName
 }
 
 @Composable

@@ -70,6 +70,7 @@
     <string name="theme_dark">Koyu</string>
     <string name="settings_default_browser">Varsayılan tarayıcı yap</string>
     <string name="settings_default_browser_summary">Bağlantılar G-Tarayıcı ile açılsın</string>
+    <string name="settings_default_browser_active">G-Tarayıcı şu anda varsayılan tarayıcınız</string>
     <string name="settings_privacy">Gizlilik ve güvenlik</string>
     <string name="settings_strict_tracking">Sıkı izleyici koruması</string>
     <string name="settings_strict_tracking_summary">İzleyicileri, parmak izi toplayıcıları ve kripto madencilerini engeller. Nadiren bazı siteler bozulabilir.</string>

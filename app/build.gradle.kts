@@ -17,8 +17,8 @@ android {
         // GeckoView, Android 8.0 (API 26) ve üzerini destekler.
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
     }
 
     // Kalıcı imza anahtarı keystore.properties (repoya girmez) veya ortam değişkenlerinden okunur.
@@ -95,6 +95,7 @@ dependencies {
     implementation(libs.mozilla.browser.state)
     implementation(libs.mozilla.browser.session.storage)
     implementation(libs.mozilla.browser.icons)
+    implementation(libs.mozilla.browser.thumbnails)
     implementation(libs.mozilla.concept.engine)
     implementation(libs.mozilla.concept.fetch)
     implementation(libs.mozilla.feature.session)

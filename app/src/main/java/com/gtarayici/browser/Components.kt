@@ -6,6 +6,7 @@ import com.gtarayici.browser.data.AppDatabase
 import com.gtarayici.browser.data.HistoryRecorder
 import com.gtarayici.browser.downloads.DownloadService
 import com.gtarayici.browser.settings.AppSettings
+import com.gtarayici.browser.thumbnails.TabThumbnails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,6 +16,8 @@ import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.session.storage.SessionStorage
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.browser.thumbnails.ThumbnailsMiddleware
+import mozilla.components.browser.thumbnails.storage.ThumbnailStorage
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
@@ -86,6 +89,9 @@ class Components(private val context: Context) {
 
     val permissionStorage by lazy { OnDiskSitePermissionsStorage(context, coroutineScope = applicationScope) }
 
+    val thumbnailStorage by lazy { ThumbnailStorage(context) }
+    val tabThumbnails by lazy { TabThumbnails(thumbnailStorage, applicationScope) }
+
     val store by lazy {
         BrowserStore(
             middleware = listOf(
@@ -95,6 +101,9 @@ class Components(private val context: Context) {
                     deleteFileFromStorage = { false },
                     downloadFileUtils = downloadFileUtils,
                 ),
+                // Sıra önemli: önizleme önbelleği, diske kaydeden Mozilla katmanından önce gelir.
+                tabThumbnails.middleware,
+                ThumbnailsMiddleware(thumbnailStorage),
                 LastAccessMiddleware(),
                 PromptMiddleware(),
             ) + EngineMiddleware.create(engine),
