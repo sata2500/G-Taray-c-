@@ -66,7 +66,7 @@ class Components(private val context: Context) {
     val profiles by lazy {
         ProfileManager(context, database, applicationScope, context.getString(R.string.profile_default_name))
     }
-    val appLock by lazy { AppLock() }
+    val appLock by lazy { AppLock(context) }
 
     val runtime: GeckoRuntime by lazy {
         val runtimeSettings = GeckoRuntimeSettings.Builder()
@@ -158,6 +158,7 @@ class Components(private val context: Context) {
     }
 
     val vpn by lazy { VpnManager(context, applicationScope) }
+    val webApkInstaller by lazy { com.gtarayici.browser.webapk.WebApkInstaller(context, this) }
     val youtube by lazy { YouTubeDownloader(context, this) }
 
     /** Ayar ekranındaki değişiklikleri çalışan motora anında uygular. */
@@ -177,6 +178,8 @@ class Components(private val context: Context) {
         // WebRTC'nin VPN/vekil sunucuyu atlayıp gerçek IP'yi sızdırmasını önler.
         GeckoPrefs.set("media.peerconnection.ice.proxy_only_if_behind_proxy", true)
         GeckoPrefs.set("media.peerconnection.ice.default_address_only", true)
+        // Arka planda (ör. ekran kapalıyken) oynatma listesindeki sonraki video başlayabilsin.
+        GeckoPrefs.set("media.block-autoplay-until-in-foreground", false)
     }
 
     private fun applyDns(target: mozilla.components.concept.engine.Settings) {

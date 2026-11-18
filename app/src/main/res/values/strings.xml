@@ -150,7 +150,7 @@
     <string name="settings_sponsorblock">SponsorBlock</string>
     <string name="settings_sponsorblock_summary">YouTube videolarındaki sponsor ve tanıtım bölümlerini otomatik atlar</string>
     <string name="settings_auto_pip">Otomatik resim içinde resim</string>
-    <string name="settings_auto_pip_summary">Tam ekran video oynarken ana ekrana dönünce küçük pencerede devam eder</string>
+    <string name="settings_auto_pip_summary">Video oynarken uygulamadan çıkınca küçük pencerede devam eder</string>
 
     <!-- YouTube indirme -->
     <string name="menu_download_video">Videoyu indir</string>
@@ -199,4 +199,39 @@
     <string name="vpn_test_failed">Test başarısız: %1$s</string>
     <string name="vpn_invalid">Bağlantı okunamadı: %1$s</string>
     <string name="vpn_logs">Günlük</string>
+
+    <!-- Uygulama parolası -->
+    <string name="lock_password">Parola veya PIN</string>
+    <string name="lock_use_password">Parola kullan</string>
+    <string name="lock_use_biometric">Parmak izi veya yüz ile aç</string>
+    <string name="lock_wrong_password">Parola yanlış</string>
+    <string name="lock_wait">Çok fazla hatalı deneme. %1$d sn sonra tekrar deneyin.</string>
+    <string name="settings_app_password">Uygulama parolası</string>
+    <string name="settings_app_password_off">Ayarlı değil: kilitler parmak izi, yüz veya cihaz ekran kilidiyle açılır</string>
+    <string name="settings_app_password_on">Ayarlı: kilitler bu parola veya parmak izi/yüz ile açılır</string>
+    <string name="password_set_title">Uygulama parolası belirle</string>
+    <string name="password_change_title">Uygulama parolası</string>
+    <string name="password_current">Mevcut parola</string>
+    <string name="password_new">Yeni parola veya PIN (en az 4 karakter)</string>
+    <string name="password_repeat">Yeni parolayı tekrar girin</string>
+    <string name="password_mismatch">Parolalar eşleşmiyor</string>
+    <string name="password_too_short">En az 4 karakter olmalı</string>
+    <string name="password_remove">Parolayı kaldır</string>
+    <string name="password_saved">Uygulama parolası kaydedildi</string>
+    <string name="password_removed">Uygulama parolası kaldırıldı</string>
+    <string name="pip_play">Oynat</string>
+    <string name="pip_pause">Duraklat</string>
+    <string name="pip_next">Sonraki</string>
+    <string name="pip_previous">Önceki</string>
+    <string name="vpn_import_file">Dosyadan</string>
+    <string name="vpn_help_title">Sunucu nasıl eklenir?</string>
+    <string name="vpn_help_body">1. VPN sağlayıcınızın sitesinde veya hesap panelinde "elle kurulum" (manual setup) bölümünü açın.\n2. Bir <b>WireGuard yapılandırma dosyası</b> (.conf) indirin ya da bir paylaşım bağlantısı (vless://, vmess://, ss://, trojan://, hy2://, tuic://) kopyalayın.\n3. Burada "Sunucu ekle"ye dokunun; bağlantıyı yapıştırın veya "Dosyadan" ile .conf dosyasını seçin.\n4. Sunucuyu seçip "Bağlan"a dokunun, ardından "Bağlantıyı test et" ile çıkış IP\'nizi kontrol edin.\n\nSOCKS5 ve HTTP vekil sunucuları da eklenebilir (socks5://kullanıcı:parola@sunucu:port).\n\nŞu an desteklenmeyenler: IKEv2/IPsec (strongSwan), OpenVPN, L2TP ve PPTP. Sağlayıcınız WireGuard sunuyorsa onu tercih edin.</string>
+    <string name="webapk_option_app">Uygulama olarak yükle</string>
+    <string name="webapk_option_app_summary">Uygulama çekmecesinde kendi simgesiyle görünür, kendi penceresinde açılır ve ayarlardan normal bir uygulama gibi kaldırılabilir</string>
+    <string name="webapk_option_app_summary_site">Bu site bir web uygulaması bildirimi sunmuyor; yine de kendi penceresinde açılan bir uygulama olarak yüklenebilir</string>
+    <string name="webapk_option_shortcut_summary">Yalnızca ana ekrana bir kısayol ekler</string>
+    <string name="webapk_preparing">Uygulama hazırlanıyor…</string>
+    <string name="webapk_permission">Uygulama yükleyebilmek için açılan ekranda G-Tarayıcı\'ya "Bu kaynaktan izin ver" iznini verin, sonra tekrar deneyin</string>
+    <string name="webapk_installed">%1$s yüklendi</string>
+    <string name="webapk_failed">Uygulama yüklenemedi: %1$s</string>
 </resources>

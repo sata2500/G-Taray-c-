@@ -1,6 +1,13 @@
 package com.gtarayici.browser.ui.screens
 
 import android.content.ClipboardManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,6 +72,16 @@ fun VpnScreen(onBack: () -> Unit) {
     var testResult by remember { mutableStateOf<String?>(null) }
     var showLog by remember { mutableStateOf(false) }
     var selectedId by remember { mutableStateOf(vpn.activeServerId) }
+    var helpOpen by remember { mutableStateOf(servers.isEmpty()) }
+    val importFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        val text = runCatching {
+            context.contentResolver.openInputStream(uri)?.use { it.bufferedReader().readText() }
+        }.getOrNull().orEmpty()
+        vpn.addServer(text)
+            .onSuccess { selectedId = it.id; helpOpen = false }
+            .onFailure { Toast.makeText(context, context.getString(R.string.vpn_invalid, it.message ?: ""), Toast.LENGTH_LONG).show() }
+    }
 
     OverlayScaffold(
         title = stringResource(R.string.vpn_title),
@@ -147,6 +164,23 @@ fun VpnScreen(onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 20.dp),
                 )
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).clickable { helpOpen = !helpOpen },
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.Help, null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(12.dp))
+                            Text(stringResource(R.string.vpn_help_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                            Icon(if (helpOpen) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null)
+                        }
+                        if (helpOpen) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(stringResource(R.string.vpn_help_body), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
             }
             if (showLog) {
                 item {
@@ -202,12 +236,21 @@ fun VpnScreen(onBack: () -> Unit) {
                         supportingText = error?.let { { Text(it) } },
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    TextButton(onClick = {
-                        val clip = context.getSystemService(ClipboardManager::class.java).primaryClip
-                        text = clip?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
-                    }) {
-                        Icon(Icons.Filled.ContentPaste, null)
-                        Text(stringResource(R.string.vpn_paste), modifier = Modifier.padding(start = 8.dp))
+                    Row {
+                        TextButton(onClick = {
+                            val clip = context.getSystemService(ClipboardManager::class.java).primaryClip
+                            text = clip?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
+                        }) {
+                            Icon(Icons.Filled.ContentPaste, null)
+                            Text(stringResource(R.string.vpn_paste), modifier = Modifier.padding(start = 8.dp))
+                        }
+                        TextButton(onClick = {
+                            adding = false
+                            importFile.launch(arrayOf("*/*"))
+                        }) {
+                            Icon(Icons.Filled.FileOpen, null)
+                            Text(stringResource(R.string.vpn_import_file), modifier = Modifier.padding(start = 8.dp))
+                        }
                     }
                 }
             },

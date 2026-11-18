@@ -27,7 +27,11 @@ object ShareLinkParser {
             text.startsWith("ss://", true) -> parseShadowsocks(text)
             text.startsWith("hysteria2://", true) || text.startsWith("hy2://", true) -> parseHysteria2(text)
             text.startsWith("tuic://", true) -> parseTuic(text)
-            else -> throw ParseException("Tanınmayan bağlantı biçimi")
+            Regex("^socks[45h]?://", RegexOption.IGNORE_CASE).containsMatchIn(text) -> parseSocks(text)
+            text.startsWith("http://", true) || text.startsWith("https://", true) -> parseHttpProxy(text)
+            else -> throw ParseException(
+                "Tanınmayan biçim. IKEv2/IPsec (strongSwan), OpenVPN, L2TP ve PPTP şu an desteklenmiyor.",
+            )
         }
     }
 
@@ -236,6 +240,35 @@ object ShareLinkParser {
             .put("congestion_control", link.q("congestion_control") ?: "bbr")
             .put("tls", tls(link.q("sni") ?: link.host, isTrue(link.q("allow_insecure", "insecure")), link.q("alpn") ?: "h3", null))
         return Parsed(link.name.ifBlank { link.host }, "TUIC", json)
+    }
+
+    private fun parseSocks(raw: String): Parsed {
+        val link = Link(raw.replaceFirst(Regex("^socks[45h]?://", RegexOption.IGNORE_CASE), "socks://"))
+        val json = JSONObject()
+            .put("type", "socks")
+            .put("server", link.host)
+            .put("server_port", link.uri.port.takeIf { it > 0 } ?: 1080)
+            .put("version", "5")
+        link.uri.rawUserInfo?.let { info ->
+            json.put("username", decode(info.substringBefore(':')))
+            json.put("password", decode(info.substringAfter(':', "")))
+        }
+        return Parsed(link.name.ifBlank { link.host }, "SOCKS5", json)
+    }
+
+    private fun parseHttpProxy(raw: String): Parsed {
+        val secure = raw.startsWith("https://", true)
+        val link = Link(raw)
+        val json = JSONObject()
+            .put("type", "http")
+            .put("server", link.host)
+            .put("server_port", link.uri.port.takeIf { it > 0 } ?: if (secure) 443 else 8080)
+        link.uri.rawUserInfo?.let { info ->
+            json.put("username", decode(info.substringBefore(':')))
+            json.put("password", decode(info.substringAfter(':', "")))
+        }
+        if (secure) json.put("tls", tls(link.host, false, null, null))
+        return Parsed(link.name.ifBlank { link.host }, if (secure) "HTTPS vekil" else "HTTP vekil", json)
     }
 
     private fun parseWireGuard(text: String): Parsed {

@@ -23,6 +23,9 @@ class ShareLinkParserTest {
         "ss-legacy" to "ss://" + Base64.getEncoder().encodeToString("aes-256-gcm:pw@5.6.7.8:8388".toByteArray()) + "#Old",
         "hy2" to "hy2://pw@a.com:443?sni=a.com&obfs=salamander&obfs-password=x#HY2",
         "tuic" to "tuic://$uuid:pw@a.com:443?sni=a.com&congestion_control=bbr&alpn=h3#TUIC",
+        "socks5" to "socks5://user:p%40ss@10.0.0.1:1080#Ev",
+        "http" to "http://proxy.example.com:3128#HTTP",
+        "https" to "https://u:p@secure.example.com:443#HTTPS",
         "wireguard" to """
             [Interface]
             PrivateKey = yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=

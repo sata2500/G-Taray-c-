@@ -220,7 +220,7 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         } else {
             text
         }
-        return decoded.lines().map(String::trim).filter { it.contains("://") }
+        return decoded.lines().map(String::trim).filter { it.contains("://") && !it.startsWith("#") }
     }
 
     private fun loadServers(): List<VpnServer> = runCatching {

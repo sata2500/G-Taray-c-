@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddToHomeScreen
 import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -136,11 +135,7 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
             MenuItem(Icons.Filled.Download, stringResource(R.string.menu_downloads)) { controller.open(Overlay.DOWNLOADS) }
             if (state.hasPage) {
                 MenuItem(Icons.Filled.FindInPage, stringResource(R.string.menu_find_in_page)) { controller.openFindInPage() }
-                if (state.installableWebApp) {
-                    MenuItem(Icons.Filled.InstallMobile, stringResource(R.string.menu_install_app)) { controller.addToHomescreen() }
-                } else {
-                    MenuItem(Icons.Filled.AddToHomeScreen, stringResource(R.string.menu_add_to_home)) { controller.addToHomescreen() }
-                }
+                MenuItem(Icons.Filled.InstallMobile, stringResource(R.string.menu_install_app)) { controller.openInstallDialog() }
                 MenuItem(Icons.Filled.ContentCopy, stringResource(R.string.menu_copy_link)) { controller.copyLink() }
                 ListItem(
                     leadingContent = { Icon(Icons.Filled.DesktopWindows, null) },

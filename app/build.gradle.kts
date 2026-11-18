@@ -1,4 +1,6 @@
 import java.util.Properties
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
 
 plugins {
     alias(libs.plugins.android.application)
@@ -17,8 +19,8 @@ android {
         // GeckoView, Android 8.0 (API 26) ve üzerini destekler.
         minSdk = 26
         targetSdk = 37
-        versionCode = 3
-        versionName = "0.2.0"
+        versionCode = 4
+        versionName = "0.3.0"
     }
 
     // Kalıcı imza anahtarı keystore.properties (repoya girmez) veya ortam değişkenlerinden okunur.
@@ -131,6 +133,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.google.material)
     implementation(libs.androidx.biometric)
+    // Cihazda üretilen web uygulaması APK'larını imzalamak için (Apache-2.0)
+    implementation(libs.apksig)
 
     // YouTube video çözümleme (GPL-3.0)
     implementation(libs.newpipe.extractor)
@@ -147,5 +151,34 @@ configurations.configureEach {
         }
         if (gecko != null) select(gecko)
         because("GeckoView glean-native'i zaten içerir")
+    }
+}
+
+/** WebAPK şablonunu (webapk-shell modülü) uygulamanın assets/webapk/shell.apk dosyası olarak paketler. */
+abstract class BundleWebApkShell : DefaultTask() {
+    @get:InputFiles
+    abstract val shellApks: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun bundle() {
+        val out = outputDir.get().asFile.resolve("webapk")
+        out.deleteRecursively()
+        out.mkdirs()
+        val apk = shellApks.asFileTree.matching { include("*.apk") }.singleFile
+        apk.copyTo(out.resolve("shell.apk"), overwrite = true)
+    }
+}
+
+val bundleWebApkShell = tasks.register<BundleWebApkShell>("bundleWebApkShell") {
+    dependsOn(":webapk-shell:assembleRelease")
+    shellApks.from(rootProject.layout.projectDirectory.dir("webapk-shell/build/outputs/apk/release"))
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(bundleWebApkShell, BundleWebApkShell::outputDir)
     }
 }

@@ -1,16 +1,16 @@
 {
   "manifest_version": 2,
   "name": "G-Tarayıcı Yardımcısı",
-  "version": "1.0.0",
-  "description": "YouTube arka planda oynatma ve SponsorBlock desteği.",
+  "version": "1.1.0",
+  "description": "Arka planda oynatma, resim içinde resim, medya kontrolleri ve SponsorBlock desteği.",
   "browser_specific_settings": {
     "gecko": { "id": "helper@gtarayici.app" }
   },
   "permissions": [
     "nativeMessaging",
-    "https://sponsor.ajay.app/*",
-    "*://*.youtube.com/*",
-    "*://*.youtube-nocookie.com/*"
+    "tabs",
+    "<all_urls>",
+    "https://sponsor.ajay.app/*"
   ],
   "background": { "scripts": ["background.js"] },
   "content_scripts": [
@@ -18,6 +18,12 @@
       "matches": ["*://*.youtube.com/*", "*://*.youtube-nocookie.com/*"],
       "js": ["youtube.js"],
       "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["media.js"],
+      "run_at": "document_idle",
       "all_frames": true
     }
   ]

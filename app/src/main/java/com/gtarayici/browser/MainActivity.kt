@@ -34,7 +34,6 @@ import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.feature.privatemode.feature.SecureWindowFeature
 import mozilla.components.feature.session.FullScreenFeature
-import mozilla.components.feature.session.PictureInPictureFeature
 import mozilla.components.feature.session.SessionFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
@@ -51,7 +50,7 @@ class MainActivity : AppCompatActivity() {
 
     private var fullscreen by mutableStateOf(false)
     private var inPictureInPicture by mutableStateOf(false)
-    private var pipFeature: PictureInPictureFeature? = null
+    private lateinit var pip: com.gtarayici.browser.media.PipController
 
     private val sessionFeature = ViewBoundFeatureWrapper<SessionFeature>()
     private val fullScreenFeature = ViewBoundFeatureWrapper<FullScreenFeature>()
@@ -84,7 +83,7 @@ class MainActivity : AppCompatActivity() {
         engineView.setActivityContext(this)
         setupFeatures()
 
-        pipFeature = PictureInPictureFeature(components.store, this)
+        pip = com.gtarayici.browser.media.PipController(this, components).also { it.start() }
         if (components.settings.securePrivateTabs.value) {
             lifecycle.addObserver(SecureWindowFeature(window, components.store))
         }
@@ -108,18 +107,19 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         engineView.setActivityContext(null)
+        pip.stop()
     }
 
     /** Ana ekran tuşuna basıldığında tam ekran video oynuyorsa resim içinde resme geçer. */
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        if (components.settings.autoPictureInPicture.value) pipFeature?.onHomePressed()
+        pip.onUserLeaveHint()
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPictureInPicture = isInPictureInPictureMode
-        pipFeature?.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        pip.onPictureInPictureModeChanged(isInPictureInPictureMode)
     }
 
     /** Uygulama arka plana geçince kilitli profiller ve gizli sekmeler yeniden kilitlenir. */

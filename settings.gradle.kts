@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "G-Tarayici"
 include(":app")
+include(":webapk-shell")

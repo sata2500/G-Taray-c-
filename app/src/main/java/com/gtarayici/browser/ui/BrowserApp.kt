@@ -41,6 +41,7 @@ import com.gtarayici.browser.ui.screens.ExtensionPrompts
 import com.gtarayici.browser.ui.screens.ExtensionsScreen
 import com.gtarayici.browser.ui.screens.HistoryScreen
 import com.gtarayici.browser.ui.screens.HomeScreen
+import com.gtarayici.browser.ui.screens.InstallAppDialog
 import com.gtarayici.browser.ui.screens.LockScreen
 import com.gtarayici.browser.ui.screens.ProfileSwitcherSheet
 import com.gtarayici.browser.ui.screens.ProfilesScreen
@@ -241,7 +242,7 @@ fun BrowserApp(controller: BrowserController, engineView: View, fullscreen: Bool
                 }
                 // Kilit ekranı açılınca doğrulama istemi kendiliğinden gelir.
                 LaunchedEffect(lockKey) { controller.unlock(lockKey, title) }
-                Box(overlayModifier) { LockScreen(title) { controller.unlock(lockKey, title) } }
+                Box(overlayModifier) { LockScreen(title, lockKey) { controller.unlock(lockKey, title) } }
             }
 
             if (controller.menuOpen) {
@@ -271,6 +272,7 @@ fun BrowserApp(controller: BrowserController, engineView: View, fullscreen: Bool
                 )
             }
             if (controller.profileSwitcherOpen) ProfileSwitcherSheet(controller)
+            if (controller.installDialogOpen) InstallAppDialog(controller, installable = current?.hasManifest == true)
             controller.youtubeUrl?.let { url -> YouTubeDownloadSheet(url) { controller.youtubeUrl = null } }
             ExtensionPrompts()
             ExtensionPopupSheet()

@@ -51,6 +51,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -285,11 +292,22 @@ fun ProfileSwitcherSheet(controller: BrowserController) {
 
 /** Kilitli profil veya gizli sekmeler için içeriği tamamen örten kilit ekranı. */
 @Composable
-fun LockScreen(title: String, onUnlock: () -> Unit) {
-    Box(
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).clickable(onClick = onUnlock),
-        contentAlignment = Alignment.Center,
-    ) {
+fun LockScreen(title: String, lockKey: String, onBiometric: () -> Unit) {
+    val context = LocalContext.current
+    val lock = context.components.appLock
+    var password by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    val focus = remember { FocusRequester() }
+    val submit = {
+        if (lock.unlockWithPassword(lockKey, password)) {
+            error = null
+        } else {
+            password = ""
+            val wait = lock.lockoutSeconds()
+            error = if (wait > 0) context.getString(R.string.lock_wait, wait) else context.getString(R.string.lock_wrong_password)
+        }
+    }
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
             Icon(Icons.Filled.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp))
             Spacer(Modifier.height(16.dp))
@@ -302,9 +320,33 @@ fun LockScreen(title: String, onUnlock: () -> Unit) {
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(24.dp))
-            FilledTonalButton(onClick = onUnlock) {
-                Icon(Icons.Filled.Fingerprint, null)
-                Text(stringResource(R.string.lock_unlock), modifier = Modifier.padding(start = 8.dp))
+            if (lock.hasPassword) {
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it; error = null },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.lock_password)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { submit() }),
+                    isError = error != null,
+                    supportingText = error?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                )
+                Spacer(Modifier.height(12.dp))
+                FilledTonalButton(onClick = { submit() }, enabled = password.isNotEmpty()) {
+                    Text(stringResource(R.string.lock_unlock))
+                }
+            }
+            if (lock.hasBiometrics(context) || !lock.hasPassword) {
+                Spacer(Modifier.height(8.dp))
+                TextButton(onClick = onBiometric) {
+                    Icon(Icons.Filled.Fingerprint, null)
+                    Text(
+                        stringResource(if (lock.hasPassword) R.string.lock_use_biometric else R.string.lock_unlock),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
             }
         }
     }

@@ -19,6 +19,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Password
+import android.widget.Toast
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.gtarayici.browser.security.AppLock
 import androidx.compose.material3.OutlinedTextField
 import com.gtarayici.browser.settings.DnsProvider
 import androidx.compose.material.icons.filled.Info
@@ -76,6 +82,7 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     val sponsorBlock by settings.sponsorBlock.collectAsState()
     val autoPip by settings.autoPictureInPicture.collectAsState()
     var dnsDialog by remember { mutableStateOf(false) }
+    var passwordDialog by remember { mutableStateOf(false) }
     var dnsCustomDialog by remember { mutableStateOf(false) }
 
     var isDefault by remember { mutableStateOf(isDefaultBrowser(context)) }
@@ -162,6 +169,11 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
                     components.applyPrivacySettings()
                 }
             }
+            ClickRow(
+                Icons.Filled.Password,
+                stringResource(R.string.settings_app_password),
+                stringResource(if (components.appLock.hasPassword) R.string.settings_app_password_on else R.string.settings_app_password_off),
+            ) { passwordDialog = true }
             SwitchRow(
                 stringResource(R.string.settings_lock_private),
                 stringResource(R.string.settings_lock_private_summary),
@@ -217,6 +229,7 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
             onDismiss = { engineDialog = false },
         )
     }
+    if (passwordDialog) PasswordDialog(onDismiss = { passwordDialog = false })
     if (dnsDialog) {
         ChoiceDialog(
             title = stringResource(R.string.settings_dns),
@@ -299,6 +312,68 @@ private fun OverlayScaffoldSettings(onBack: () -> Unit, content: @Composable (Mo
         onBack = onBack,
         content = content,
     )
+
+/** Uygulama parolasını belirleme, değiştirme veya kaldırma. */
+@Composable
+private fun PasswordDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val lock = context.components.appLock
+    val hasPassword = lock.hasPassword
+    var current by remember { mutableStateOf("") }
+    var new by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    val field = @Composable { value: String, label: Int, onChange: (String) -> Unit ->
+        OutlinedTextField(
+            value = value,
+            onValueChange = { onChange(it); error = null },
+            singleLine = true,
+            label = { Text(stringResource(label)) },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+        )
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(if (hasPassword) R.string.password_change_title else R.string.password_set_title)) },
+        text = {
+            Column {
+                if (hasPassword) field(current, R.string.password_current) { current = it }
+                field(new, R.string.password_new) { new = it }
+                field(repeat, R.string.password_repeat) { repeat = it }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                if (hasPassword) {
+                    TextButton(onClick = {
+                        if (lock.verifyPassword(current)) {
+                            lock.removePassword()
+                            Toast.makeText(context, R.string.password_removed, Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                        } else {
+                            error = context.getString(R.string.lock_wrong_password)
+                        }
+                    }) { Text(stringResource(R.string.password_remove), color = MaterialTheme.colorScheme.error) }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                error = when {
+                    hasPassword && !lock.verifyPassword(current) -> context.getString(R.string.lock_wrong_password)
+                    new.length < AppLock.MIN_PASSWORD_LENGTH -> context.getString(R.string.password_too_short)
+                    new != repeat -> context.getString(R.string.password_mismatch)
+                    else -> null
+                }
+                if (error == null) {
+                    lock.setPassword(new)
+                    Toast.makeText(context, R.string.password_saved, Toast.LENGTH_SHORT).show()
+                    onDismiss()
+                }
+            }) { Text(stringResource(R.string.profile_save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
 
 @Composable
 private fun themeLabel(mode: ThemeMode) = stringResource(

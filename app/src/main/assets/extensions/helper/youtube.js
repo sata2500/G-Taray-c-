@@ -59,6 +59,61 @@
   // --- 2) SponsorBlock ---------------------------------------------------------------------
   if (window.top !== window) return; // Yalnızca ana çerçevede.
 
+  // --- 3) Medya kontrolleri ve oynatma listesinde otomatik geçiş --------------------------
+  // YouTube mobil sitesi "önceki/sonraki" işleyicilerini kaydetmez; oynatıcının kendi
+  // işlevlerine bağlarız. Böylece bildirimde, kilit ekranında ve resim içinde resimde görünürler.
+  function player() {
+    const node = document.getElementById("movie_player");
+    return node ? node.wrappedJSObject : null;
+  }
+  function inPlaylist() {
+    try {
+      return new URL(location.href).searchParams.has("list");
+    } catch (e) {
+      return false;
+    }
+  }
+  function next() {
+    const p = player();
+    if (p && typeof p.nextVideo === "function") p.nextVideo();
+  }
+  function previous() {
+    const p = player();
+    const video = document.querySelector("video");
+    if (video && video.currentTime > 5) {
+      video.currentTime = 0;
+    } else if (p && typeof p.previousVideo === "function") {
+      p.previousVideo();
+    }
+  }
+  function registerHandlers() {
+    try {
+      const session = navigator.wrappedJSObject.mediaSession;
+      if (!session) return;
+      session.setActionHandler("nexttrack", exportFunction(next, window));
+      session.setActionHandler("previoustrack", exportFunction(previous, window));
+    } catch (e) {}
+  }
+  // YouTube işleyicileri sıfırlayabildiği için düzenli olarak yeniden kaydedilir.
+  setInterval(() => {
+    const video = document.querySelector("video");
+    if (video && !video.paused) registerHandlers();
+  }, 2000);
+
+  // Ekran kapalıyken YouTube'un kendi geçişi gecikebilir; video bitince sıradakine geçilir.
+  document.addEventListener(
+    "ended",
+    (event) => {
+      if (!(event.target instanceof HTMLVideoElement) || !backgroundPlay) return;
+      if (!inPlaylist()) return;
+      const endedUrl = location.href;
+      setTimeout(() => {
+        if (location.href === endedUrl) next();
+      }, 1500);
+    },
+    true
+  );
+
   const CATEGORIES = ["sponsor", "selfpromo", "interaction"];
   let currentVideoId = null;
   let segments = [];

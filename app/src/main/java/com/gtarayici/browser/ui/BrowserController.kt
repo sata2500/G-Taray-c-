@@ -37,6 +37,7 @@ class BrowserController(
     var findInPageOpen by mutableStateOf(false)
     var youtubeUrl by mutableStateOf<String?>(null)
     var profileSwitcherOpen by mutableStateOf(false)
+    var installDialogOpen by mutableStateOf(false)
 
     /** Görünür sekme yokken yeni sekmelerin gizli açılıp açılmayacağı. */
     var privateMode by mutableStateOf(false)
@@ -176,9 +177,36 @@ class BrowserController(
         youtubeUrl = selectedTab?.content?.url
     }
 
-    /** Sitede bir web uygulaması bildirimi varsa uygulama olarak, yoksa kısayol olarak ana ekrana ekler. */
+    fun openInstallDialog() {
+        menuOpen = false
+        installDialogOpen = true
+    }
+
+    /** Siteyi gerçek bir Android uygulaması (WebAPK) olarak yükler. */
+    fun installWebApk() {
+        installDialogOpen = false
+        val tab = selectedTab ?: return
+        val installer = components.webApkInstaller
+        if (!installer.canInstall()) {
+            Toast.makeText(activity, R.string.webapk_permission, Toast.LENGTH_LONG).show()
+            installer.requestPermission()
+            return
+        }
+        Toast.makeText(activity, R.string.webapk_preparing, Toast.LENGTH_SHORT).show()
+        components.applicationScope.launch {
+            when (val result = installer.install(tab)) {
+                is com.gtarayici.browser.webapk.WebApkInstaller.Result.Failed ->
+                    Toast.makeText(activity, activity.getString(R.string.webapk_failed, result.message), Toast.LENGTH_LONG).show()
+                com.gtarayici.browser.webapk.WebApkInstaller.Result.NeedsPermission -> installer.requestPermission()
+                com.gtarayici.browser.webapk.WebApkInstaller.Result.Started -> Unit
+            }
+        }
+    }
+
+    /** Ana ekrana basit bir kısayol (veya web uygulaması kısayolu) ekler. */
     fun addToHomescreen() {
         menuOpen = false
+        installDialogOpen = false
         if (!components.webAppUseCases.isPinningSupported()) {
             Toast.makeText(activity, R.string.webapp_not_supported, Toast.LENGTH_LONG).show()
             return

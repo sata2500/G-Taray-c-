@@ -5,7 +5,7 @@
 G-Tarayıcı, Mozilla'nın **GeckoView** motoru üzerine kuruludur. Amacı, kurduğunuz anda hiçbir ayar yapmadan
 sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
-> Durum: **v0.2.0** — yol haritasındaki ana özelliklerin ilk sürümleri hazır; cihaz üzerinde kapsamlı test sürüyor.
+> Durum: **v0.3.0** — yol haritasındaki ana özelliklerin ilk sürümleri hazır; cihaz üzerinde kapsamlı test sürüyor.
 
 ## Özellikler
 
@@ -21,7 +21,8 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 ### Profiller ve kilit
 - **Kullanıcı profilleri:** her profilin çerezleri, oturumları, sekmeleri, geçmişi ve yer imleri tamamen ayrıdır
 - Araç çubuğundan tek dokunuşla profil değiştirme
-- **Biyometrik kilitli profiller** (parmak izi, yüz veya ekran kilidi)
+- **Kilitli profiller:** parmak izi, yüz, cihaz ekran kilidi veya **uygulamaya özel parola/PIN**
+  (PBKDF2 ile özetlenir; 5 hatalı denemede 30 sn bekleme)
 - İsteğe bağlı **kilitli gizli sekmeler**; gizli sekmelerde ekran görüntüsü engeli
 
 ### Eklentiler
@@ -32,19 +33,24 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 ### Medya ve YouTube
 - **Arka planda oynatma:** uygulamadan çıkınca veya ekran kapanınca YouTube çalmaya devam eder
 - Bildirim ve kilit ekranında medya kontrolleri
-- **Resim içinde resim:** tam ekran videoda ana ekrana dönünce küçük pencerede devam eder
+- **Resim içinde resim:** video oynarken uygulamadan çıkınca (tam ekran gerekmeden) küçük pencerede devam eder;
+  pencerede önceki / oynat-duraklat / sonraki düğmeleri
+- Bildirim ve kilit ekranında YouTube için **önceki/sonraki** düğmeleri; oynatma listesinde ekran kapalıyken sonraki videoya geçiş
 - **SponsorBlock:** sponsor ve tanıtım bölümlerini otomatik atlar (video kimliği gizlilik korumalı sorgulanır)
 - **YouTube video/ses indirme:** 1080p'ye kadar MP4 (görüntü + ses cihazda birleştirilir), M4A veya Opus ses
 
 ### Web uygulamaları (PWA)
-- "Uygulamayı yükle": web uygulamaları ana ekrana kendi simgesiyle eklenir, tarayıcı arayüzü olmadan
-  kendi penceresinde açılır ve son uygulamalar listesinde ayrı görünür
-- Web uygulaması olmayan siteler için "Ana ekrana ekle" kısayolu
+- **Gerçek uygulama olarak yükleme (WebAPK):** Chrome'daki gibi, site cihazda üretilen ve cihaza özel anahtarla
+  imzalanan küçük bir APK olarak yüklenir. Uygulama çekmecesinde kendi adı ve simgesiyle görünür, ayarlardan
+  kaldırılabilir, tarayıcı arayüzü olmadan kendi penceresinde açılır. Hiçbir sunucuya veri gönderilmez.
+- İstenirse yalnızca ana ekran kısayolu
 
 ### Tarayıcı VPN'i
 - Yalnızca G-Tarayıcı'nın trafiği şifrelenir; cihaz VPN izni gerekmez, diğer uygulamalar ve VPN'ler etkilenmez
-- Dahili sing-box çekirdeği: **VLESS (Reality dahil), VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard**
-- Paylaşım bağlantısı, WireGuard yapılandırması veya abonelik içeriği yapıştırarak sunucu ekleme
+- Dahili sing-box çekirdeği: **VLESS (Reality dahil), VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard,
+  SOCKS5 ve HTTP(S) vekil**
+- Paylaşım bağlantısı veya abonelik içeriği yapıştırarak ya da WireGuard `.conf` dosyasını içe aktararak sunucu ekleme
+- Desteklenmeyenler: IKEv2/IPsec, OpenVPN, L2TP, PPTP
 - Bağlantı testi (çıkış IP'si, ülke, gecikme), günlük görüntüleme
 - Bağlantı koparsa trafik doğrudan internete düşmez (sızıntı koruması)
 
@@ -62,12 +68,12 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 | 2. Profiller | Ayrı veri alanlı profiller, biyometrik kilit | ✅ |
 | 3. Gizlilik | uBlock Origin, eklentiler, çerez pencereleri, güvenli DNS | ✅ |
 | 4. Medya | Arka planda oynatma, resim içinde resim, YouTube indirme, SponsorBlock | ✅ |
-| 5. PWA | Kısayol ve bağımsız pencere | ✅ · Cihazda gerçek APK üretimi ⏳ |
+| 5. PWA | Bağımsız pencere ve cihazda üretilen gerçek APK (WebAPK) | ✅ |
 | 6. VPN | sing-box ile tarayıcıya özel VPN | ✅ · Profile özel VPN ⏳ |
 | 7. Kullanışlılık | Sayfada bul ✅ · Okuma modu, çeviri, QR okuyucu, kullanıcı betikleri, sekme grupları, otomatik güncelleme ⏳ | 🚧 |
 
 **Bilinen sınırlamalar:** VPN ve DNS ayarları tüm profiller için ortaktır (GeckoView tek bir ağ yapılandırması kullanır).
-Resim içinde resim, Firefox'ta olduğu gibi video tam ekrandayken çalışır.
+WebAPK yüklemek için G-Tarayıcı'ya bir kez "bilinmeyen uygulamaları yükleme" izni verilmelidir.
 
 ## Teknoloji
 
@@ -103,11 +109,13 @@ app/src/main/java/com/gtarayici/browser/
 ├── thumbnails/               # Sekme önizlemeleri
 ├── vpn/                      # sing-box tabanlı tarayıcı VPN'i ve bağlantı ayrıştırıcı
 ├── webapp/                   # Yüklenen web uygulamaları (PWA) penceresi
+├── webapk/                   # WebAPK üretimi: ikili manifest yamalama, imzalama, yükleme
 ├── youtube/                  # YouTube indirme ve birleştirme
 └── ui/                       # Compose arayüzü (araç çubuğu, menü, ekranlar, tema)
 app/src/main/assets/extensions/
 ├── ublock_origin.xpi         # Hazır kurulu reklam engelleyici (imzalı, AMO)
-└── helper/                   # Arka planda oynatma ve SponsorBlock yardımcı eklentisi
+└── helper/                   # Arka planda oynatma, resim içinde resim, medya kontrolleri, SponsorBlock
+webapk-shell/                 # Cihazda kişiselleştirilen 8 KB'lık WebAPK şablonu (saf Java)
 ```
 
 ## Derleme

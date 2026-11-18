@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.SystemAction
+import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.isMainProcess
 import mozilla.components.support.webextensions.WebExtensionSupport
@@ -28,6 +29,33 @@ class GTarayiciApplication : Application() {
         restoreTabs()
         components.applicationScope.launch(Dispatchers.IO) {
             components.manifestStorage.warmUpScopes(System.currentTimeMillis())
+        }
+        allowMediaSiteAutoplay()
+    }
+
+    /**
+     * Oynatma listelerinde sonraki videonun ekran kapalıyken de başlayabilmesi için YouTube'da
+     * sesli otomatik oynatmaya izin verilir (diğer sitelerde engelli kalır). Bir kez yapılır.
+     */
+    private fun allowMediaSiteAutoplay() {
+        val prefs = getSharedPreferences("gtarayici_state", MODE_PRIVATE)
+        if (prefs.getBoolean("media_autoplay_allowed", false)) return
+        components.applicationScope.launch {
+            MEDIA_SITES.forEach { origin ->
+                val existing = components.permissionStorage.findSitePermissionsBy(origin, includeTemporary = false, private = false)
+                if (existing == null) {
+                    components.permissionStorage.save(
+                        SitePermissions(
+                            origin = origin,
+                            autoplayAudible = SitePermissions.AutoplayStatus.ALLOWED,
+                            autoplayInaudible = SitePermissions.AutoplayStatus.ALLOWED,
+                        ),
+                        request = null,
+                        private = false,
+                    )
+                }
+            }
+            prefs.edit().putBoolean("media_autoplay_allowed", true).apply()
         }
     }
 
@@ -75,6 +103,12 @@ class GTarayiciApplication : Application() {
         }
     }
 }
+
+private val MEDIA_SITES = listOf(
+    "https://www.youtube.com",
+    "https://m.youtube.com",
+    "https://music.youtube.com",
+)
 
 val Context.components: Components
     get() = (applicationContext as GTarayiciApplication).components
