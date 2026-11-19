@@ -326,4 +326,6 @@
     <string name="update_invalid">İndirilen dosya geçerli bir G-Tarayıcı güncellemesi değil.</string>
     <string name="update_signature">İndirilen güncelleme farklı bir anahtarla imzalanmış; güvenlik nedeniyle kurulmadı.</string>
     <string name="update_install_failed">Kurulum başarısız: %1$s</string>
+    <string name="settings_video_download_button">Video indirme düğmesi</string>
+    <string name="settings_video_download_button_summary">Yüklü web uygulamalarında (ör. YouTube) video açıkken kenarda küçük bir indirme düğmesi gösterir; parmakla taşınabilir</string>
 </resources>

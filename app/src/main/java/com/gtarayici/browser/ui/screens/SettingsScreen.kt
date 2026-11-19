@@ -88,6 +88,7 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     val sponsorBlock by settings.sponsorBlock.collectAsState()
     val autoPip by settings.autoPictureInPicture.collectAsState()
     val autoUpdate by settings.autoUpdateCheck.collectAsState()
+    val videoDownloadButton by settings.videoDownloadButton.collectAsState()
     val updateState by components.updater.state.collectAsState()
     var dnsDialog by remember { mutableStateOf(false) }
     var passwordDialog by remember { mutableStateOf(false) }
@@ -216,6 +217,11 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
                 stringResource(R.string.settings_auto_pip_summary),
                 autoPip,
             ) { settings.setAutoPictureInPicture(it) }
+            SwitchRow(
+                stringResource(R.string.settings_video_download_button),
+                stringResource(R.string.settings_video_download_button_summary),
+                videoDownloadButton,
+            ) { settings.setVideoDownloadButton(it) }
             ClickRow(
                 Icons.Filled.BugReport,
                 stringResource(R.string.diag_title),

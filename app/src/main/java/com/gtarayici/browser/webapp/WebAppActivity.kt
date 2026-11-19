@@ -46,6 +46,9 @@ import com.gtarayici.browser.components
 import com.gtarayici.browser.media.PipController
 import com.gtarayici.browser.search.UrlInput
 import com.gtarayici.browser.ui.components.observe
+import com.gtarayici.browser.ui.components.VideoDownloadButton
+import com.gtarayici.browser.ui.components.YouTubeDownloadSheet
+import com.gtarayici.browser.youtube.YouTubeDownloader
 import com.gtarayici.browser.ui.components.keepSizeDuringPip
 import com.gtarayici.browser.ui.theme.GTarayiciTheme
 import mozilla.components.browser.state.selector.findCustomTab
@@ -70,6 +73,8 @@ class WebAppActivity : AppCompatActivity() {
     private var fullscreen by mutableStateOf(false)
     private var inPip by mutableStateOf(false)
     private var pip: PipController? = null
+    /** İndirme penceresi açıkken indirilecek video sayfası */
+    private var downloadUrl by mutableStateOf<String?>(null)
 
     private val sessionFeature = ViewBoundFeatureWrapper<SessionFeature>()
     private val promptFeature = ViewBoundFeatureWrapper<PromptFeature>()
@@ -144,6 +149,7 @@ class WebAppActivity : AppCompatActivity() {
         val scope = manifest?.scope ?: manifest?.startUrl
         setContent {
             val themeMode by components.settings.theme.collectAsState()
+            val downloadButton by components.settings.videoDownloadButton.collectAsState()
             val url by components.store.observe { it.findCustomTab(id)?.content?.url.orEmpty() }
             val outOfScope = scope != null && url.isNotBlank() && !url.startsWith(scope)
             GTarayiciTheme(mode = themeMode) {
@@ -168,6 +174,15 @@ class WebAppActivity : AppCompatActivity() {
                         }
                         AndroidView(factory = { view }, modifier = Modifier.keepSizeDuringPip(inPip))
                     }
+                    // Adres çubuğu ve menü olmadığından YouTube videolarında küçük bir indirme düğmesi gösterilir.
+                    VideoDownloadButton(
+                        visible = downloadButton && !fullscreen && !inPip && downloadUrl == null &&
+                            YouTubeDownloader.isVideoPage(url),
+                        onClick = { downloadUrl = url },
+                        resetKey = url,
+                        modifier = Modifier.systemBarsPadding().padding(top = 56.dp, bottom = 72.dp),
+                    )
+                    downloadUrl?.let { YouTubeDownloadSheet(it) { downloadUrl = null } }
                     pip?.let { controller -> AndroidView(factory = { controller.pipView }, modifier = Modifier.fillMaxSize()) }
                 }
             }

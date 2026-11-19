@@ -70,6 +70,7 @@ class AppSettings(context: Context) {
     private val sponsorBlockPref = bool("sponsorblock", true)
     private val autoPipPref = bool("auto_pip", true)
     private val autoUpdatePref = bool("auto_update_check", true)
+    private val videoDownloadButtonPref = bool("video_download_button", true)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -86,6 +87,7 @@ class AppSettings(context: Context) {
     val sponsorBlock get() = sponsorBlockPref.flow
     val autoPictureInPicture get() = autoPipPref.flow
     val autoUpdateCheck get() = autoUpdatePref.flow
+    val videoDownloadButton get() = videoDownloadButtonPref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -102,6 +104,7 @@ class AppSettings(context: Context) {
     fun setSponsorBlock(value: Boolean) = sponsorBlockPref.set(value)
     fun setAutoPictureInPicture(value: Boolean) = autoPipPref.set(value)
     fun setAutoUpdateCheck(value: Boolean) = autoUpdatePref.set(value)
+    fun setVideoDownloadButton(value: Boolean) = videoDownloadButtonPref.set(value)
 
     /** Seçili DNS sağlayıcısının DoH adresi; kapalıysa null. */
     fun dohUrl(): String? = when (dnsProvider.value) {

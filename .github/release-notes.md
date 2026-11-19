@@ -1,13 +1,9 @@
-## G-Tarayıcı 0.5.0
+## G-Tarayıcı 0.5.1
 
 **Yeni**
-- Okuma görünümü: makaleleri reklamsız, sade bir sayfada okuyun (yazı tipi, boyut, açık/sepya/koyu renk)
-- Sayfa çevirisi: tamamen cihazda yapılır, sayfa metni hiçbir sunucuya gitmez
-- QR kod tarayıcı (adres çubuğunda ve menüde)
-- Sekme grupları: adlandırılmış, renkli, daraltılabilir gruplar; gruptaki sekmeden açılan bağlantılar aynı gruba katılır
-- Uygulama içi güncelleme: yeni sürümler uygulamanın içinden kurulur
+- Yüklü web uygulamalarında (ör. YouTube) video açıkken kenarda küçük bir **indirme düğmesi** belirir.
+  Parmakla yukarı-aşağı taşınabilir, yeri hatırlanır; birkaç saniye sonra soluklaşır, tam ekranda ve
+  küçük pencerede gizlenir. Ayarlar → Medya → Video indirme düğmesi ile kapatılabilir.
 
-**Düzeltmeler**
-- Doğrudan başka bir uygulamaya geçerken de resim içinde resim açılır
-
-**Not:** Bu sürümden itibaren uygulama kalıcı bir anahtarla imzalanır ve Android 9 veya üzerini gerektirir.
+**0.5.0 ile gelenler:** okuma görünümü, cihaz üzerinde sayfa çevirisi, QR kod tarayıcı, sekme grupları,
+uygulama içi güncelleme, başka uygulamaya geçerken resim içinde resim.
