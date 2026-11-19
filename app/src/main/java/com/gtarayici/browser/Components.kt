@@ -140,6 +140,7 @@ class Components(private val context: Context) {
         )
     }
 
+    val tabUnloader by lazy { com.gtarayici.browser.tabs.TabUnloader(store, settings, applicationScope) }
     val tabGroups by lazy { com.gtarayici.browser.tabs.TabGroups(context, store, applicationScope) }
 
     val sessionStorage by lazy { SessionStorage(context, engine, applicationScope = applicationScope) }
@@ -167,7 +168,8 @@ class Components(private val context: Context) {
         WebAppIntentProcessor(store, customTabsUseCases.addWebApp, sessionUseCases.loadUrl, manifestStorage)
     }
 
-    val vpn by lazy { VpnManager(context, applicationScope) }
+    val vpnCore by lazy { com.gtarayici.browser.vpn.VpnCore(context, applicationScope) }
+    val vpn by lazy { VpnManager(context, applicationScope, vpnCore) }
     val webApkInstaller by lazy { com.gtarayici.browser.webapk.WebApkInstaller(context, this) }
     val youtube by lazy { YouTubeDownloader(context, this) }
     val updater by lazy { com.gtarayici.browser.update.Updater(context, settings, applicationScope) }

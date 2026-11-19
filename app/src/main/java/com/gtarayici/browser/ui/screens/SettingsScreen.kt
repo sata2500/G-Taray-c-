@@ -1,5 +1,19 @@
 package com.gtarayici.browser.ui.screens
 
+import com.gtarayici.browser.ui.components.isDefaultBrowser
+import com.gtarayici.browser.ui.components.rememberDefaultBrowserRequest
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.core.net.toUri
 import android.app.role.RoleManager
 import android.content.Context
@@ -88,6 +102,8 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     val sponsorBlock by settings.sponsorBlock.collectAsState()
     val autoPip by settings.autoPictureInPicture.collectAsState()
     val autoUpdate by settings.autoUpdateCheck.collectAsState()
+    val hideToolbar by settings.hideToolbarOnScroll.collectAsState()
+    val unloadTabs by settings.unloadInactiveTabs.collectAsState()
     val videoDownloadButton by settings.videoDownloadButton.collectAsState()
     val pullToRefresh by settings.pullToRefresh.collectAsState()
     val toolbarSwipe by settings.toolbarSwipeTabs.collectAsState()
@@ -98,176 +114,197 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     var dnsCustomDialog by remember { mutableStateOf(false) }
 
     var isDefault by remember { mutableStateOf(isDefaultBrowser(context)) }
-    // Rol isteği penceresi startActivityForResult ile açılmazsa Android onu sessizce kapatır.
-    val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        isDefault = isDefaultBrowser(context)
-    }
-    val requestDefaultBrowser = {
-        val roleManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) context.getSystemService<RoleManager>() else null
-        val canRequestRole = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && roleManager != null &&
-            roleManager.isRoleAvailable(RoleManager.ROLE_BROWSER) && !roleManager.isRoleHeld(RoleManager.ROLE_BROWSER)
-        if (canRequestRole) {
-            roleLauncher.launch(roleManager!!.createRequestRoleIntent(RoleManager.ROLE_BROWSER))
-        } else {
-            // Zaten varsayılansa veya rol isteği desteklenmiyorsa sistem ayarı açılır.
-            runCatching { roleLauncher.launch(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)) }
-                .onFailure { runCatching { roleLauncher.launch(Intent(Settings.ACTION_SETTINGS)) } }
-        }
-    }
+    val requestDefaultBrowser = rememberDefaultBrowserRequest { isDefault = it }
 
     var engineDialog by remember { mutableStateOf(false) }
     var themeDialog by remember { mutableStateOf(false) }
     var clearDialog by remember { mutableStateOf(false) }
 
-    OverlayScaffoldSettings(onBack) { modifier ->
-        Column(modifier.verticalScroll(rememberScrollState())) {
-            SectionTitle(stringResource(R.string.settings_general))
-            ClickRow(Icons.Filled.Search, stringResource(R.string.settings_search_engine), engine.title) {
-                engineDialog = true
-            }
-            ClickRow(Icons.Filled.Palette, stringResource(R.string.settings_theme), themeLabel(theme)) {
-                themeDialog = true
-            }
-            ClickRow(
-                Icons.Filled.OpenInBrowser,
-                stringResource(R.string.settings_default_browser),
-                stringResource(
-                    if (isDefault) R.string.settings_default_browser_active else R.string.settings_default_browser_summary,
-                ),
-            ) { requestDefaultBrowser() }
-            SwitchRow(
-                stringResource(R.string.settings_pull_to_refresh),
-                stringResource(R.string.settings_pull_to_refresh_summary),
-                pullToRefresh,
-            ) { settings.setPullToRefresh(it) }
-            SwitchRow(
-                stringResource(R.string.settings_toolbar_swipe),
-                stringResource(R.string.settings_toolbar_swipe_summary),
-                toolbarSwipe,
-            ) { settings.setToolbarSwipeTabs(it) }
+    var page by rememberSaveable { mutableStateOf<SettingsPage?>(null) }
+    var query by rememberSaveable { mutableStateOf("") }
+    BackHandler(enabled = page != null || query.isNotEmpty()) {
+        if (query.isNotEmpty()) query = "" else page = null
+    }
 
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            SectionTitle(stringResource(R.string.settings_privacy))
-            SwitchRow(
-                stringResource(R.string.settings_strict_tracking),
-                stringResource(R.string.settings_strict_tracking_summary),
-                strict,
-            ) {
-                settings.setStrictTracking(it)
-                components.applyPrivacySettings()
-            }
-            SwitchRow(
-                stringResource(R.string.settings_https_only),
-                stringResource(R.string.settings_https_only_summary),
-                httpsOnly,
-            ) {
-                settings.setHttpsOnly(it)
-                components.applyPrivacySettings()
-            }
-            SwitchRow(stringResource(R.string.settings_gpc), stringResource(R.string.settings_gpc_summary), gpc) {
-                settings.setGlobalPrivacyControl(it)
-                components.applyPrivacySettings()
-            }
-            SwitchRow(
-                stringResource(R.string.settings_cookie_banner),
-                stringResource(R.string.settings_cookie_banner_summary),
-                cookieBanner,
-            ) {
-                settings.setCookieBannerReject(it)
-                components.applyPrivacySettings()
-            }
-            ClickRow(
-                Icons.Filled.Dns,
-                stringResource(R.string.settings_dns),
-                if (dnsProvider == DnsProvider.CUSTOM) dnsCustom.ifBlank { dnsProvider.title } else dnsProvider.title,
-            ) { dnsDialog = true }
-            if (dnsProvider != DnsProvider.OFF) {
-                SwitchRow(
-                    stringResource(R.string.settings_dns_strict),
-                    stringResource(R.string.settings_dns_strict_summary),
-                    dnsStrict,
-                ) {
-                    settings.setDnsStrict(it)
-                    components.applyPrivacySettings()
+    com.gtarayici.browser.ui.components.OverlayScaffold(
+        title = page?.let { stringResource(it.title) } ?: stringResource(R.string.menu_settings),
+        onBack = { if (page != null) page = null else onBack() },
+    ) { modifier ->
+        Column(modifier.verticalScroll(rememberScrollState())) {
+            val searching = page == null && query.isNotBlank()
+            if (page == null) {
+                SettingsSearchField(query) { query = it }
+                if (!searching) {
+                    SettingsPage.entries.forEach { entry ->
+                        ListItem(
+                            leadingContent = { Icon(entry.icon, null, tint = MaterialTheme.colorScheme.primary) },
+                            headlineContent = { Text(stringResource(entry.title)) },
+                            supportingContent = { Text(stringResource(entry.summary)) },
+                            modifier = Modifier.clickable { page = entry },
+                        )
+                    }
                 }
             }
-            ClickRow(
-                Icons.Filled.Password,
-                stringResource(R.string.settings_app_password),
-                stringResource(if (components.appLock.hasPassword) R.string.settings_app_password_on else R.string.settings_app_password_off),
-            ) { passwordDialog = true }
-            SwitchRow(
-                stringResource(R.string.settings_lock_private),
-                stringResource(R.string.settings_lock_private_summary),
-                lockPrivate,
-            ) { settings.setLockPrivateTabs(it) }
-            SwitchRow(
-                stringResource(R.string.settings_secure_private),
-                stringResource(R.string.settings_secure_private_summary),
-                securePrivate,
-            ) { settings.setSecurePrivateTabs(it) }
-            ClickRow(
-                Icons.Filled.CleaningServices,
-                stringResource(R.string.settings_clear_data),
-                stringResource(R.string.settings_clear_data_summary),
-            ) { clearDialog = true }
-
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            SectionTitle(stringResource(R.string.settings_media))
-            SwitchRow(
-                stringResource(R.string.settings_background_play),
-                stringResource(R.string.settings_background_play_summary),
-                backgroundPlay,
-            ) { settings.setBackgroundPlay(it) }
-            SwitchRow(
-                stringResource(R.string.settings_sponsorblock),
-                stringResource(R.string.settings_sponsorblock_summary),
-                sponsorBlock,
-            ) { settings.setSponsorBlock(it) }
-            SwitchRow(
-                stringResource(R.string.settings_auto_pip),
-                stringResource(R.string.settings_auto_pip_summary),
-                autoPip,
-            ) { settings.setAutoPictureInPicture(it) }
-            SwitchRow(
-                stringResource(R.string.settings_video_download_button),
-                stringResource(R.string.settings_video_download_button_summary),
-                videoDownloadButton,
-            ) { settings.setVideoDownloadButton(it) }
-            ClickRow(
-                Icons.Filled.BugReport,
-                stringResource(R.string.diag_title),
-                stringResource(R.string.diag_summary),
-            ) { diagDialog = true }
-
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            SectionTitle(stringResource(R.string.settings_updates))
-            ClickRow(
-                Icons.Filled.SystemUpdate,
-                stringResource(R.string.update_check),
-                when (val state = updateState) {
-                    UpdateState.Checking -> stringResource(R.string.update_checking)
-                    UpdateState.UpToDate -> stringResource(R.string.update_up_to_date, components.updater.currentVersion)
-                    is UpdateState.Available -> stringResource(R.string.update_title, state.release.version)
-                    is UpdateState.Downloading -> stringResource(R.string.update_downloading, state.release.version)
-                    else -> stringResource(R.string.update_check_summary, components.updater.currentVersion)
-                },
-            ) { components.updater.check() }
-            SwitchRow(
-                stringResource(R.string.update_auto),
-                stringResource(R.string.update_auto_summary),
-                autoUpdate,
-            ) { settings.setAutoUpdateCheck(it) }
-
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            SectionTitle(stringResource(R.string.settings_about))
-            InfoRow(Icons.Filled.Info, stringResource(R.string.settings_version), BuildConfig.VERSION_NAME)
-            InfoRow(
-                Icons.Filled.Language,
-                stringResource(R.string.settings_engine),
-                "GeckoView ${org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION}",
-            )
-            InfoRow(Icons.Filled.Code, stringResource(R.string.settings_license), stringResource(R.string.settings_license_value))
+            CompositionLocalProvider(LocalSettingsQuery provides if (searching) query.trim() else "") {
+                if (searching || page == SettingsPage.GENERAL) {
+                ClickRow(Icons.Filled.Search, stringResource(R.string.settings_search_engine), engine.title) {
+                    engineDialog = true
+                }
+                ClickRow(
+                    Icons.Filled.OpenInBrowser,
+                    stringResource(R.string.settings_default_browser),
+                    stringResource(
+                        if (isDefault) R.string.settings_default_browser_active else R.string.settings_default_browser_summary,
+                    ),
+                ) { requestDefaultBrowser() }
+                SwitchRow(
+                    stringResource(R.string.settings_unload_tabs),
+                    stringResource(R.string.settings_unload_tabs_summary),
+                    unloadTabs,
+                ) { settings.setUnloadInactiveTabs(it) }
+                }
+                if (searching || page == SettingsPage.APPEARANCE) {
+                ClickRow(Icons.Filled.Palette, stringResource(R.string.settings_theme), themeLabel(theme)) {
+                    themeDialog = true
+                }
+                SwitchRow(
+                    stringResource(R.string.settings_pull_to_refresh),
+                    stringResource(R.string.settings_pull_to_refresh_summary),
+                    pullToRefresh,
+                ) { settings.setPullToRefresh(it) }
+                SwitchRow(
+                    stringResource(R.string.settings_toolbar_swipe),
+                    stringResource(R.string.settings_toolbar_swipe_summary),
+                    toolbarSwipe,
+                ) { settings.setToolbarSwipeTabs(it) }
+                SwitchRow(
+                    stringResource(R.string.settings_hide_toolbar),
+                    stringResource(R.string.settings_hide_toolbar_summary),
+                    hideToolbar,
+                ) { settings.setHideToolbarOnScroll(it) }
+                }
+                if (searching || page == SettingsPage.PRIVACY) {
+                SwitchRow(
+                    stringResource(R.string.settings_strict_tracking),
+                    stringResource(R.string.settings_strict_tracking_summary),
+                    strict,
+                ) {
+                    settings.setStrictTracking(it)
+                    components.applyPrivacySettings()
+                }
+                SwitchRow(
+                    stringResource(R.string.settings_https_only),
+                    stringResource(R.string.settings_https_only_summary),
+                    httpsOnly,
+                ) {
+                    settings.setHttpsOnly(it)
+                    components.applyPrivacySettings()
+                }
+                SwitchRow(stringResource(R.string.settings_gpc), stringResource(R.string.settings_gpc_summary), gpc) {
+                    settings.setGlobalPrivacyControl(it)
+                    components.applyPrivacySettings()
+                }
+                SwitchRow(
+                    stringResource(R.string.settings_cookie_banner),
+                    stringResource(R.string.settings_cookie_banner_summary),
+                    cookieBanner,
+                ) {
+                    settings.setCookieBannerReject(it)
+                    components.applyPrivacySettings()
+                }
+                ClickRow(
+                    Icons.Filled.Dns,
+                    stringResource(R.string.settings_dns),
+                    if (dnsProvider == DnsProvider.CUSTOM) dnsCustom.ifBlank { dnsProvider.title } else dnsProvider.title,
+                ) { dnsDialog = true }
+                if (dnsProvider != DnsProvider.OFF) {
+                    SwitchRow(
+                        stringResource(R.string.settings_dns_strict),
+                        stringResource(R.string.settings_dns_strict_summary),
+                        dnsStrict,
+                    ) {
+                        settings.setDnsStrict(it)
+                        components.applyPrivacySettings()
+                    }
+                }
+                ClickRow(
+                    Icons.Filled.Password,
+                    stringResource(R.string.settings_app_password),
+                    stringResource(if (components.appLock.hasPassword) R.string.settings_app_password_on else R.string.settings_app_password_off),
+                ) { passwordDialog = true }
+                SwitchRow(
+                    stringResource(R.string.settings_lock_private),
+                    stringResource(R.string.settings_lock_private_summary),
+                    lockPrivate,
+                ) { settings.setLockPrivateTabs(it) }
+                SwitchRow(
+                    stringResource(R.string.settings_secure_private),
+                    stringResource(R.string.settings_secure_private_summary),
+                    securePrivate,
+                ) { settings.setSecurePrivateTabs(it) }
+                ClickRow(
+                    Icons.Filled.CleaningServices,
+                    stringResource(R.string.settings_clear_data),
+                    stringResource(R.string.settings_clear_data_summary),
+                ) { clearDialog = true }
+                }
+                if (searching || page == SettingsPage.MEDIA) {
+                SwitchRow(
+                    stringResource(R.string.settings_background_play),
+                    stringResource(R.string.settings_background_play_summary),
+                    backgroundPlay,
+                ) { settings.setBackgroundPlay(it) }
+                SwitchRow(
+                    stringResource(R.string.settings_sponsorblock),
+                    stringResource(R.string.settings_sponsorblock_summary),
+                    sponsorBlock,
+                ) { settings.setSponsorBlock(it) }
+                SwitchRow(
+                    stringResource(R.string.settings_auto_pip),
+                    stringResource(R.string.settings_auto_pip_summary),
+                    autoPip,
+                ) { settings.setAutoPictureInPicture(it) }
+                SwitchRow(
+                    stringResource(R.string.settings_video_download_button),
+                    stringResource(R.string.settings_video_download_button_summary),
+                    videoDownloadButton,
+                ) { settings.setVideoDownloadButton(it) }
+                }
+                if (searching || page == SettingsPage.UPDATES) {
+                ClickRow(
+                    Icons.Filled.SystemUpdate,
+                    stringResource(R.string.update_check),
+                    when (val state = updateState) {
+                        UpdateState.Checking -> stringResource(R.string.update_checking)
+                        UpdateState.UpToDate -> stringResource(R.string.update_up_to_date, components.updater.currentVersion)
+                        is UpdateState.Available -> stringResource(R.string.update_title, state.release.version)
+                        is UpdateState.Downloading -> stringResource(R.string.update_downloading, state.release.version)
+                        else -> stringResource(R.string.update_check_summary, components.updater.currentVersion)
+                    },
+                ) { components.updater.check() }
+                SwitchRow(
+                    stringResource(R.string.update_auto),
+                    stringResource(R.string.update_auto_summary),
+                    autoUpdate,
+                ) { settings.setAutoUpdateCheck(it) }
+                }
+                if (searching || page == SettingsPage.ADVANCED) {
+                ClickRow(
+                    Icons.Filled.BugReport,
+                    stringResource(R.string.diag_title),
+                    stringResource(R.string.diag_summary),
+                ) { diagDialog = true }
+                }
+                if (searching || page == SettingsPage.ABOUT) {
+                InfoRow(Icons.Filled.Info, stringResource(R.string.settings_version), BuildConfig.VERSION_NAME)
+                InfoRow(
+                    Icons.Filled.Language,
+                    stringResource(R.string.settings_engine),
+                    "GeckoView ${org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION}",
+                )
+                InfoRow(Icons.Filled.Code, stringResource(R.string.settings_license), stringResource(R.string.settings_license_value))
+                }
+            }
         }
     }
 
@@ -348,22 +385,6 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     }
 }
 
-private fun isDefaultBrowser(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        context.getSystemService<RoleManager>()?.let { return it.isRoleHeld(RoleManager.ROLE_BROWSER) }
-    }
-    val intent = Intent(Intent.ACTION_VIEW, "https://example.com".toUri())
-    val info = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-    return info?.activityInfo?.packageName == context.packageName
-}
-
-@Composable
-private fun OverlayScaffoldSettings(onBack: () -> Unit, content: @Composable (Modifier) -> Unit) =
-    com.gtarayici.browser.ui.components.OverlayScaffold(
-        title = stringResource(R.string.menu_settings),
-        onBack = onBack,
-        content = content,
-    )
 
 /** Tanılama kaydı: resim içinde resim gibi cihaza bağlı adımların zaman çizelgesi; sorun bildirmek için paylaşılır. */
 @Composable
@@ -478,17 +499,8 @@ private fun themeLabel(mode: ThemeMode) = stringResource(
 )
 
 @Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
-    )
-}
-
-@Composable
 private fun ClickRow(icon: ImageVector, title: String, summary: String, onClick: () -> Unit) {
+    if (!matchesQuery(title, summary)) return
     ListItem(
         leadingContent = { Icon(icon, null) },
         headlineContent = { Text(title) },
@@ -499,6 +511,7 @@ private fun ClickRow(icon: ImageVector, title: String, summary: String, onClick:
 
 @Composable
 private fun InfoRow(icon: ImageVector, title: String, value: String) {
+    if (!matchesQuery(title, value)) return
     ListItem(
         leadingContent = { Icon(icon, null) },
         headlineContent = { Text(title) },
@@ -508,6 +521,7 @@ private fun InfoRow(icon: ImageVector, title: String, value: String) {
 
 @Composable
 private fun SwitchRow(title: String, summary: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    if (!matchesQuery(title, summary)) return
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = { Text(summary) },
@@ -546,5 +560,43 @@ private fun <T> ChoiceDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
+    )
+}
+
+/** Ayarlar ana sayfasındaki kategoriler. */
+private enum class SettingsPage(val icon: ImageVector, val title: Int, val summary: Int) {
+    GENERAL(Icons.Filled.Tune, R.string.settings_general, R.string.settings_page_general_summary),
+    APPEARANCE(Icons.Filled.Palette, R.string.settings_appearance, R.string.settings_page_appearance_summary),
+    PRIVACY(Icons.Filled.Shield, R.string.settings_privacy, R.string.settings_page_privacy_summary),
+    MEDIA(Icons.Filled.PlayCircle, R.string.settings_media, R.string.settings_page_media_summary),
+    UPDATES(Icons.Filled.SystemUpdate, R.string.settings_updates, R.string.settings_page_updates_summary),
+    ADVANCED(Icons.Filled.Build, R.string.settings_advanced, R.string.settings_page_advanced_summary),
+    ABOUT(Icons.Filled.Info, R.string.settings_about, R.string.settings_page_about_summary),
+}
+
+/** Ayarlarda arama: boş değilse yalnızca eşleşen satırlar gösterilir. */
+private val LocalSettingsQuery = staticCompositionLocalOf { "" }
+
+@Composable
+private fun matchesQuery(vararg texts: String): Boolean {
+    val query = LocalSettingsQuery.current
+    return query.isEmpty() || texts.any { it.contains(query, ignoreCase = true) }
+}
+
+@Composable
+private fun SettingsSearchField(value: String, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        singleLine = true,
+        leadingIcon = { Icon(Icons.Filled.Search, null) },
+        trailingIcon = {
+            if (value.isNotEmpty()) {
+                IconButton(onClick = { onChange("") }) { Icon(Icons.Filled.Close, stringResource(R.string.action_clear)) }
+            }
+        },
+        placeholder = { Text(stringResource(R.string.settings_search_hint)) },
+        shape = RoundedCornerShape(28.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }

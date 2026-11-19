@@ -45,6 +45,17 @@ class BrowserController(
     var translateOpen by mutableStateOf(false)
     var siteInfoOpen by mutableStateOf(false)
 
+    /** İlk açılış tanıtımı gösteriliyor mu (yalnızca yeni kurulumda, bir kez). */
+    var onboarding by mutableStateOf(false)
+
+    fun finishOnboarding() {
+        onboarding = false
+        activity.getSharedPreferences("gtarayici_state", android.content.Context.MODE_PRIVATE).edit { putBoolean(KEY_ONBOARDED, true) }
+    }
+
+    /** Kaydırınca gizlenen adres çubuğunun durumu. */
+    val dynamicToolbar = com.gtarayici.browser.ui.components.DynamicToolbarState()
+
     /** Okuma görünümü: Mozilla bileşeni etkinlik tarafından bağlanır, ayarları arayüzde gösterilir. */
     var readerFeature: () -> ReaderViewFeature? = { null }
     val readerControls = ReaderControls(activity)
@@ -362,6 +373,7 @@ class BrowserController(
      */
     fun handleBack(): Boolean {
         when {
+            onboarding -> finishOnboarding()
             menuOpen -> menuOpen = false
             siteInfoOpen -> siteInfoOpen = false
             readerControls.open -> readerControls.hideControls()
@@ -378,7 +390,19 @@ class BrowserController(
         return true
     }
 
-    private companion object {
-        const val KEY_HIDDEN_SITES = "home_hidden_sites"
+    companion object {
+        private const val KEY_HIDDEN_SITES = "home_hidden_sites"
+        const val KEY_ONBOARDED = "onboarding_done"
+
+        /** Yeni kurulumsa (önceki sürümlerden kalma durum yoksa) tanıtım gösterilir. */
+        fun needsOnboarding(prefs: android.content.SharedPreferences): Boolean {
+            if (prefs.getBoolean(KEY_ONBOARDED, false)) return false
+            // Önceki sürümleri kullananlar tanıtımı görmez.
+            if (prefs.contains("asked_notifications")) {
+                prefs.edit { putBoolean(KEY_ONBOARDED, true) }
+                return false
+            }
+            return true
+        }
     }
 }

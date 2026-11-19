@@ -73,6 +73,8 @@ class AppSettings(context: Context) {
     private val videoDownloadButtonPref = bool("video_download_button", true)
     private val pullToRefreshPref = bool("pull_to_refresh", true)
     private val toolbarSwipePref = bool("toolbar_swipe_tabs", true)
+    private val unloadTabsPref = bool("unload_inactive_tabs", true)
+    private val hideToolbarPref = bool("hide_toolbar_on_scroll", true)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -92,6 +94,8 @@ class AppSettings(context: Context) {
     val videoDownloadButton get() = videoDownloadButtonPref.flow
     val pullToRefresh get() = pullToRefreshPref.flow
     val toolbarSwipeTabs get() = toolbarSwipePref.flow
+    val unloadInactiveTabs get() = unloadTabsPref.flow
+    val hideToolbarOnScroll get() = hideToolbarPref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -111,6 +115,8 @@ class AppSettings(context: Context) {
     fun setVideoDownloadButton(value: Boolean) = videoDownloadButtonPref.set(value)
     fun setPullToRefresh(value: Boolean) = pullToRefreshPref.set(value)
     fun setToolbarSwipeTabs(value: Boolean) = toolbarSwipePref.set(value)
+    fun setUnloadInactiveTabs(value: Boolean) = unloadTabsPref.set(value)
+    fun setHideToolbarOnScroll(value: Boolean) = hideToolbarPref.set(value)
 
     /** Seçili DNS sağlayıcısının DoH adresi; kapalıysa null. */
     fun dohUrl(): String? = when (dnsProvider.value) {

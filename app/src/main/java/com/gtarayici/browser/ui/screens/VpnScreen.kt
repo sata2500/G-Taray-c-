@@ -50,6 +50,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.gtarayici.browser.vpn.VpnCoreState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -78,6 +81,13 @@ fun VpnScreen(onBack: () -> Unit) {
     var testResult by remember { mutableStateOf<String?>(null) }
     var showLog by remember { mutableStateOf(false) }
     var selectedId by remember { mutableStateOf(vpn.activeServerId) }
+    val core = context.components.vpnCore
+    val coreState by core.state.collectAsState()
+    // Bileşen kurulum ekranından dönülünce durumu yenile.
+    LifecycleResumeEffect(Unit) {
+        core.refresh()
+        onPauseOrDispose { }
+    }
     var helpOpen by remember { mutableStateOf(servers.isEmpty()) }
     val importFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri ?: return@rememberLauncherForActivityResult
@@ -106,6 +116,9 @@ fun VpnScreen(onBack: () -> Unit) {
         },
     ) { modifier ->
         LazyColumn(modifier) {
+            if (coreState !is VpnCoreState.Ready) {
+                item { VpnCoreCard(coreState, onInstall = { core.install() }) }
+            }
             item {
                 Card(
                     colors = CardDefaults.cardColors(
@@ -310,5 +323,40 @@ fun VpnScreen(onBack: () -> Unit) {
             },
             dismissButton = { TextButton(onClick = close) { Text(stringResource(R.string.action_cancel)) } },
         )
+    }
+}
+
+/** VPN çekirdekleri ayrı paket olarak gelir; kurulu değilse bu kart gösterilir. */
+@Composable
+private fun VpnCoreCard(state: VpnCoreState, onInstall: () -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp),
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Text(stringResource(R.string.vpn_core_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.vpn_core_body), style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(16.dp))
+            when (state) {
+                is VpnCoreState.Downloading -> {
+                    LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    Text(stringResource(R.string.vpn_core_downloading, (state.progress * 100).toInt()), style = MaterialTheme.typography.bodySmall)
+                }
+                VpnCoreState.Installing -> Text(stringResource(R.string.vpn_core_installing), style = MaterialTheme.typography.bodySmall)
+                else -> {
+                    if (state is VpnCoreState.Failed) {
+                        Text(
+                            stringResource(R.string.vpn_core_failed, state.message),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    FilledTonalButton(onClick = onInstall) { Text(stringResource(R.string.vpn_core_install)) }
+                }
+            }
+        }
     }
 }

@@ -43,6 +43,13 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import com.gtarayici.browser.qr.QrScannerScreen
 import com.gtarayici.browser.update.UpdateDialog
 import com.gtarayici.browser.reader.ReaderControlsSheet
@@ -60,6 +67,7 @@ import com.gtarayici.browser.ui.screens.ExtensionPrompts
 import com.gtarayici.browser.ui.screens.ExtensionsScreen
 import com.gtarayici.browser.ui.screens.HistoryScreen
 import com.gtarayici.browser.ui.screens.HomeScreen
+import com.gtarayici.browser.ui.screens.OnboardingScreen
 import com.gtarayici.browser.ui.screens.HomeSite
 import com.gtarayici.browser.ui.screens.topSites
 import com.gtarayici.browser.ui.screens.InstallAppDialog
@@ -145,6 +153,7 @@ fun BrowserApp(
     val selectedTabId by store.observe { it.selectedTabId }
     val translationSupported by store.observe { it.translationEngine.isEngineSupported == true }
     val toolbarSwipe by components.settings.toolbarSwipeTabs.collectAsState()
+    val hideToolbar by components.settings.hideToolbarOnScroll.collectAsState()
     // Kapatılan sekmeler: birkaç saniye "Geri al" çubuğu gösterilir.
     val undo by store.observe { it.undoHistory.tag to it.undoHistory.tabs.size }
     val snackbar = remember { SnackbarHostState() }
@@ -199,78 +208,102 @@ fun BrowserApp(
     GTarayiciTheme(mode = themeMode, private = private) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
             val chrome = if (fullscreen) Modifier else Modifier.systemBarsPadding()
+            // Kaydırınca gizlenen adres çubuğu: çubuk sayfanın üstünde durur, motor görünümü tam boydur.
+            val floatingBars = hideToolbar && !fullscreen
+            val dynamic = controller.dynamicToolbar
+            var toolbarHeight by remember { mutableIntStateOf(0) }
+            val barsVisibleOnly = controller.findInPageOpen || showHome || pictureInPicture ||
+                (current?.offerTranslate == true && current.translated.not() && dismissedOffer != pageUrl)
+            SideEffect {
+                dynamic.configure(enabled = floatingBars, heightPx = toolbarHeight)
+                if (dynamic.locked != barsVisibleOnly) dynamic.locked = barsVisibleOnly
+            }
+            // Sayfa değişince veya yüklenmeye başlayınca çubuk yeniden görünür.
+            LaunchedEffect(pageUrl, current?.loading, barsVisibleOnly) { dynamic.show() }
+            val bars: @Composable () -> Unit = {
+                if (controller.findInPageOpen && pageUrl != null) {
+                    FindInPageBar(onClose = { controller.closeFindInPage() })
+                }
+                val tabId = selectedTabId
+                if (tabId != null && pageUrl != null && current?.offerTranslate == true && current.translated.not() &&
+                    dismissedOffer != pageUrl && !controller.translateOpen
+                ) {
+                    TranslateOfferBar(
+                        tabId = tabId,
+                        onOptions = { controller.openTranslate() },
+                        onDismiss = { dismissedOffer = pageUrl },
+                    )
+                }
+                Box(Modifier.onSizeChanged { toolbarHeight = it.height }) {
+                BottomToolbar(
+                    state = ToolbarState(
+                        displayUrl = (current?.readerUrl?.takeIf { current.readerActive } ?: pageUrl)
+                            ?.let(UrlInput::displayUrl).orEmpty(),
+                        loading = current?.loading == true,
+                        progress = current?.progress ?: 0,
+                        secure = current?.secure,
+                        tabCount = profileTabs.count { it.content.private == private },
+                        private = private,
+                        profile = profile.takeIf { profiles.size > 1 },
+                        vpn = when (vpnStatus) {
+                            is VpnStatus.Connected -> VpnIndicator.ON
+                            is VpnStatus.Error -> VpnIndicator.ERROR
+                            VpnStatus.Connecting -> VpnIndicator.ON
+                            VpnStatus.Off -> VpnIndicator.OFF
+                        },
+                        reader = when {
+                            current?.readerActive == true -> ReaderIndicator.ACTIVE
+                            current?.readerable == true -> ReaderIndicator.AVAILABLE
+                            else -> ReaderIndicator.NONE
+                        },
+                    ),
+                    onReaderClick = { controller.toggleReader(current?.readerActive == true) },
+                    actions = ToolbarActions(
+                        onSwipeTab = if (toolbarSwipe && pageUrl != null) { delta -> controller.switchAdjacentTab(delta) } else null,
+                        onNewTab = { controller.newTab(it) },
+                        onCloseTab = { controller.closeCurrentTab() },
+                        onCopyUrl = { controller.copyLink() },
+                        onPasteAndGo = { controller.pasteAndGo() },
+                        onSiteInfo = { controller.siteInfoOpen = true },
+                    ),
+                    onUrlClick = { controller.open(Overlay.SEARCH) },
+                    onReloadOrStop = { controller.reloadOrStop() },
+                    onTabsClick = { controller.open(Overlay.TABS) },
+                    onMenuClick = { controller.menuOpen = true },
+                    onProfileClick = { controller.profileSwitcherOpen = true },
+                    onVpnClick = { controller.open(Overlay.VPN) },
+                )
+                }
+            }
             Column(Modifier.fillMaxSize().then(chrome).imePadding()) {
-                Box(Modifier.weight(1f)) {
+                Box(Modifier.weight(1f).clipToBounds()) {
                     // Motor görünümü her zaman yerinde kalır; aksi halde bağlı özellikler serbest bırakılır.
                     // PiP sırasında da gizlenmez: sayfa çizilmeye devam etmeli (YouTube oynatıcısı buna bağlı).
                     AndroidView(factory = { engineView }, modifier = Modifier.keepSizeDuringPip(pictureInPicture))
                     if (showHome && !pictureInPicture) {
-                        HomeScreen(
-                            private = private,
-                            frequent = frequent,
-                            bookmarks = bookmarks.map { HomeSite(it.url, it.title.ifBlank { UrlInput.host(it.url) }) },
-                            onSearchClick = { controller.open(Overlay.SEARCH) },
-                            onScanQr = { controller.openQrScanner() },
-                            onOpen = { controller.loadUrl(it) },
-                            onOpenInNewTab = { controller.loadUrl(it, inNewTab = true) },
-                            onHideFrequent = { controller.hideFrequentSite(it.url) },
-                            onRemoveBookmark = { controller.removeBookmark(it.url) },
-                        )
+                        Box(Modifier.padding(bottom = if (floatingBars) with(LocalDensity.current) { toolbarHeight.toDp() } else 0.dp)) {
+                            HomeScreen(
+                                private = private,
+                                frequent = frequent,
+                                bookmarks = bookmarks.map { HomeSite(it.url, it.title.ifBlank { UrlInput.host(it.url) }) },
+                                onSearchClick = { controller.open(Overlay.SEARCH) },
+                                onScanQr = { controller.openQrScanner() },
+                                onOpen = { controller.loadUrl(it) },
+                                onOpenInNewTab = { controller.loadUrl(it, inNewTab = true) },
+                                onHideFrequent = { controller.hideFrequentSite(it.url) },
+                                onRemoveBookmark = { controller.removeBookmark(it.url) },
+                            )
+                        }
+                    }
+                    if (floatingBars && !pictureInPicture) {
+                        Column(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .offset { IntOffset(0, dynamic.offset.roundToInt()) },
+                        ) { bars() }
                     }
                 }
-                if (!fullscreen) {
-                    if (controller.findInPageOpen && pageUrl != null) {
-                        FindInPageBar(onClose = { controller.closeFindInPage() })
-                    }
-                    val tabId = selectedTabId
-                    if (tabId != null && pageUrl != null && current?.offerTranslate == true && current.translated.not() &&
-                        dismissedOffer != pageUrl && !controller.translateOpen
-                    ) {
-                        TranslateOfferBar(
-                            tabId = tabId,
-                            onOptions = { controller.openTranslate() },
-                            onDismiss = { dismissedOffer = pageUrl },
-                        )
-                    }
-                    BottomToolbar(
-                        state = ToolbarState(
-                            displayUrl = (current?.readerUrl?.takeIf { current.readerActive } ?: pageUrl)
-                                ?.let(UrlInput::displayUrl).orEmpty(),
-                            loading = current?.loading == true,
-                            progress = current?.progress ?: 0,
-                            secure = current?.secure,
-                            tabCount = profileTabs.count { it.content.private == private },
-                            private = private,
-                            profile = profile.takeIf { profiles.size > 1 },
-                            vpn = when (vpnStatus) {
-                                is VpnStatus.Connected -> VpnIndicator.ON
-                                is VpnStatus.Error -> VpnIndicator.ERROR
-                                VpnStatus.Connecting -> VpnIndicator.ON
-                                VpnStatus.Off -> VpnIndicator.OFF
-                            },
-                            reader = when {
-                                current?.readerActive == true -> ReaderIndicator.ACTIVE
-                                current?.readerable == true -> ReaderIndicator.AVAILABLE
-                                else -> ReaderIndicator.NONE
-                            },
-                        ),
-                        onReaderClick = { controller.toggleReader(current?.readerActive == true) },
-                        actions = ToolbarActions(
-                            onSwipeTab = if (toolbarSwipe && pageUrl != null) { delta -> controller.switchAdjacentTab(delta) } else null,
-                            onNewTab = { controller.newTab(it) },
-                            onCloseTab = { controller.closeCurrentTab() },
-                            onCopyUrl = { controller.copyLink() },
-                            onPasteAndGo = { controller.pasteAndGo() },
-                            onSiteInfo = { controller.siteInfoOpen = true },
-                        ),
-                        onUrlClick = { controller.open(Overlay.SEARCH) },
-                        onReloadOrStop = { controller.reloadOrStop() },
-                        onTabsClick = { controller.open(Overlay.TABS) },
-                        onMenuClick = { controller.menuOpen = true },
-                        onProfileClick = { controller.profileSwitcherOpen = true },
-                        onVpnClick = { controller.open(Overlay.VPN) },
-                    )
-                }
+                if (!fullscreen && !floatingBars) bars()
             }
 
             val overlayModifier = Modifier
@@ -335,6 +368,10 @@ fun BrowserApp(
                 Overlay.VPN -> Box(overlayModifier) {
                     VpnScreen(onBack = { controller.closeOverlay() })
                 }
+            }
+
+            if (controller.onboarding && !pictureInPicture) {
+                OnboardingScreen(onDone = { controller.finishOnboarding() })
             }
 
             if (lockKey != null && !pictureInPicture) {

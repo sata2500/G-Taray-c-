@@ -24,6 +24,7 @@ import com.gtarayici.browser.downloads.DownloadService
 import com.gtarayici.browser.ui.BrowserApp
 import com.gtarayici.browser.ui.BrowserController
 import com.gtarayici.browser.ui.Overlay
+import com.gtarayici.browser.ui.components.ScrollTrackingLayout
 import android.content.res.Configuration
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
@@ -73,6 +74,9 @@ class MainActivity : AppCompatActivity() {
     /** Motor görünümünü saran "aşağı çekerek yenile" kabı. */
     private lateinit var swipeRefresh: SwipeRefreshLayout
 
+    /** Kaydırmayı izleyip adres çubuğunu gizleyen/gösteren en dış kap. */
+    private lateinit var scrollContainer: ScrollTrackingLayout
+
     private var pendingPermissionFeature: (() -> PermissionsFeature?)? = null
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -98,6 +102,8 @@ class MainActivity : AppCompatActivity() {
             addView(engineView.asView(), ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
             setColorSchemeColors(MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary, 0xFF0B57D0.toInt()))
         }
+        controller.dynamicToolbar.engineView = engineView
+        scrollContainer = ScrollTrackingLayout(this, engineView, controller.dynamicToolbar, swipeRefresh)
         setupFeatures()
         lifecycleScope.launch {
             components.settings.pullToRefresh.collect { updatePullToRefresh() }
@@ -111,7 +117,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             BrowserApp(
                 controller,
-                swipeRefresh,
+                scrollContainer,
                 fullscreen || inPictureInPicture,
                 inPictureInPicture,
                 pipView = pip.pipView,
@@ -128,8 +134,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) handleIntent(intent)
+        controller.onboarding = BrowserController.needsOnboarding(getSharedPreferences("gtarayici_state", MODE_PRIVATE))
         requestNotificationPermissionOnce()
-        components.updater.checkIfDue()
+        // Güncelleme denetimi ağ kullanır; açılıştaki sayfa yüklemesiyle yarışmasın.
+        window.decorView.postDelayed({ components.updater.checkIfDue() }, UPDATE_CHECK_DELAY_MS)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -375,5 +383,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val ACTION_OPEN_DOWNLOADS = "com.gtarayici.browser.OPEN_DOWNLOADS"
+        private const val UPDATE_CHECK_DELAY_MS = 8_000L
     }
 }

@@ -1,6 +1,17 @@
 package com.gtarayici.browser.ui.screens
 
 import android.text.format.DateUtils
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.res.pluralStringResource
+import com.gtarayici.browser.data.Bookmark
+import com.gtarayici.browser.data.HistoryEntry
 import android.text.format.Formatter
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -78,7 +89,9 @@ fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
                 EmptyState(stringResource(R.string.history_empty))
             } else {
                 LazyColumn {
-                    items(visible, key = { it.url }) { entry ->
+                    historyGroups(visible).forEach { (label, group) ->
+                        item(key = "day-$label") { DayHeader(stringResource(label)) }
+                        items(group, key = { it.url }) { entry ->
                         ListItem(
                             leadingContent = { Favicon(entry.url) },
                             headlineContent = {
@@ -87,7 +100,7 @@ fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
                             supportingContent = {
                                 Text(
                                     "${UrlInput.host(entry.url)} · " +
-                                        DateUtils.getRelativeTimeSpanString(entry.lastVisited),
+                                        DateUtils.formatDateTime(context, entry.lastVisited, DateUtils.FORMAT_SHOW_TIME),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -99,6 +112,7 @@ fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
                             },
                             modifier = Modifier.clickable { onOpen(entry.url) },
                         )
+                        }
                     }
                 }
             }
@@ -130,36 +144,211 @@ fun BookmarksScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
     val bookmarks by remember(profileId) { dao.all(profileId) }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var filter by remember { mutableStateOf("") }
+    var folder by remember { mutableStateOf("") }
+    var editing by remember { mutableStateOf<Bookmark?>(null) }
+    var renamingFolder by remember { mutableStateOf<String?>(null) }
+    val folders = bookmarks.map { it.folder }.filter { it.isNotBlank() }.distinct().sorted()
+    BackHandler(enabled = folder.isNotEmpty()) { folder = "" }
 
-    OverlayScaffold(title = stringResource(R.string.menu_bookmarks), onBack = onBack) { modifier ->
+    OverlayScaffold(
+        title = folder.ifEmpty { stringResource(R.string.menu_bookmarks) },
+        onBack = { if (folder.isNotEmpty()) folder = "" else onBack() },
+        actions = {
+            if (folder.isNotEmpty()) {
+                IconButton(onClick = { renamingFolder = folder }) { Icon(Icons.Filled.Edit, stringResource(R.string.bookmark_rename_folder)) }
+            }
+        },
+    ) { modifier ->
+        val searching = filter.isNotBlank()
         val visible = bookmarks.filter {
-            filter.isBlank() || it.title.contains(filter, true) || it.url.contains(filter, true)
+            if (searching) it.title.contains(filter, true) || it.url.contains(filter, true) else it.folder == folder
         }
         Column(modifier) {
-            if (bookmarks.isNotEmpty()) FilterField(filter) { filter = it }
-            if (visible.isEmpty()) {
-                EmptyState(stringResource(R.string.bookmarks_empty))
-            } else {
-                LazyColumn {
-                    items(visible, key = { it.id }) { bookmark ->
+            if (bookmarks.isNotEmpty() && folder.isEmpty()) FilterField(filter) { filter = it }
+            LazyColumn {
+                if (!searching && folder.isEmpty()) {
+                    items(folders, key = { "folder-$it" }) { name ->
                         ListItem(
-                            leadingContent = { Favicon(bookmark.url) },
-                            headlineContent = { Text(bookmark.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            leadingContent = { Icon(Icons.Filled.Folder, null, tint = MaterialTheme.colorScheme.primary) },
+                            headlineContent = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             supportingContent = {
-                                Text(UrlInput.displayUrl(bookmark.url), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                val count = bookmarks.count { it.folder == name }
+                                Text(pluralStringResource(R.plurals.bookmark_count, count, count))
                             },
-                            trailingContent = {
-                                IconButton(onClick = { scope.launch(Dispatchers.IO) { dao.deleteByUrl(profileId, bookmark.url) } }) {
-                                    Icon(Icons.Filled.Delete, stringResource(R.string.action_delete))
-                                }
-                            },
-                            modifier = Modifier.clickable { onOpen(bookmark.url) },
+                            modifier = Modifier.clickable { folder = name },
                         )
                     }
                 }
+                items(visible, key = { it.id }) { bookmark ->
+                    BookmarkRow(
+                        bookmark,
+                        onOpen = { onOpen(bookmark.url) },
+                        onEdit = { editing = bookmark },
+                        onDelete = { scope.launch(Dispatchers.IO) { dao.deleteById(bookmark.id) } },
+                    )
+                }
+            }
+            if (visible.isEmpty() && (searching || folders.isEmpty() || folder.isNotEmpty())) {
+                EmptyState(stringResource(R.string.bookmarks_empty))
             }
         }
     }
+
+    editing?.let { bookmark ->
+        BookmarkEditDialog(
+            bookmark = bookmark,
+            folders = folders,
+            onSave = { updated ->
+                editing = null
+                scope.launch(Dispatchers.IO) { runCatching { dao.upsert(updated) } }
+            },
+            onDismiss = { editing = null },
+        )
+    }
+    renamingFolder?.let { old ->
+        var name by remember(old) { mutableStateOf(old) }
+        AlertDialog(
+            onDismissRequest = { renamingFolder = null },
+            title = { Text(stringResource(R.string.bookmark_rename_folder)) },
+            text = {
+                Column {
+                    OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    Text(
+                        stringResource(R.string.bookmark_rename_folder_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val target = name.trim()
+                    renamingFolder = null
+                    folder = target
+                    scope.launch(Dispatchers.IO) { dao.renameFolder(profileId, old, target) }
+                }) { Text(stringResource(R.string.action_save)) }
+            },
+            dismissButton = { TextButton(onClick = { renamingFolder = null }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+}
+
+@Composable
+private fun BookmarkRow(bookmark: Bookmark, onOpen: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    ListItem(
+        leadingContent = { Favicon(bookmark.url) },
+        headlineContent = { Text(bookmark.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        supportingContent = { Text(UrlInput.displayUrl(bookmark.url), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        trailingContent = {
+            Box {
+                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.action_menu)) }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.bookmark_edit)) },
+                        leadingIcon = { Icon(Icons.Filled.Edit, null) },
+                        onClick = { menu = false; onEdit() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_delete)) },
+                        leadingIcon = { Icon(Icons.Filled.Delete, null) },
+                        onClick = { menu = false; onDelete() },
+                    )
+                }
+            }
+        },
+        modifier = Modifier.clickable(onClick = onOpen),
+    )
+}
+
+@Composable
+private fun BookmarkEditDialog(bookmark: Bookmark, folders: List<String>, onSave: (Bookmark) -> Unit, onDismiss: () -> Unit) {
+    var title by remember { mutableStateOf(bookmark.title) }
+    var url by remember { mutableStateOf(bookmark.url) }
+    var folder by remember { mutableStateOf(bookmark.folder) }
+    var folderMenu by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.bookmark_edit)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text(stringResource(R.string.bookmark_title)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = { Text(stringResource(R.string.bookmark_url)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+                Box(Modifier.padding(top = 8.dp)) {
+                    OutlinedTextField(
+                        value = folder,
+                        onValueChange = { folder = it },
+                        label = { Text(stringResource(R.string.bookmark_folder)) },
+                        placeholder = { Text(stringResource(R.string.bookmark_folder_none)) },
+                        singleLine = true,
+                        trailingIcon = {
+                            if (folders.isNotEmpty()) {
+                                IconButton(onClick = { folderMenu = true }) { Icon(Icons.Filled.ArrowDropDown, null) }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    DropdownMenu(expanded = folderMenu, onDismissRequest = { folderMenu = false }) {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.bookmark_folder_none)) }, onClick = { folder = ""; folderMenu = false })
+                        folders.forEach { name ->
+                            DropdownMenuItem(text = { Text(name) }, onClick = { folder = name; folderMenu = false })
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = url.isNotBlank(),
+                onClick = { onSave(bookmark.copy(title = title.trim().ifBlank { url.trim() }, url = url.trim(), folder = folder.trim())) },
+            ) { Text(stringResource(R.string.action_save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+/** Geçmişi "Bugün / Dün / Bu hafta / Bu ay / Daha eski" gruplarına ayırır (sıra korunur). */
+internal fun historyGroups(entries: List<HistoryEntry>, now: Long = System.currentTimeMillis()): List<Pair<Int, List<HistoryEntry>>> {
+    val calendar = java.util.Calendar.getInstance().apply {
+        timeInMillis = now
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }
+    val today = calendar.timeInMillis
+    val day = 24L * 60 * 60 * 1000
+    fun bucket(time: Long) = when {
+        time >= today -> R.string.history_today
+        time >= today - day -> R.string.history_yesterday
+        time >= today - 6 * day -> R.string.history_this_week
+        time >= today - 29 * day -> R.string.history_this_month
+        else -> R.string.history_older
+    }
+    return entries.groupBy { bucket(it.lastVisited) }.toList()
+}
+
+@Composable
+private fun DayHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+    )
 }
 
 @Composable

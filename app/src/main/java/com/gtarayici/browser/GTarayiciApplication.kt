@@ -3,6 +3,7 @@ package com.gtarayici.browser
 import androidx.core.content.edit
 import android.app.Application
 import android.content.Context
+import android.os.Looper
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,12 +27,17 @@ class GTarayiciApplication : Application() {
         components.vpn.restore()
         components.mediaSessionFeature.start()
         components.historyRecorder.start()
-        components.downloadsUseCases.restoreDownloads()
         restoreTabs()
-        components.applicationScope.launch(Dispatchers.IO) {
-            components.manifestStorage.warmUpScopes(System.currentTimeMillis())
+        // Açılışı geciktirmemek için acil olmayan işler ilk ekran çizildikten sonra (ana iş parçacığı boşken) yapılır.
+        Looper.myQueue().addIdleHandler {
+            components.downloadsUseCases.restoreDownloads()
+            components.applicationScope.launch(Dispatchers.IO) {
+                components.manifestStorage.warmUpScopes(System.currentTimeMillis())
+            }
+            allowMediaSiteAutoplay()
+            components.tabUnloader.start()
+            false
         }
-        allowMediaSiteAutoplay()
     }
 
     /**

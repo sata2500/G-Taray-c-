@@ -5,7 +5,7 @@
 G-Tarayıcı, Mozilla'nın **GeckoView** motoru üzerine kuruludur. Amacı, kurduğunuz anda hiçbir ayar yapmadan
 sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
-> Durum: **v0.6.0** — yol haritasındaki özelliklerin neredeyse tamamı hazır; sürümler kalıcı anahtarla imzalanır ve
+> Durum: **v0.7.0** — yol haritasındaki özelliklerin neredeyse tamamı hazır; sürümler kalıcı anahtarla imzalanır ve
 > uygulama içinden güncellenir.
 
 ## Özellikler
@@ -48,6 +48,8 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
 ### Tarayıcı VPN'i
 - Yalnızca G-Tarayıcı'nın trafiği şifrelenir; cihaz VPN izni gerekmez, diğer uygulamalar ve VPN'ler etkilenmez
+- Çekirdekler ayrı bir **VPN bileşeni** paketinde gelir (~20 MB); VPN'i kullanmayanlar indirmez. Bileşen ilk
+  kullanımda GitHub sürümünden indirilir ve yalnızca G-Tarayıcı'nın anahtarıyla imzalıysa kabul edilir
 - **OpenVPN** (.ovpn; kullanıcı adı/parola, tls-auth, tls-crypt, comp-lzo dahil): gerçek OpenVPN 2.7 istemcisi,
   telefonun VPN izni yerine kullanıcı alanı ağ yığınına (gVisor) bağlanır
 - Dahili sing-box çekirdeği: **VLESS (Reality dahil), VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard,
@@ -61,7 +63,9 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 - Tek elle kullanım için alttan adres çubuğu; yer imleri ve geçmişten anlık öneriler
 - Hareketler: adres çubuğunu kaydırarak sekme değiştirme, aşağı çekerek yenileme, sekmeyi yana kaydırarak
   kapatma ("Geri al" ile), sekme sayacına ve adres çubuğuna uzun basınca hızlı menüler
-- Ana sayfada sık ziyaret edilen siteler ve yer imleri
+- Kaydırınca gizlenen adres çubuğu; kullanılmayan sekmelerin uyutulması (bellek ve pil tasarrufu)
+- Ana sayfada sık ziyaret edilen siteler ve yer imleri; klasörlü, düzenlenebilir yer imleri; gün gün gruplanmış geçmiş
+- Kategorili ve aranabilir ayarlar, ilk açılışta kısa tanıtım
 - **Site bilgisi:** bağlantı durumu, engellenen izleyiciler, siteye özel izleyici koruması, site verilerini ve
   izinlerini sıfırlama
 - Önizlemeli sekme ekranı, gizli sekmeler, sayfada bul, masaüstü sitesi modu
@@ -136,6 +140,8 @@ app/src/main/assets/extensions/
 ├── ublock_origin.xpi         # Hazır kurulu reklam engelleyici (imzalı, AMO)
 └── helper/                   # Arka planda oynatma, resim içinde resim, medya kontrolleri, SponsorBlock
 webapk-shell/                 # Cihazda kişiselleştirilen 8 KB'lık WebAPK şablonu (saf Java)
+vpn-core/                     # VPN bileşeni: yalnızca VPN çekirdeklerini taşıyan kodsuz paket
+docs/TEST_PLAN.md             # Cihaz üzerinde baştan sona test planı
 native/ovpn-bridge/           # OpenVPN ↔ kullanıcı alanı ağ yığını ↔ SOCKS5 köprüsü (Go)
 ```
 
@@ -144,7 +150,7 @@ native/ovpn-bridge/           # OpenVPN ↔ kullanıcı alanı ağ yığını �
 Gereksinimler: JDK 21, Android SDK (platform 37.2, build-tools 37) ve VPN çekirdeği için Go 1.26+.
 
 ```bash
-# VPN çekirdeklerini bir kez derleyin; ikili dosyalar repoya eklenmez
+# VPN çekirdeklerini bir kez derleyin (vpn-core/src/main/jniLibs); ikili dosyalar repoya eklenmez
 ./scripts/build-singbox.sh
 ANDROID_NDK_ROOT=/yol/android-ndk ./scripts/build-openvpn.sh   # OpenVPN + köprü (NDK gerekir)
 ```
@@ -153,8 +159,8 @@ ANDROID_NDK_ROOT=/yol/android-ndk ./scripts/build-openvpn.sh   # OpenVPN + köpr
 # Hata ayıklama sürümü
 ./gradlew assembleDebug
 
-# Optimize edilmiş sürüm
-./gradlew assembleRelease
+# Optimize edilmiş sürüm ve VPN bileşeni
+./gradlew :app:assembleRelease :vpn-core:assembleRelease
 ```
 
 Her işlemci mimarisi için ayrı APK üretilir (`app/build/outputs/apk/`). Günümüz telefonlarının

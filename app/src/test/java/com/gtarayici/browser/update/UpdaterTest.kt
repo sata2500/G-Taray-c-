@@ -21,6 +21,8 @@ class UpdaterTest {
     private val release = JSONObject(
         """
         {"tag_name":"v0.5.0","body":"Notlar","assets":[
+          {"name":"G-Tarayici-VPN-arm64-v8a-core.apk","size":20,"browser_download_url":"https://example.org/vpn.apk"},
+          {"name":"G-Tarayici-VPN-arm64-v8a.apk","size":20,"browser_download_url":"https://example.org/vpn-old.apk"},
           {"name":"G-Tarayici-0.5.0-armeabi-v7a.apk","size":100,"browser_download_url":"https://example.org/v7a.apk"},
           {"name":"G-Tarayici-0.5.0-arm64-v8a.apk","size":200,"browser_download_url":"https://example.org/arm64.apk"},
           {"name":"SHA256SUMS.txt","size":1,"browser_download_url":"https://example.org/sums"}

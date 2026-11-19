@@ -18,8 +18,8 @@ keystore.properties
 .DS_Store
 
 # sing-box ikili dosyaları büyüktür; scripts/build-singbox.sh ile üretilir.
-app/src/main/jniLibs/*/libsingbox.so
+vpn-core/src/main/jniLibs/*/libsingbox.so
 build/
 # OpenVPN ikili dosyaları scripts/build-openvpn.sh ile üretilir.
-app/src/main/jniLibs/*/libopenvpn.so
-app/src/main/jniLibs/*/libovpnbridge.so
+vpn-core/src/main/jniLibs/*/libopenvpn.so
+vpn-core/src/main/jniLibs/*/libovpnbridge.so

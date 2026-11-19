@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# OpenVPN 2.7 (Android modu) ve G-Tarayıcı OpenVPN köprüsünü derleyip app/src/main/jniLibs altına koyar.
+# OpenVPN 2.7 (Android modu) ve G-Tarayıcı OpenVPN köprüsünü derleyip vpn-core/src/main/jniLibs altına koyar.
 #
 # Gereksinimler: Android NDK (ANDROID_NDK_ROOT), Go 1.25+, curl, make.
 # Kaynaklar Debian arşivinden indirilir: OpenVPN 2.7.8, OpenSSL 3.5 (LTS), LZO 2.10, LZ4 1.10.
@@ -61,7 +61,7 @@ build_abi() { # abi clang-triple openssl-target goos goarch goarm
    sed -i 's/^#define TARGET_LINUX 1/#define TARGET_ANDROID 1/; s/^#define HAVE_LIBCAPNG 1/\/* #undef HAVE_LIBCAPNG *\//' config.h
    make -j"$(nproc)" >/dev/null)
 
-  local out="$ROOT/app/src/main/jniLibs/$abi"
+  local out="$ROOT/vpn-core/src/main/jniLibs/$abi"
   mkdir -p "$out"
   llvm-strip -o "$out/libopenvpn.so" "$b"/openvpn-*/src/openvpn/openvpn
   (cd "$ROOT/native/ovpn-bridge" && CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" GOARM="$goarm" \

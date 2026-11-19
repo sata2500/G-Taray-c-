@@ -1,5 +1,7 @@
 package com.gtarayici.browser.vpn
 
+import com.gtarayici.browser.R
+
 import android.content.Context
 import android.net.ConnectivityManager
 import androidx.core.content.edit
@@ -55,7 +57,7 @@ data class VpnTestResult(val ip: String?, val country: String?, val latencyMs: L
  *
  * Bağlantı koparsa trafik doğrudan internete düşmez (sızıntıya karşı "kapalı başarısızlık").
  */
-class VpnManager(private val context: Context, private val scope: CoroutineScope) {
+class VpnManager(private val context: Context, private val scope: CoroutineScope, private val core: VpnCore) {
     private val logger = Logger("VpnManager")
     private val prefs = context.getSharedPreferences("gtarayici_vpn", Context.MODE_PRIVATE)
     private val workDir = File(context.filesDir, "vpn").apply { mkdirs() }
@@ -177,10 +179,9 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
      * "GTOVPN READY" yazar; kimlik hatası "GTOVPN AUTH_FAILED" olarak bildirilir.
      */
     private suspend fun startOpenVpn(server: VpnServer): Int {
-        val libDir = File(context.applicationInfo.nativeLibraryDir)
-        val bridge = File(libDir, "libovpnbridge.so")
-        val openvpn = File(libDir, "libopenvpn.so")
-        check(bridge.exists() && openvpn.exists()) { "OpenVPN bu cihaz mimarisi için bulunamadı" }
+        val bridge = core.binary(VpnCore.OPENVPN_BRIDGE)
+        val openvpn = core.binary(VpnCore.OPENVPN)
+        check(bridge != null && openvpn != null) { context.getString(R.string.vpn_core_missing_error) }
         val dir = File(workDir, "openvpn").apply { deleteRecursively(); mkdirs() }
         val config = File(dir, "config.ovpn").apply { writeText(OpenVpnConfig.sanitize(server.link)) }
         val auth = File(dir, "auth.txt")
@@ -238,8 +239,8 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
     }
 
     private suspend fun startSingBox(server: VpnServer): Int {
-        val binary = File(context.applicationInfo.nativeLibraryDir, "libsingbox.so")
-        check(binary.exists()) { "VPN çekirdeği bu cihaz mimarisi için bulunamadı" }
+        val binary = core.binary(VpnCore.SING_BOX)
+        checkNotNull(binary) { context.getString(R.string.vpn_core_missing_error) }
         val port = ServerSocket(0).use { it.localPort }
         val config = File(workDir, "config.json")
         config.writeText(buildConfig(server, port, systemDns()).toString(2))

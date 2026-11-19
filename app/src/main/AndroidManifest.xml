@@ -23,6 +23,11 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
+    <!-- Ayrı paket olarak gelen VPN bileşeninin (çekirdekler) bulunabilmesi için -->
+    <queries>
+        <package android:name="com.gtarayici.vpncore" />
+    </queries>
+
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -114,6 +119,10 @@
 
         <receiver
             android:name=".update.UpdateInstallReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".vpn.VpnCoreInstallReceiver"
             android:exported="false" />
 
         <service

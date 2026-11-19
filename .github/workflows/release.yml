@@ -73,9 +73,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: |
-            app/src/main/jniLibs/*/libsingbox.so
-            app/src/main/jniLibs/*/libopenvpn.so
-            app/src/main/jniLibs/*/libovpnbridge.so
+            vpn-core/src/main/jniLibs/*/libsingbox.so
+            vpn-core/src/main/jniLibs/*/libopenvpn.so
+            vpn-core/src/main/jniLibs/*/libovpnbridge.so
           key: native-${{ hashFiles('scripts/build-singbox.sh', 'scripts/build-openvpn.sh', 'native/**') }}
 
       - name: Yerel kütüphaneleri derle (sing-box, OpenVPN)
@@ -89,7 +89,7 @@ jobs:
 
       - name: Derle ve test et
         if: steps.check.outputs.build == 'true'
-        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleRelease
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleRelease :vpn-core:assembleRelease
 
       - name: İmzala
         if: steps.check.outputs.build == 'true'

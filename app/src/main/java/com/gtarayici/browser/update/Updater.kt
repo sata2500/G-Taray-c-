@@ -1,6 +1,5 @@
 package com.gtarayici.browser.update
 
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -15,8 +14,6 @@ import com.gtarayici.browser.BuildConfig
 import com.gtarayici.browser.R
 import com.gtarayici.browser.settings.AppSettings
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -139,50 +136,15 @@ class Updater(private val context: Context, private val settings: AppSettings, p
     }
 
     private fun fetchLatest(): Release? {
-        val connection = open("https://api.github.com/repos/${BuildConfig.UPDATE_REPO}/releases/latest")
-        connection.setRequestProperty("Accept", "application/vnd.github+json")
-        try {
-            when (connection.responseCode) {
-                HttpURLConnection.HTTP_OK -> Unit
-                HttpURLConnection.HTTP_NOT_FOUND -> throw UpdateException(context.getString(R.string.update_no_release))
-                else -> throw UpdateException(context.getString(R.string.update_server_error, connection.responseCode))
-            }
-            val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
-            return parseRelease(json, preferredAbi())
-        } finally {
-            connection.disconnect()
-        }
+        val json = Apks.fetchRelease(BuildConfig.UPDATE_REPO) ?: throw UpdateException(context.getString(R.string.update_no_release))
+        return parseRelease(json, preferredAbi())
     }
 
     private fun download(release: Release): File {
         val dir = File(context.cacheDir, "update").apply { deleteRecursively(); mkdirs() }
         val file = File(dir, "update.apk")
-        val connection = open(release.apkUrl)
-        try {
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                throw UpdateException(context.getString(R.string.update_server_error, connection.responseCode))
-            }
-            val total = connection.contentLengthLong.takeIf { it > 0 } ?: release.apkSize
-            var done = 0L
-            var reported = 0f
-            connection.inputStream.use { input ->
-                file.outputStream().use { output ->
-                    val buffer = ByteArray(64 * 1024)
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        output.write(buffer, 0, read)
-                        done += read
-                        val progress = if (total > 0) done.toFloat() / total else 0f
-                        if (progress - reported >= 0.01f) {
-                            reported = progress
-                            _state.value = UpdateState.Downloading(release, progress)
-                        }
-                    }
-                }
-            }
-        } finally {
-            connection.disconnect()
+        Apks.download(release.apkUrl, file, release.apkSize) { progress ->
+            _state.value = UpdateState.Downloading(release, progress)
         }
         return file
     }
@@ -204,30 +166,9 @@ class Updater(private val context: Context, private val settings: AppSettings, p
     }
 
     private fun commit(file: File, release: Release) {
-        val installer = context.packageManager.packageInstaller
-        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
-            setAppPackageName(context.packageName)
-            setSize(file.length())
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
-            }
+        Apks.install(context, file, context.packageName, UpdateInstallReceiver::class.java) {
+            putExtra(UpdateInstallReceiver.EXTRA_VERSION, release.version)
         }
-        val sessionId = installer.createSession(params)
-        installer.openSession(sessionId).use { session ->
-            session.openWrite("base.apk", 0, file.length()).use { out ->
-                file.inputStream().use { it.copyTo(out) }
-                session.fsync(out)
-            }
-            val callback = Intent(context, UpdateInstallReceiver::class.java).putExtra(UpdateInstallReceiver.EXTRA_VERSION, release.version)
-            val pending = PendingIntent.getBroadcast(
-                context,
-                sessionId,
-                callback,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
-            )
-            session.commit(pending.intentSender)
-        }
-        file.delete()
     }
 
     /** Yükleme yarıda kaldığında arayüzü sıfırlar. */
@@ -236,15 +177,9 @@ class Updater(private val context: Context, private val settings: AppSettings, p
         if (message == null) _prompt.value = false
     }
 
-    private fun open(url: String): HttpURLConnection = (URL(url).openConnection() as HttpURLConnection).apply {
-        connectTimeout = 15_000
-        readTimeout = 30_000
-        instanceFollowRedirects = true
-        setRequestProperty("User-Agent", "G-Tarayici-Updater")
-    }
-
     private fun errorMessage(error: Throwable): String = when (error) {
         is UpdateException -> error.message.orEmpty()
+        is Apks.HttpException -> context.getString(R.string.update_server_error, error.code)
         is java.net.UnknownHostException, is java.net.SocketTimeoutException, is java.net.ConnectException ->
             context.getString(R.string.update_offline)
         else -> error.message ?: error.javaClass.simpleName
@@ -267,7 +202,8 @@ class Updater(private val context: Context, private val settings: AppSettings, p
             for (i in 0 until assets.length()) {
                 val asset = assets.getJSONObject(i)
                 val name = asset.optString("name")
-                if (name.endsWith("-$abi.apk")) {
+                // VPN bileşeni ayrı pakettir, uygulama güncellemesi değildir.
+                if (name.endsWith("-$abi.apk") && !name.contains("-VPN-")) {
                     return Release(
                         version = version,
                         notes = json.optString("body").trim(),

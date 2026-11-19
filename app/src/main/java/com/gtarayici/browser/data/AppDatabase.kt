@@ -1,6 +1,7 @@
 package com.gtarayici.browser.data
 
 import android.content.Context
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -51,6 +52,8 @@ data class Bookmark(
     val url: String,
     val title: String,
     val createdAt: Long = System.currentTimeMillis(),
+    /** Klasör adı; boşsa yer imi kök düzeydedir. */
+    @ColumnInfo(defaultValue = "") val folder: String = "",
 )
 
 @Dao
@@ -118,13 +121,20 @@ interface BookmarkDao {
     @Query("DELETE FROM bookmarks WHERE profileId = :profileId AND url = :url")
     suspend fun deleteByUrl(profileId: String, url: String)
 
+    @Query("DELETE FROM bookmarks WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    /** Klasörü yeniden adlandırır (boş ad: klasörü kaldırıp yer imlerini köke taşır). */
+    @Query("UPDATE bookmarks SET folder = :newName WHERE profileId = :profileId AND folder = :oldName")
+    suspend fun renameFolder(profileId: String, oldName: String, newName: String)
+
     @Query("DELETE FROM bookmarks WHERE profileId = :profileId")
     suspend fun clear(profileId: String)
 }
 
 @Database(
     entities = [Profile::class, HistoryEntry::class, Bookmark::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -137,8 +147,15 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "gtarayici.db")
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
+
+        /** v0.7: yer imi klasörleri. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `bookmarks` ADD COLUMN `folder` TEXT NOT NULL DEFAULT ''")
+            }
+        }
 
         /** v0.1.x verileri varsayılan profile taşınır; hiçbir geçmiş veya yer imi kaybolmaz. */
         val MIGRATION_1_2 = object : Migration(1, 2) {
