@@ -2,7 +2,16 @@ package com.gtarayici.browser.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import kotlin.math.abs
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -378,6 +387,9 @@ private fun TabCard(
     onRemoveFromGroup: (() -> Unit)?,
 ) {
     var menu by remember { mutableStateOf(false) }
+    val offset = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    var width by remember { mutableIntStateOf(1) }
     val url = tab.content.url
     val isBlank = url.isBlank() || url == "about:blank"
     val title = tab.content.title.ifBlank {
@@ -397,10 +409,33 @@ private fun TabCard(
             groupColor != null -> BorderStroke(2.dp, groupColor)
             else -> null
         },
-        modifier = Modifier.padding(6.dp).fillMaxWidth().combinedClickable(
-            onClick = { onSelect(tab.id) },
-            onLongClick = { menu = true },
-        ),
+        modifier = Modifier
+            .padding(6.dp)
+            .fillMaxWidth()
+            .onSizeChanged { width = it.width.coerceAtLeast(1) }
+            // Yana kaydırınca sekme kapanır.
+            .graphicsLayer {
+                translationX = offset.value
+                alpha = 1f - (abs(offset.value) / width).coerceIn(0f, 0.85f)
+            }
+            .draggable(
+                orientation = Orientation.Horizontal,
+                state = rememberDraggableState { delta -> scope.launch { offset.snapTo(offset.value + delta) } },
+                onDragStopped = { velocity ->
+                    val dismiss = abs(offset.value) > width * 0.35f || abs(velocity) > 2_500f
+                    if (dismiss) {
+                        val direction = if (offset.value + velocity * 0.1f < 0) -1 else 1
+                        offset.animateTo(direction * width * 1.2f)
+                        onClose(tab.id)
+                    } else {
+                        offset.animateTo(0f)
+                    }
+                },
+            )
+            .combinedClickable(
+                onClick = { onSelect(tab.id) },
+                onLongClick = { menu = true },
+            ),
     ) {
         // Uzun basınca: gruba ekle / gruptan çıkar
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {

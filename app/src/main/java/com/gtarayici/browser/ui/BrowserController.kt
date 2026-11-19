@@ -1,6 +1,7 @@
 package com.gtarayici.browser.ui
 
 import android.content.ClipData
+import androidx.core.content.edit
 import android.content.ClipboardManager
 import android.content.Intent
 import android.widget.Toast
@@ -18,6 +19,7 @@ import com.gtarayici.browser.security.AppLock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mozilla.components.browser.state.action.UndoAction
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.Engine.BrowsingData
@@ -41,6 +43,7 @@ class BrowserController(
     var profileSwitcherOpen by mutableStateOf(false)
     var installDialogOpen by mutableStateOf(false)
     var translateOpen by mutableStateOf(false)
+    var siteInfoOpen by mutableStateOf(false)
 
     /** Okuma görünümü: Mozilla bileşeni etkinlik tarafından bağlanır, ayarları arayüzde gösterilir. */
     var readerFeature: () -> ReaderViewFeature? = { null }
@@ -115,6 +118,56 @@ class BrowserController(
 
     fun closeTab(id: String) {
         components.tabsUseCases.removeTab(id, selectParentIfExists = true)
+    }
+
+    /** Aynı türdeki (normal/gizli) sekmeler arasında bir öncekine veya sonrakine geçer. */
+    fun switchAdjacentTab(delta: Int) {
+        val current = selectedTab ?: return
+        val tabs = store.state.tabs.filter { it.contextId == profile.contextId && it.content.private == current.content.private }
+        val index = tabs.indexOfFirst { it.id == current.id }
+        val target = tabs.getOrNull(index + delta) ?: return
+        components.tabsUseCases.selectTab(target.id)
+    }
+
+    fun closeCurrentTab() {
+        selectedTab?.let { closeTab(it.id) }
+    }
+
+    /** Panodaki metni adres çubuğuna yazılmış gibi açar (adresse gider, değilse arar). */
+    fun pasteAndGo() {
+        val clipboard = activity.getSystemService(ClipboardManager::class.java)
+        val text = clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(activity)?.toString()?.trim()
+        if (text.isNullOrEmpty()) {
+            Toast.makeText(activity, R.string.toolbar_clipboard_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        submit(text)
+    }
+
+    private val statePrefs = activity.getSharedPreferences("gtarayici_state", android.content.Context.MODE_PRIVATE)
+
+    /** Ana sayfadaki "Sık ziyaret edilenler"den kaldırılan alan adları. */
+    val hiddenSites = kotlinx.coroutines.flow.MutableStateFlow(statePrefs.getStringSet(KEY_HIDDEN_SITES, emptySet()).orEmpty().toSet())
+
+    fun hideFrequentSite(url: String) {
+        val next = hiddenSites.value + com.gtarayici.browser.ui.screens.hostOf(url)
+        hiddenSites.value = next
+        statePrefs.edit { putStringSet(KEY_HIDDEN_SITES, next) }
+    }
+
+    fun removeBookmark(url: String) {
+        val profileId = profile.id
+        components.applicationScope.launch(Dispatchers.IO) { components.database.bookmarks().deleteByUrl(profileId, url) }
+    }
+
+    /** Veriler temizlenince kapatılan sekmeler "Geri al" ile geri getirilemez. */
+    private fun forgetClosedTabs() {
+        store.dispatch(UndoAction.ClearRecoverableTabs(store.state.undoHistory.tag ?: return))
+    }
+
+    /** Son kapatılan sekmeleri geri getirir. */
+    fun undoCloseTabs() {
+        components.tabsUseCases.undo.invoke()
     }
 
     fun closeAllTabs(private: Boolean) {
@@ -283,6 +336,7 @@ class BrowserController(
         components.applicationScope.launch {
             val ids = store.state.tabs.filter { it.contextId == target.contextId }.map { it.id }
             if (ids.isNotEmpty()) components.tabsUseCases.removeTabs(ids)
+            forgetClosedTabs()
             target.contextId?.let { components.runtime.storageController.clearDataForSessionContext(it) }
             components.profiles.delete(target)
         }
@@ -295,6 +349,7 @@ class BrowserController(
     fun clearBrowsingData() {
         components.applicationScope.launch {
             components.tabsUseCases.removeAllTabs()
+            forgetClosedTabs()
             withContext(Dispatchers.IO) { components.database.history().clearAll() }
             components.engine.clearData(BrowsingData.all())
             Toast.makeText(activity, R.string.settings_data_cleared, Toast.LENGTH_SHORT).show()
@@ -308,6 +363,7 @@ class BrowserController(
     fun handleBack(): Boolean {
         when {
             menuOpen -> menuOpen = false
+            siteInfoOpen -> siteInfoOpen = false
             readerControls.open -> readerControls.hideControls()
             translateOpen -> translateOpen = false
             profileSwitcherOpen -> profileSwitcherOpen = false
@@ -320,5 +376,9 @@ class BrowserController(
             else -> return false
         }
         return true
+    }
+
+    private companion object {
+        const val KEY_HIDDEN_SITES = "home_hidden_sites"
     }
 }

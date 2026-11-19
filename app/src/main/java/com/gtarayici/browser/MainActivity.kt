@@ -37,6 +37,12 @@ import mozilla.components.feature.privatemode.feature.SecureWindowFeature
 import mozilla.components.feature.readerview.ReaderViewFeature
 import mozilla.components.feature.session.FullScreenFeature
 import mozilla.components.feature.session.SessionFeature
+import mozilla.components.feature.session.SwipeRefreshFeature
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.color.MaterialColors
+import kotlinx.coroutines.launch
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action
@@ -62,6 +68,10 @@ class MainActivity : AppCompatActivity() {
     private val sitePermissionsFeature = ViewBoundFeatureWrapper<SitePermissionsFeature>()
     private val thumbnailsFeature = ViewBoundFeatureWrapper<BrowserThumbnails>()
     private val readerViewFeature = ViewBoundFeatureWrapper<ReaderViewFeature>()
+    private val swipeRefreshFeature = ViewBoundFeatureWrapper<SwipeRefreshFeature>()
+
+    /** Motor görünümünü saran "aşağı çekerek yenile" kabı. */
+    private lateinit var swipeRefresh: SwipeRefreshLayout
 
     private var pendingPermissionFeature: (() -> PermissionsFeature?)? = null
     private val permissionLauncher =
@@ -84,7 +94,14 @@ class MainActivity : AppCompatActivity() {
         }
         engineView = components.engine.createView(this)
         engineView.setActivityContext(this)
+        swipeRefresh = SwipeRefreshLayout(this).apply {
+            addView(engineView.asView(), ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            setColorSchemeColors(MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary, 0xFF0B57D0.toInt()))
+        }
         setupFeatures()
+        lifecycleScope.launch {
+            components.settings.pullToRefresh.collect { updatePullToRefresh() }
+        }
 
         pip = com.gtarayici.browser.media.PipController(this, components, engineView = { engineView.asView() }).also { it.start() }
         if (components.settings.securePrivateTabs.value) {
@@ -94,7 +111,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             BrowserApp(
                 controller,
-                engineView.asView(),
+                swipeRefresh,
                 fullscreen || inPictureInPicture,
                 inPictureInPicture,
                 pipView = pip.pipView,
@@ -103,7 +120,11 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this) {
             val handled = fullScreenFeature.onBackPressed() || promptFeature.onBackPressed() || controller.handleBack()
-            if (!handled) moveTaskToBack(true)
+            if (!handled) {
+                // Geri tuşuyla arka plana alınmak bir uygulama geçişi değildir.
+                pip.noteOwnLaunch()
+                moveTaskToBack(true)
+            }
         }
 
         if (savedInstanceState == null) handleIntent(intent)
@@ -144,6 +165,7 @@ class MainActivity : AppCompatActivity() {
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPictureInPicture = isInPictureInPictureMode
+        updatePullToRefresh()
         pip.onPictureInPictureModeChanged(isInPictureInPictureMode)
         // Küçük pencere kapatıldıysa uygulama arka plandadır: kilitler yeniden devreye girer.
         if (!isInPictureInPictureMode && !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
@@ -247,6 +269,12 @@ class MainActivity : AppCompatActivity() {
             view = view,
         )
 
+        swipeRefreshFeature.set(
+            feature = SwipeRefreshFeature(store, components.sessionUseCases.reload, swipeRefresh),
+            owner = this,
+            view = view,
+        )
+
         readerViewFeature.set(
             feature = ReaderViewFeature(this, components.engine, store, controller.readerControls),
             owner = this,
@@ -288,8 +316,14 @@ class MainActivity : AppCompatActivity() {
         permissionLauncher.launch(permissions)
     }
 
+    /** Tam ekranda ve küçük pencerede aşağı çekerek yenileme kapalıdır (video hareketleriyle çakışmasın). */
+    private fun updatePullToRefresh() {
+        swipeRefresh.isEnabled = components.settings.pullToRefresh.value && !fullscreen && !inPictureInPicture
+    }
+
     private fun onFullScreenChanged(enabled: Boolean) {
         fullscreen = enabled
+        updatePullToRefresh()
         val insets = WindowCompat.getInsetsController(window, window.decorView)
         if (enabled) {
             insets.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE

@@ -19,8 +19,8 @@ android {
         // Android 9+: sürümler yalnızca APK İmza Şeması v3 (anahtar döndürme) ile imzalanır.
         minSdk = 28
         targetSdk = 37
-        versionCode = 13
-        versionName = "0.5.2"
+        versionCode = 14
+        versionName = "0.6.0"
         // Uygulama içi güncellemelerin alındığı GitHub deposu (sürümler GitHub Releases'ta yayınlanır).
         buildConfigField("String", "UPDATE_REPO", "\"sata2500/G-Taray-c-\"")
     }
@@ -140,6 +140,7 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.zxing.core)
+    implementation(libs.androidx.swiperefreshlayout)
     // Cihazda üretilen web uygulaması APK'larını imzalamak için (Apache-2.0)
     implementation(libs.apksig)
 

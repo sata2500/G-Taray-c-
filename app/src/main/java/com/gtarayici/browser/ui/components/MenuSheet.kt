@@ -1,6 +1,15 @@
 package com.gtarayici.browser.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -127,26 +136,50 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
             }
 
-            if (state.isYouTubeVideo) {
-                MenuItem(Icons.Filled.OndemandVideo, stringResource(R.string.menu_download_video)) { controller.openYouTubeDownload() }
+            // Sık kullanılan sayfalar: tek dokunuşla, kaydırmadan
+            Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
+                Row(Modifier.fillMaxWidth()) {
+                    MenuTile(Icons.Filled.Add, stringResource(R.string.menu_tile_new_tab), Modifier.weight(1f)) {
+                        controller.newTab(private = false)
+                    }
+                    MenuTile(Icons.Filled.VisibilityOff, stringResource(R.string.menu_tile_private_tab), Modifier.weight(1f)) {
+                        controller.newTab(private = true)
+                    }
+                    MenuTile(Icons.Filled.Bookmarks, stringResource(R.string.menu_bookmarks), Modifier.weight(1f)) {
+                        controller.open(Overlay.BOOKMARKS)
+                    }
+                    MenuTile(Icons.Filled.History, stringResource(R.string.menu_history), Modifier.weight(1f)) {
+                        controller.open(Overlay.HISTORY)
+                    }
+                }
+                Row(Modifier.fillMaxWidth()) {
+                    MenuTile(Icons.Filled.Download, stringResource(R.string.menu_downloads), Modifier.weight(1f)) {
+                        controller.open(Overlay.DOWNLOADS)
+                    }
+                    MenuTile(Icons.Filled.Extension, stringResource(R.string.menu_extensions), Modifier.weight(1f)) {
+                        controller.open(Overlay.EXTENSIONS)
+                    }
+                    MenuTile(Icons.Filled.VpnKey, stringResource(R.string.menu_vpn), Modifier.weight(1f)) {
+                        controller.open(Overlay.VPN)
+                    }
+                    MenuTile(Icons.Filled.Settings, stringResource(R.string.menu_settings), Modifier.weight(1f)) {
+                        controller.open(Overlay.SETTINGS)
+                    }
+                }
             }
-            MenuItem(Icons.Filled.Add, stringResource(R.string.menu_new_tab)) { controller.newTab(private = false) }
-            MenuItem(Icons.Filled.VisibilityOff, stringResource(R.string.menu_new_private_tab)) {
-                controller.newTab(private = true)
-            }
-            HorizontalDivider(Modifier.padding(vertical = 4.dp))
-            MenuItem(Icons.Filled.Bookmarks, stringResource(R.string.menu_bookmarks)) { controller.open(Overlay.BOOKMARKS) }
-            MenuItem(Icons.Filled.History, stringResource(R.string.menu_history)) { controller.open(Overlay.HISTORY) }
-            MenuItem(Icons.Filled.Download, stringResource(R.string.menu_downloads)) { controller.open(Overlay.DOWNLOADS) }
-            MenuItem(Icons.Filled.QrCodeScanner, stringResource(R.string.menu_scan_qr)) { controller.openQrScanner() }
+
             if (state.hasPage) {
-                MenuItem(Icons.Filled.FindInPage, stringResource(R.string.menu_find_in_page)) { controller.openFindInPage() }
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                if (state.isYouTubeVideo) {
+                    MenuItem(Icons.Filled.OndemandVideo, stringResource(R.string.menu_download_video)) { controller.openYouTubeDownload() }
+                }
                 if (state.canTranslate) {
                     MenuItem(Icons.Filled.Translate, stringResource(R.string.menu_translate)) { controller.openTranslate() }
                 }
                 if (state.readerActive) {
                     MenuItem(Icons.Filled.TextFields, stringResource(R.string.reader_settings)) { controller.openReaderSettings() }
                 }
+                MenuItem(Icons.Filled.FindInPage, stringResource(R.string.menu_find_in_page)) { controller.openFindInPage() }
                 MenuItem(Icons.Filled.InstallMobile, stringResource(R.string.menu_install_app)) { controller.openInstallDialog() }
                 MenuItem(Icons.Filled.ContentCopy, stringResource(R.string.menu_copy_link)) { controller.copyLink() }
                 ListItem(
@@ -160,11 +193,40 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
                 )
             }
             HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            MenuItem(Icons.Filled.QrCodeScanner, stringResource(R.string.menu_scan_qr)) { controller.openQrScanner() }
             MenuItem(Icons.Filled.ManageAccounts, stringResource(R.string.menu_profiles)) { controller.open(Overlay.PROFILES) }
-            MenuItem(Icons.Filled.Extension, stringResource(R.string.menu_extensions)) { controller.open(Overlay.EXTENSIONS) }
-            MenuItem(Icons.Filled.VpnKey, stringResource(R.string.menu_vpn)) { controller.open(Overlay.VPN) }
-            MenuItem(Icons.Filled.Settings, stringResource(R.string.menu_settings)) { controller.open(Overlay.SETTINGS) }
         }
+    }
+}
+
+/** Menü ızgarasındaki simge + etiket düğmesi. */
+@Composable
+private fun MenuTile(icon: ImageVector, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Column(
+        modifier
+            .padding(4.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.secondaryContainer),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(22.dp))
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 6.dp),
+        )
     }
 }
 

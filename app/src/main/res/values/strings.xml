@@ -35,7 +35,7 @@
     <string name="link_copied">Bağlantı kopyalandı</string>
 
     <!-- Ana sayfa -->
-    <string name="home_shortcuts">Kısayollar</string>
+    <string name="home_shortcuts">Yer imleri</string>
     <string name="home_private_title">Gizli sekmedesiniz</string>
     <string name="home_private_body">Bu sekmeyi kapattığınızda geçmiş, çerezler ve site verileri silinir. İndirdiğiniz dosyalar ve eklediğiniz yer imleri korunur.</string>
 
@@ -328,4 +328,40 @@
     <string name="update_install_failed">Kurulum başarısız: %1$s</string>
     <string name="settings_video_download_button">Video indirme düğmesi</string>
     <string name="settings_video_download_button_summary">Yüklü web uygulamalarında (ör. YouTube) video açıkken kenarda küçük bir indirme düğmesi gösterir; parmakla taşınabilir</string>
+    <string name="menu_tile_new_tab">Yeni sekme</string>
+    <string name="menu_tile_private_tab">Gizli sekme</string>
+    <string name="toolbar_paste_and_go">Yapıştır ve git</string>
+    <string name="toolbar_close_tab">Bu sekmeyi kapat</string>
+    <string name="site_info">Site bilgisi</string>
+    <string name="toolbar_clipboard_empty">Panoda metin yok</string>
+    <string name="site_secure">Bağlantı güvenli</string>
+    <string name="site_secure_summary">Bu siteyle aranızdaki veriler şifrelenir</string>
+    <string name="site_insecure">Bağlantı güvenli değil</string>
+    <string name="site_insecure_summary">Parola veya kart bilgisi girmeyin; veriler şifrelenmeden gönderilir</string>
+    <string name="site_tracking_protection">İzleyici koruması</string>
+    <string name="site_tracking_on">Açık. Site bozuk görünüyorsa yalnızca bu site için kapatabilirsiniz.</string>
+    <string name="site_tracking_off">Bu sitede kapalı</string>
+    <plurals name="site_trackers_blocked">
+        <item quantity="one">Bu sayfada %d izleyici engellendi</item>
+        <item quantity="other">Bu sayfada %d izleyici engellendi</item>
+    </plurals>
+    <string name="site_clear_data">Çerezleri ve site verilerini temizle</string>
+    <string name="site_clear_data_summary">Bu sitedeki oturumunuz kapanabilir</string>
+    <string name="site_data_cleared">Site verileri temizlendi</string>
+    <string name="site_reset_permissions">Site izinlerini sıfırla</string>
+    <string name="site_reset_permissions_summary">Kamera, mikrofon, konum, bildirim ve otomatik oynatma izinleri yeniden sorulur</string>
+    <string name="site_permissions_reset">Site izinleri sıfırlandı</string>
+    <string name="action_undo">Geri al</string>
+    <string name="tab_closed">Sekme kapatıldı</string>
+    <plurals name="tabs_closed">
+        <item quantity="one">%d sekme kapatıldı</item>
+        <item quantity="other">%d sekme kapatıldı</item>
+    </plurals>
+    <string name="home_frequent">Sık ziyaret edilenler</string>
+    <string name="home_hide_site">Buradan kaldır</string>
+    <string name="home_open_new_tab">Yeni sekmede aç</string>
+    <string name="settings_pull_to_refresh">Aşağı çekerek yenile</string>
+    <string name="settings_pull_to_refresh_summary">Sayfanın en üstündeyken aşağı çekince sayfa yenilenir</string>
+    <string name="settings_toolbar_swipe">Adres çubuğuyla sekme değiştir</string>
+    <string name="settings_toolbar_swipe_summary">Alttaki adres çubuğunu sağa veya sola kaydırarak önceki/sonraki sekmeye geçin</string>
 </resources>

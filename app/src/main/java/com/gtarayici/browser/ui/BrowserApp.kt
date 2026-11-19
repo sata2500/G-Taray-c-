@@ -33,6 +33,16 @@ import com.gtarayici.browser.ui.components.MenuState
 import com.gtarayici.browser.ui.components.ToolbarState
 import com.gtarayici.browser.ui.components.VpnIndicator
 import com.gtarayici.browser.ui.components.ReaderIndicator
+import com.gtarayici.browser.ui.components.SiteInfoSheet
+import com.gtarayici.browser.ui.components.ToolbarActions
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.qr.QrScannerScreen
 import com.gtarayici.browser.update.UpdateDialog
 import com.gtarayici.browser.reader.ReaderControlsSheet
@@ -50,6 +60,8 @@ import com.gtarayici.browser.ui.screens.ExtensionPrompts
 import com.gtarayici.browser.ui.screens.ExtensionsScreen
 import com.gtarayici.browser.ui.screens.HistoryScreen
 import com.gtarayici.browser.ui.screens.HomeScreen
+import com.gtarayici.browser.ui.screens.HomeSite
+import com.gtarayici.browser.ui.screens.topSites
 import com.gtarayici.browser.ui.screens.InstallAppDialog
 import com.gtarayici.browser.ui.screens.LockScreen
 import com.gtarayici.browser.ui.screens.ProfileSwitcherSheet
@@ -132,9 +144,31 @@ fun BrowserApp(
     val allTabs by store.observe { it.tabs }
     val selectedTabId by store.observe { it.selectedTabId }
     val translationSupported by store.observe { it.translationEngine.isEngineSupported == true }
+    val toolbarSwipe by components.settings.toolbarSwipeTabs.collectAsState()
+    // Kapatılan sekmeler: birkaç saniye "Geri al" çubuğu gösterilir.
+    val undo by store.observe { it.undoHistory.tag to it.undoHistory.tabs.size }
+    val snackbar = remember { SnackbarHostState() }
+    val undoLabel = stringResource(R.string.action_undo)
+    val closedOne = stringResource(R.string.tab_closed)
+    val closedMany = pluralStringResource(R.plurals.tabs_closed, undo.second, undo.second)
+    LaunchedEffect(undo) {
+        if (undo.second == 0) {
+            snackbar.currentSnackbarData?.dismiss()
+            return@LaunchedEffect
+        }
+        val result = snackbar.showSnackbar(
+            message = if (undo.second == 1) closedOne else closedMany,
+            actionLabel = undoLabel,
+            duration = SnackbarDuration.Short,
+        )
+        if (result == SnackbarResult.ActionPerformed) controller.undoCloseTabs()
+    }
     var dismissedOffer by remember { mutableStateOf<String?>(null) }
     val profileTabs = allTabs.filter { it.contextId == profile.contextId }
     val bookmarks by remember(profile.id) { components.database.bookmarks().all(profile.id) }.collectAsState(initial = emptyList())
+    val history by remember(profile.id) { components.database.history().recent(profile.id, 500) }.collectAsState(initial = emptyList())
+    val hiddenSites by controller.hiddenSites.collectAsState()
+    val frequent = remember(history, hiddenSites) { topSites(history, hiddenSites) }
 
     // Seçili sekme başka bir profile aitse bu profilde görünür sekme yok sayılır.
     val current = selected?.takeIf { it.contextId == profile.contextId }
@@ -173,9 +207,14 @@ fun BrowserApp(
                     if (showHome && !pictureInPicture) {
                         HomeScreen(
                             private = private,
-                            shortcuts = bookmarks,
+                            frequent = frequent,
+                            bookmarks = bookmarks.map { HomeSite(it.url, it.title.ifBlank { UrlInput.host(it.url) }) },
                             onSearchClick = { controller.open(Overlay.SEARCH) },
+                            onScanQr = { controller.openQrScanner() },
                             onOpen = { controller.loadUrl(it) },
+                            onOpenInNewTab = { controller.loadUrl(it, inNewTab = true) },
+                            onHideFrequent = { controller.hideFrequentSite(it.url) },
+                            onRemoveBookmark = { controller.removeBookmark(it.url) },
                         )
                     }
                 }
@@ -216,6 +255,14 @@ fun BrowserApp(
                             },
                         ),
                         onReaderClick = { controller.toggleReader(current?.readerActive == true) },
+                        actions = ToolbarActions(
+                            onSwipeTab = if (toolbarSwipe && pageUrl != null) { delta -> controller.switchAdjacentTab(delta) } else null,
+                            onNewTab = { controller.newTab(it) },
+                            onCloseTab = { controller.closeCurrentTab() },
+                            onCopyUrl = { controller.copyLink() },
+                            onPasteAndGo = { controller.pasteAndGo() },
+                            onSiteInfo = { controller.siteInfoOpen = true },
+                        ),
                         onUrlClick = { controller.open(Overlay.SEARCH) },
                         onReloadOrStop = { controller.reloadOrStop() },
                         onTabsClick = { controller.open(Overlay.TABS) },
@@ -335,12 +382,22 @@ fun BrowserApp(
             if (controller.translateOpen) {
                 selectedTabId?.let { id -> TranslateSheet(id) { controller.translateOpen = false } }
             }
+            if (controller.siteInfoOpen) {
+                selectedTabId?.let { id -> SiteInfoSheet(id) { controller.siteInfoOpen = false } }
+            }
             ReaderControlsSheet(controller.readerControls)
             UpdateDialog()
             ExtensionPrompts()
             ExtensionPopupSheet()
 
             BackHandler(enabled = controller.overlay != Overlay.NONE) { controller.closeOverlay() }
+
+            if (!pictureInPicture) {
+                SnackbarHost(
+                    snackbar,
+                    Modifier.align(Alignment.BottomCenter).systemBarsPadding().imePadding().padding(bottom = 64.dp),
+                )
+            }
 
             // Küçük pencerede yalnızca video (Gecko'nun kopyaladığı PiP oturumu) gösterilir.
             if (pipView != null) {

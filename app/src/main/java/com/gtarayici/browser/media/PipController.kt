@@ -13,6 +13,7 @@ import android.os.Build
 import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -94,6 +95,7 @@ class PipController(
     }
 
     fun stop() {
+        handler.removeCallbacks(earlyEntry)
         if (supported) runCatching { activity.unregisterReceiver(receiver) }
     }
 
@@ -101,9 +103,8 @@ class PipController(
      * Kullanıcı uygulamadan ayrılıyor (ana ekran, son uygulamalar, başka uygulamaya geçiş, bildirim).
      *
      * Android 12+ ana ekran hareketinde otomatik geçişi kendisi yapar ve bu durumda bu çağrı gelmez.
-     * Bazı üreticiler (ör. vivo) doğrudan uygulama değiştirmede otomatik geçişi yapmaz; o zaman
-     * sistem yine bu ipucunu verir ve geçiş elle istenir. Sistem bunu yalnızca gerçekten başka bir
-     * göreve geçilirken kabul eder; uygulama içinde açılan pencerelerde PiP başlamaz.
+     * Otomatik geçiş kapalıyken (bkz. [onTopResumedChanged]) sistem, geçiş tamamlandığında bu ipucunu
+     * verir ve PiP isteğini kabul eder. Uygulama içinde açılan pencerelerde PiP başlamaz.
      */
     fun onUserLeaveHint() {
         leaveHintSeen = true
@@ -112,18 +113,32 @@ class PipController(
     }
 
     /**
-     * Etkinlik ön plandaki "en üst" konumunu kaybetti. Bazı üreticilerin hızlı uygulama değiştirme
-     * hareketi (ör. vivo'da alt çubuğu yana kaydırmak) ayrılma ipucu vermez ve uygulama arka plana
-     * düştükten sonra PiP isteğini reddeder; bu an, uygulama henüz açıkken PiP isteyebilmenin son fırsatıdır.
-     * Uygulamanın kendi açtığı ekranlarda (paylaşım, dosya seçici, izinler) tetiklenmez.
+     * Etkinlik ön plandaki "en üst" konumunu kaybetti ya da geri kazandı.
+     *
+     * Bazı üreticilerin hızlı uygulama değiştirme hareketi (ör. vivo'da alt çubuğu yana kaydırmak)
+     * otomatik PiP'i yapmaz. Hareket başlayınca otomatik geçiş bayrağı kapatılır: böylece hareket
+     * tamamlanırsa sistem ayrılma ipucu verip PiP'e izin verir, vazgeçilirse hiçbir şey olmaz ve bayrak
+     * eski haline döner.
+     *
+     * Cihaz bu yolu da engelliyorsa (bir kez fark edilir ve hatırlanır) PiP hareket sürerken, uygulama
+     * henüz açıkken istenir; yarım kalan hafif kaydırmalarda açılmaması için kısa bir süre beklenir.
      */
     fun onTopResumedChanged(isTop: Boolean) {
         log("en üst etkinlik=$isTop")
-        if (isTop) return
+        handler.removeCallbacks(earlyEntry)
+        if (isTop) {
+            if (leaving) {
+                leaving = false
+                updateParams()
+            }
+            return
+        }
         val ownLaunch = android.os.SystemClock.uptimeMillis() - lastOwnLaunch < OWN_LAUNCH_GRACE_MS
-        if (ownLaunch) return
+        if (ownLaunch || !enabled || media?.playing != true) return
         if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
-        enterManually("en üst konum kaybı")
+        leaving = true
+        updateParams()
+        if (earlyMode) handler.postDelayed(earlyEntry, EARLY_ENTRY_DELAY_MS)
     }
 
     /** Uygulama kendisi bir ekran açarken çağrılır (bu sırada PiP'e geçilmez). */
@@ -131,8 +146,16 @@ class PipController(
         lastOwnLaunch = android.os.SystemClock.uptimeMillis()
     }
 
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val prefs = activity.getSharedPreferences("gtarayici_state", Context.MODE_PRIVATE)
+    private var earlyMode = prefs.getBoolean(KEY_EARLY_MODE, false)
+    private var leaving = false
     private var leaveHintSeen = false
     private var lastOwnLaunch = 0L
+
+    private val earlyEntry = Runnable {
+        if (leaving && activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) enterManually("hareket sürerken")
+    }
 
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onResume(owner: LifecycleOwner) {
@@ -147,7 +170,23 @@ class PipController(
 
         override fun onStop(owner: LifecycleOwner) {
             log("durduruldu")
+            handler.removeCallbacks(earlyEntry)
+            // Geçiş tamamlandı ama PiP açılamadı: bu cihaz tamamlanmış geçişte izin vermiyor.
+            if (leaving && !earlyMode && media?.playing == true && !activity.isInPictureInPictureMode &&
+                !activity.isChangingConfigurations && !activity.isFinishing && screenUnlocked()
+            ) {
+                earlyMode = true
+                prefs.edit { putBoolean(KEY_EARLY_MODE, true) }
+                Diagnostics.log("PiP: bu cihaz tamamlanmış geçişte PiP'e izin vermiyor; bundan sonra hareket sürerken istenecek")
+            }
+            leaving = false
         }
+    }
+
+    private fun screenUnlocked(): Boolean {
+        val power = activity.getSystemService(android.os.PowerManager::class.java)
+        val keyguard = activity.getSystemService(android.app.KeyguardManager::class.java)
+        return power?.isInteractive == true && keyguard?.isKeyguardLocked != true
     }
 
     /** Yalnızca video oynarken (PiP'in söz konusu olduğu durumlarda) tanılama kaydı tutulur. */
@@ -168,6 +207,8 @@ class PipController(
         val tab = mediaTab()
         Diagnostics.log("PiP ${if (inPip) "başladı" else "bitti"} (yaşam döngüsü=${activity.lifecycle.currentState})")
         if (inPip) {
+            // Geçiş başarıyla PiP'e döndü; sonradan pencere kapatılınca bu "başarısız geçiş" sayılmamalı.
+            leaving = false
             if (tab != null && !native.enter()) Diagnostics.log("PiP: kaynak görünüm bulunamadı")
         } else {
             // Pencere kapatıldıysa etkinlik artık görünür değildir; büyütüldüyse tarayıcıya dönülür.
@@ -183,7 +224,7 @@ class PipController(
         runCatching { activity.setPictureInPictureParams(buildParams()) }
     }
 
-    private fun buildParams(autoEnter: Boolean = true): PictureInPictureParams {
+    private fun buildParams(autoEnter: Boolean = !leaving): PictureInPictureParams {
         val info = media
         val builder = PictureInPictureParams.Builder()
         val hint = sourceRectHint()
@@ -278,5 +319,7 @@ class PipController(
         const val CMD_NEXT = "next"
         const val CMD_PREVIOUS = "previous"
         const val OWN_LAUNCH_GRACE_MS = 2_000L
+        const val EARLY_ENTRY_DELAY_MS = 250L
+        const val KEY_EARLY_MODE = "pip_quick_switch_early"
     }
 }

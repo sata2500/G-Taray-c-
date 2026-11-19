@@ -1,6 +1,27 @@
 package com.gtarayici.browser.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import kotlin.math.abs
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -70,7 +91,13 @@ fun BottomToolbar(
     onProfileClick: () -> Unit = {},
     onVpnClick: () -> Unit = {},
     onReaderClick: () -> Unit = {},
+    actions: ToolbarActions = ToolbarActions(),
 ) {
+    val haptics = LocalHapticFeedback.current
+    val threshold = with(LocalDensity.current) { 64.dp.toPx() }
+    var drag by remember { mutableFloatStateOf(0f) }
+    val shift by animateFloatAsState(drag, label = "toolbar-swipe")
+    val swipe = actions.onSwipeTab
     Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
         Column {
             if (state.loading) {
@@ -83,13 +110,43 @@ fun BottomToolbar(
                 Spacer(Modifier.height(2.dp))
             }
             Row(
-                Modifier.fillMaxWidth().padding(start = 8.dp, end = 2.dp, top = 6.dp, bottom = 6.dp),
+                Modifier
+                    .fillMaxWidth()
+                    // Araç çubuğunu yana kaydırmak komşu sekmeye geçer.
+                    .then(
+                        if (swipe == null) Modifier else Modifier.pointerInput(swipe) {
+                            detectHorizontalDragGestures(
+                                onDragEnd = {
+                                    if (abs(drag) > threshold) {
+                                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        swipe(if (drag < 0) 1 else -1)
+                                    }
+                                    drag = 0f
+                                },
+                                onDragCancel = { drag = 0f },
+                            ) { change, amount ->
+                                change.consume()
+                                drag = (drag + amount).coerceIn(-threshold * 2, threshold * 2)
+                            }
+                        },
+                    )
+                    .padding(start = 8.dp, end = 2.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 state.profile?.let { profile ->
                     IconButton(onClick = onProfileClick) { ProfileAvatar(profile, 28.dp) }
                 }
-                UrlPill(state, onUrlClick, onReloadOrStop, onReaderClick, Modifier.weight(1f))
+                UrlPill(
+                    state,
+                    onUrlClick,
+                    onReloadOrStop,
+                    onReaderClick,
+                    actions,
+                    Modifier.weight(1f).graphicsLayer {
+                        translationX = shift * 0.4f
+                        alpha = 1f - (abs(shift) / (threshold * 4)).coerceAtMost(0.4f)
+                    },
+                )
                 if (state.vpn != VpnIndicator.OFF) {
                     IconButton(onClick = onVpnClick) {
                         Icon(
@@ -99,7 +156,7 @@ fun BottomToolbar(
                         )
                     }
                 }
-                TabCounter(state.tabCount, onTabsClick)
+                TabCounter(state.tabCount, state.displayUrl.isNotEmpty(), onTabsClick, actions)
                 IconButton(onClick = onMenuClick) {
                     Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.action_menu))
                 }
@@ -114,18 +171,42 @@ private fun UrlPill(
     onClick: () -> Unit,
     onReloadOrStop: () -> Unit,
     onReaderClick: () -> Unit,
+    actions: ToolbarActions,
     modifier: Modifier,
 ) {
     val isHome = state.displayUrl.isEmpty()
+    val haptics = LocalHapticFeedback.current
+    var menu by remember { mutableStateOf(false) }
     Row(
         modifier
             .height(44.dp)
             .clip(RoundedCornerShape(22.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .clickable(onClick = onClick)
-            .padding(start = 14.dp),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    menu = true
+                },
+            )
+            .padding(start = if (isHome) 14.dp else 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // Uzun basınca: bağlantıyı kopyala / panodakini yapıştırıp git
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            if (!isHome) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_copy_link)) },
+                    leadingIcon = { Icon(Icons.Filled.ContentCopy, null) },
+                    onClick = { menu = false; actions.onCopyUrl() },
+                )
+            }
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.toolbar_paste_and_go)) },
+                leadingIcon = { Icon(Icons.Filled.ContentPaste, null) },
+                onClick = { menu = false; actions.onPasteAndGo() },
+            )
+        }
         val (icon, description, tint) = when {
             isHome -> Triple(Icons.Filled.Search, null, MaterialTheme.colorScheme.onSurfaceVariant)
             state.secure == false -> Triple(
@@ -135,8 +216,19 @@ private fun UrlPill(
             )
             else -> Triple(Icons.Filled.Lock, stringResource(R.string.secure_connection), MaterialTheme.colorScheme.primary)
         }
-        Icon(icon, contentDescription = description, tint = tint, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(10.dp))
+        if (isHome) {
+            Icon(icon, contentDescription = description, tint = tint, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(10.dp))
+        } else {
+            // Kilit simgesi: site bilgisi (bağlantı, izleyici koruması, izinler)
+            Box(
+                Modifier.size(36.dp).clip(CircleShape).clickable(onClick = actions.onSiteInfo),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = stringResource(R.string.site_info), tint = tint, modifier = Modifier.size(18.dp))
+            }
+            Spacer(Modifier.width(4.dp))
+        }
         Text(
             text = if (isHome) {
                 stringResource(if (state.private) R.string.private_search_hint else R.string.search_hint)
@@ -176,8 +268,23 @@ private fun UrlPill(
 }
 
 @Composable
-private fun TabCounter(count: Int, onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
+private fun TabCounter(count: Int, hasPage: Boolean, onClick: () -> Unit, actions: ToolbarActions) {
+    val haptics = LocalHapticFeedback.current
+    var menu by remember { mutableStateOf(false) }
+    Box(
+        Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    menu = true
+                },
+                onClickLabel = stringResource(R.string.action_tabs),
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
         Box(
             Modifier
                 .size(22.dp)
@@ -190,5 +297,36 @@ private fun TabCounter(count: Int, onClick: () -> Unit) {
                 fontWeight = FontWeight.Bold,
             )
         }
+        // Uzun basınca: yeni sekme, yeni gizli sekme, bu sekmeyi kapat
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.menu_new_tab)) },
+                leadingIcon = { Icon(Icons.Filled.Add, null) },
+                onClick = { menu = false; actions.onNewTab(false) },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.menu_new_private_tab)) },
+                leadingIcon = { Icon(Icons.Filled.VisibilityOff, null) },
+                onClick = { menu = false; actions.onNewTab(true) },
+            )
+            if (hasPage) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.toolbar_close_tab)) },
+                    leadingIcon = { Icon(Icons.Filled.Close, null) },
+                    onClick = { menu = false; actions.onCloseTab() },
+                )
+            }
+        }
     }
 }
+
+/** Araç çubuğundaki hareket ve uzun basma işlemleri. */
+data class ToolbarActions(
+    /** Komşu sekmeye geç (+1 sonraki, -1 önceki); null ise kaydırma kapalıdır. */
+    val onSwipeTab: ((Int) -> Unit)? = null,
+    val onNewTab: (private: Boolean) -> Unit = {},
+    val onCloseTab: () -> Unit = {},
+    val onCopyUrl: () -> Unit = {},
+    val onPasteAndGo: () -> Unit = {},
+    val onSiteInfo: () -> Unit = {},
+)

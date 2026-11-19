@@ -46,6 +46,8 @@ import mozilla.components.feature.pwa.WebAppUseCases
 import mozilla.components.feature.pwa.intent.WebAppIntentProcessor
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.session.middleware.LastAccessMiddleware
+import mozilla.components.feature.session.middleware.undo.UndoMiddleware
+import mozilla.components.feature.session.TrackingProtectionUseCases
 import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
 import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.feature.tabs.TabsUseCases
@@ -129,6 +131,8 @@ class Components(private val context: Context) {
                 tabThumbnails.middleware,
                 ThumbnailsMiddleware(thumbnailStorage),
                 LastAccessMiddleware(),
+                // Kapatılan sekmeler birkaç saniye "Geri al" ile kurtarılabilir.
+                UndoMiddleware(),
                 PromptMiddleware(),
                 // Sayfa çevirisi (Firefox'un cihaz üzerinde çalışan çeviri sistemi).
                 TranslationsMiddleware(engine, applicationScope, isTranslationsEnabled = { true }),
@@ -145,6 +149,7 @@ class Components(private val context: Context) {
     val customTabsUseCases by lazy { CustomTabsUseCases(store, sessionUseCases.loadUrl) }
     val downloadsUseCases by lazy { DownloadsUseCases(store, downloadFileUtils) }
     val contextMenuUseCases by lazy { ContextMenuUseCases(store) }
+    val trackingProtectionUseCases by lazy { TrackingProtectionUseCases(store, engine) }
 
     val historyRecorder by lazy {
         HistoryRecorder(store, database.history(), applicationScope) { contextId -> profiles.byContextId(contextId)?.id }

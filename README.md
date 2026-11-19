@@ -5,7 +5,7 @@
 G-Tarayıcı, Mozilla'nın **GeckoView** motoru üzerine kuruludur. Amacı, kurduğunuz anda hiçbir ayar yapmadan
 sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
-> Durum: **v0.5.0** — yol haritasındaki özelliklerin neredeyse tamamı hazır; sürümler kalıcı anahtarla imzalanır ve
+> Durum: **v0.6.0** — yol haritasındaki özelliklerin neredeyse tamamı hazır; sürümler kalıcı anahtarla imzalanır ve
 > uygulama içinden güncellenir.
 
 ## Özellikler
@@ -59,6 +59,11 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
 ### Temel tarama
 - Tek elle kullanım için alttan adres çubuğu; yer imleri ve geçmişten anlık öneriler
+- Hareketler: adres çubuğunu kaydırarak sekme değiştirme, aşağı çekerek yenileme, sekmeyi yana kaydırarak
+  kapatma ("Geri al" ile), sekme sayacına ve adres çubuğuna uzun basınca hızlı menüler
+- Ana sayfada sık ziyaret edilen siteler ve yer imleri
+- **Site bilgisi:** bağlantı durumu, engellenen izleyiciler, siteye özel izleyici koruması, site verilerini ve
+  izinlerini sıfırlama
 - Önizlemeli sekme ekranı, gizli sekmeler, sayfada bul, masaüstü sitesi modu
 - **Sekme grupları:** adlandırılmış, renkli, daraltılabilir gruplar (profile özel, kalıcı); gruptaki bir sekmeden
   açılan bağlantılar aynı gruba katılır

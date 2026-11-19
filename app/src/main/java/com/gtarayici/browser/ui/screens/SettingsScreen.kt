@@ -89,6 +89,8 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     val autoPip by settings.autoPictureInPicture.collectAsState()
     val autoUpdate by settings.autoUpdateCheck.collectAsState()
     val videoDownloadButton by settings.videoDownloadButton.collectAsState()
+    val pullToRefresh by settings.pullToRefresh.collectAsState()
+    val toolbarSwipe by settings.toolbarSwipeTabs.collectAsState()
     val updateState by components.updater.state.collectAsState()
     var dnsDialog by remember { mutableStateOf(false) }
     var passwordDialog by remember { mutableStateOf(false) }
@@ -133,6 +135,16 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
                     if (isDefault) R.string.settings_default_browser_active else R.string.settings_default_browser_summary,
                 ),
             ) { requestDefaultBrowser() }
+            SwitchRow(
+                stringResource(R.string.settings_pull_to_refresh),
+                stringResource(R.string.settings_pull_to_refresh_summary),
+                pullToRefresh,
+            ) { settings.setPullToRefresh(it) }
+            SwitchRow(
+                stringResource(R.string.settings_toolbar_swipe),
+                stringResource(R.string.settings_toolbar_swipe_summary),
+                toolbarSwipe,
+            ) { settings.setToolbarSwipeTabs(it) }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SectionTitle(stringResource(R.string.settings_privacy))
