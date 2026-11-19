@@ -39,7 +39,17 @@ class PipController(
     private val components: Components,
     /** Yüklü web uygulaması penceresi gibi tek bir sekmeye bağlıysa o sekmenin kimliği. */
     private val fixedTabId: String? = null,
+    /** Sekmenin gösterildiği motor görünümü. */
+    private val engineView: () -> android.view.View? = { null },
 ) {
+    private val native = NativeVideoPip(activity, components.runtime) { NativeVideoPip.findGeckoView(engineView()) }
+
+    /** Küçük pencerede gösterilen, yalnızca videoyu içeren görünüm. */
+    val pipView: android.view.View get() = native.pipView
+
+    /** true iken arayüz tarayıcı sayfasını gizleyip [pipView]'ı göstermelidir. */
+    val nativeActive: Boolean get() = native.active
+
     private data class MediaInfo(val tabId: String, val playing: Boolean, val features: Long, val width: Long, val height: Long)
 
     private var media: MediaInfo? = null
@@ -89,20 +99,25 @@ class PipController(
     fun onPictureInPictureModeChanged(inPip: Boolean) {
         val tab = mediaTab()
         if (inPip) {
-            // Sayfa zaten tam ekran video gösteriyorsa dokunulmaz; değilse yalnızca video gösterilir.
-            if (tab != null && !tab.content.fullScreen) {
-                videoMode = true
-                components.extensions.enterVideoPip()
+            if (tab == null) return
+            // Önce Gecko'nun yerel video PiP'i: küçük pencerede yalnızca video oynar.
+            // Kullanılamazsa eski yöntem: video CSS ile sayfayı kaplayacak şekilde büyütülür.
+            val fallback = {
+                if (!tab.content.fullScreen && activity.isInPictureInPictureMode) {
+                    videoMode = true
+                    components.extensions.enterVideoPip()
+                }
             }
+            if (!native.enter(fallback)) fallback()
         } else {
+            val dismissed = !activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            if (native.active) native.exit(dismissed)
             if (videoMode) {
                 videoMode = false
                 components.extensions.exitVideoPip()
             }
             // Küçük pencere kapatıldıysa (etkinlik görünür değil) oynatmayı durdur.
-            if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                tab?.mediaSessionState?.controller?.pause()
-            }
+            if (dismissed) tab?.mediaSessionState?.controller?.pause()
         }
     }
 

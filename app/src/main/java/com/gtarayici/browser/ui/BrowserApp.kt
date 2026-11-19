@@ -72,7 +72,15 @@ private data class TabSummary(
 )
 
 @Composable
-fun BrowserApp(controller: BrowserController, engineView: View, fullscreen: Boolean, pictureInPicture: Boolean = false) {
+fun BrowserApp(
+    controller: BrowserController,
+    engineView: View,
+    fullscreen: Boolean,
+    pictureInPicture: Boolean = false,
+    /** Yerel video PiP görünümü; [nativePip] true iken sayfa gizlenir ve yalnızca bu gösterilir. */
+    pipView: View? = null,
+    nativePip: Boolean = false,
+) {
     val components = LocalContext.current.components
     val store = components.store
     val themeMode by components.settings.theme.collectAsState()
@@ -139,7 +147,11 @@ fun BrowserApp(controller: BrowserController, engineView: View, fullscreen: Bool
             Column(Modifier.fillMaxSize().then(chrome).imePadding()) {
                 Box(Modifier.weight(1f)) {
                     // Motor görünümü her zaman yerinde kalır; aksi halde bağlı özellikler serbest bırakılır.
-                    AndroidView(factory = { engineView }, modifier = Modifier.fillMaxSize())
+                    AndroidView(
+                        factory = { engineView },
+                        update = { it.visibility = if (nativePip) View.INVISIBLE else View.VISIBLE },
+                        modifier = Modifier.fillMaxSize(),
+                    )
                     if (showHome && !pictureInPicture) {
                         HomeScreen(
                             private = private,
@@ -278,6 +290,11 @@ fun BrowserApp(controller: BrowserController, engineView: View, fullscreen: Bool
             ExtensionPopupSheet()
 
             BackHandler(enabled = controller.overlay != Overlay.NONE) { controller.closeOverlay() }
+
+            // Küçük pencerede yalnızca video (Gecko'nun kopyaladığı PiP oturumu) gösterilir.
+            if (pipView != null) {
+                AndroidView(factory = { pipView }, modifier = Modifier.fillMaxSize())
+            }
         }
     }
 }

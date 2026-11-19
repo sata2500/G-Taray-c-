@@ -3,6 +3,7 @@ package com.gtarayici.browser.webapp
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.View
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -137,7 +138,7 @@ class WebAppActivity : AppCompatActivity() {
             view,
         )
         manifest?.let { lifecycle.addObserver(WebAppActivityFeature(this, components.icons, it)) }
-        pip = PipController(this, components, fixedTabId = id).also { it.start() }
+        pip = PipController(this, components, fixedTabId = id, engineView = { view }).also { it.start() }
 
         val scope = manifest?.scope ?: manifest?.startUrl
         setContent {
@@ -164,8 +165,13 @@ class WebAppActivity : AppCompatActivity() {
                                 }
                             }
                         }
-                        AndroidView(factory = { view }, modifier = Modifier.fillMaxSize())
+                        AndroidView(
+                            factory = { view },
+                            update = { it.visibility = if (pip?.nativeActive == true) View.INVISIBLE else View.VISIBLE },
+                            modifier = Modifier.fillMaxSize(),
+                        )
                     }
+                    pip?.let { controller -> AndroidView(factory = { controller.pipView }, modifier = Modifier.fillMaxSize()) }
                 }
             }
         }

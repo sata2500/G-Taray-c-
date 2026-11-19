@@ -83,12 +83,21 @@ class MainActivity : AppCompatActivity() {
         engineView.setActivityContext(this)
         setupFeatures()
 
-        pip = com.gtarayici.browser.media.PipController(this, components).also { it.start() }
+        pip = com.gtarayici.browser.media.PipController(this, components, engineView = { engineView.asView() }).also { it.start() }
         if (components.settings.securePrivateTabs.value) {
             lifecycle.addObserver(SecureWindowFeature(window, components.store))
         }
 
-        setContent { BrowserApp(controller, engineView.asView(), fullscreen || inPictureInPicture, inPictureInPicture) }
+        setContent {
+            BrowserApp(
+                controller,
+                engineView.asView(),
+                fullscreen || inPictureInPicture,
+                inPictureInPicture,
+                pipView = pip.pipView,
+                nativePip = pip.nativeActive,
+            )
+        }
 
         onBackPressedDispatcher.addCallback(this) {
             val handled = fullScreenFeature.onBackPressed() || promptFeature.onBackPressed() || controller.handleBack()
@@ -120,6 +129,10 @@ class MainActivity : AppCompatActivity() {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPictureInPicture = isInPictureInPictureMode
         pip.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        // Küçük pencere kapatıldıysa uygulama arka plandadır: kilitler yeniden devreye girer.
+        if (!isInPictureInPictureMode && !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
+            components.appLock.lockAll()
+        }
     }
 
     /** Uygulama arka plana geçince kilitli profiller ve gizli sekmeler yeniden kilitlenir. */
