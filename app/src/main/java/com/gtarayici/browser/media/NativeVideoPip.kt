@@ -36,6 +36,10 @@ class NativeVideoPip(
 
     /** Küçük pencerede gösterilecek görünüm (yalnızca video). */
     val pipView: GeckoView = GeckoView(context).apply {
+        // Kaynak sayfa PiP sırasında da görünür ve çizilir durumda kalır (YouTube gibi MSE oynatıcılar
+        // yeni video parçalarını ancak sayfa çizilirken yükler). Bu görünüm onun üstünde durur; iki
+        // SurfaceView'ın üst üste binme sırası belirsiz olduğundan TextureView ile çizilir.
+        setViewBackend(GeckoView.BACKEND_TEXTURE_VIEW)
         setBackgroundColor(Color.BLACK)
         layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         visibility = View.GONE

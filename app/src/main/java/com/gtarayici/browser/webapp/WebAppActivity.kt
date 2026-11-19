@@ -165,11 +165,7 @@ class WebAppActivity : AppCompatActivity() {
                                 }
                             }
                         }
-                        AndroidView(
-                            factory = { view },
-                            update = { it.visibility = if (pip?.nativeActive == true) View.INVISIBLE else View.VISIBLE },
-                            modifier = Modifier.fillMaxSize(),
-                        )
+                        AndroidView(factory = { view }, modifier = Modifier.fillMaxSize())
                     }
                     pip?.let { controller -> AndroidView(factory = { controller.pipView }, modifier = Modifier.fillMaxSize()) }
                 }

@@ -77,7 +77,7 @@ fun BrowserApp(
     engineView: View,
     fullscreen: Boolean,
     pictureInPicture: Boolean = false,
-    /** Yerel video PiP görünümü; [nativePip] true iken sayfa gizlenir ve yalnızca bu gösterilir. */
+    /** Yerel video PiP görünümü: küçük pencerede sayfanın üstünde yalnızca video gösterilir. */
     pipView: View? = null,
     nativePip: Boolean = false,
 ) {
@@ -147,11 +147,8 @@ fun BrowserApp(
             Column(Modifier.fillMaxSize().then(chrome).imePadding()) {
                 Box(Modifier.weight(1f)) {
                     // Motor görünümü her zaman yerinde kalır; aksi halde bağlı özellikler serbest bırakılır.
-                    AndroidView(
-                        factory = { engineView },
-                        update = { it.visibility = if (nativePip) View.INVISIBLE else View.VISIBLE },
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    // PiP sırasında da gizlenmez: sayfa çizilmeye devam etmeli (YouTube oynatıcısı buna bağlı).
+                    AndroidView(factory = { engineView }, modifier = Modifier.fillMaxSize())
                     if (showHome && !pictureInPicture) {
                         HomeScreen(
                             private = private,
