@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Arayüz metinleri Türkçedir; İngilizce yazım denetimi yanlış uyarılar üretir. -->
+    <issue id="Typos" severity="ignore" />
+    <!-- Bağımlılık sürümleri bilinçli olarak sabitlenir ve toplu güncellenir. -->
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <!-- Uyarlanabilir simge mipmap-anydpi-v26 altında kalmalı; aapt2 v26 niteleyicisi olmadan bulamıyor. -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="src/main/res/mipmap-anydpi-v26" />
+    </issue>
+</lint>

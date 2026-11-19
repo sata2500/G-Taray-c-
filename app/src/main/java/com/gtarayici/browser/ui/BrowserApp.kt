@@ -80,7 +80,6 @@ fun BrowserApp(
     pictureInPicture: Boolean = false,
     /** Yerel video PiP görünümü: küçük pencerede sayfanın üstünde yalnızca video gösterilir. */
     pipView: View? = null,
-    nativePip: Boolean = false,
 ) {
     val components = LocalContext.current.components
     val store = components.store

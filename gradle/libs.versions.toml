@@ -58,7 +58,7 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 newpipe-extractor = { module = "com.github.TeamNewPipe:NewPipeExtractor", version.ref = "newpipe-extractor" }
 junit = { module = "junit:junit", version = "4.13.2" }
-json = { module = "org.json:json", version = "20250517" }
+json = { module = "org.json:json", version = "20260814" }
 apksig = { module = "com.android.tools.build:apksig", version.ref = "agp" }
 google-material = { module = "com.google.android.material:material", version.ref = "material" }
 

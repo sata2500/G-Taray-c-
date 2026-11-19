@@ -1,5 +1,6 @@
 package com.gtarayici.browser
 
+import androidx.core.content.edit
 import android.Manifest
 import android.app.SearchManager
 import android.content.Intent
@@ -95,7 +96,6 @@ class MainActivity : AppCompatActivity() {
                 fullscreen || inPictureInPicture,
                 inPictureInPicture,
                 pipView = pip.pipView,
-                nativePip = pip.nativeActive,
             )
         }
 
@@ -305,7 +305,7 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
         val prefs = getSharedPreferences("gtarayici_state", MODE_PRIVATE)
         if (prefs.getBoolean("asked_notifications", false)) return
-        prefs.edit().putBoolean("asked_notifications", true).apply()
+        prefs.edit { putBoolean("asked_notifications", true) }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         ) {

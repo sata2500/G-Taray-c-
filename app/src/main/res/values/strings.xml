@@ -16,7 +16,6 @@
     <string name="action_clear">Temizle</string>
     <string name="action_close">Kapat</string>
     <string name="action_delete">Sil</string>
-    <string name="action_open">Aç</string>
     <string name="action_cancel">Vazgeç</string>
     <string name="action_ok">Tamam</string>
     <string name="secure_connection">Güvenli bağlantı</string>
@@ -169,7 +168,6 @@
     <!-- PWA -->
     <string name="menu_install_app">Uygulamayı yükle</string>
     <string name="menu_add_to_home">Ana ekrana ekle</string>
-    <string name="webapp_added">Ana ekrana eklendi</string>
     <string name="webapp_not_supported">Başlatıcınız ana ekrana kısayol eklemeyi desteklemiyor</string>
     <string name="webapp_open_in_browser">Tarayıcıda aç</string>
 
@@ -244,8 +242,8 @@
     <string name="vpn_password">VPN parolası</string>
     <string name="vpn_credentials_required">Bu OpenVPN sunucusu kullanıcı adı ve parola istiyor</string>
     <string name="diag_title">PiP tanılama kaydı</string>
-    <string name="diag_summary">Resim içinde resim sorunlarını bildirmek için: video olayları ve zaman çizelgesi</string>
-    <string name="diag_collecting">Kayıtlar toplanıyor…</string>
+    <string name="diag_summary">Resim içinde resim sorunlarını bildirmek için adımların zaman çizelgesi</string>
+    <string name="diag_empty">Henüz kayıt yok. Resim içinde resmi kullandıktan sonra tekrar bakın.</string>
     <string name="diag_copy">Kopyala</string>
     <string name="diag_copied">Tanılama kaydı kopyalandı</string>
 </resources>

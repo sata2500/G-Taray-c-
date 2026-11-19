@@ -1,5 +1,6 @@
 package com.gtarayici.browser.search
 
+import androidx.core.net.toUri
 import android.net.Uri
 import mozilla.components.support.ktx.util.URLStringUtils
 
@@ -43,5 +44,5 @@ object UrlInput {
     private val DIRECT_SCHEMES = listOf("about:", "view-source:", "data:", "moz-extension:")
 
     fun host(url: String): String =
-        runCatching { Uri.parse(url).host.orEmpty().removePrefix("www.") }.getOrDefault("")
+        runCatching { url.toUri().host.orEmpty().removePrefix("www.") }.getOrDefault("")
 }

@@ -1,7 +1,8 @@
 "use strict";
-// Uygulama ile eklenti arasındaki köprü.
+// G-Tarayıcı yardımcı eklentisi ile uygulama arasındaki köprü.
 const DEFAULTS = { backgroundPlay: true, sponsorBlock: true };
 
+// Ayarlar (arka planda oynatma, SponsorBlock) uygulamadan okunur.
 browser.runtime.onMessage.addListener((message) => {
   if (message && message.type === "settings") {
     return browser.runtime
@@ -12,40 +13,11 @@ browser.runtime.onMessage.addListener((message) => {
   return undefined;
 });
 
-// Video oynatan sayfalar bu bağlantıları açar (sekmeler, gizli sekmeler ve yüklü web uygulamaları).
-const mediaPorts = new Set();
-browser.runtime.onConnect.addListener((port) => {
-  if (port.name !== "gt-media") return;
-  mediaPorts.add(port);
-  port.onDisconnect.addListener(() => mediaPorts.delete(port));
-  // Sayfalardan gelen tanılama kayıtları uygulamaya iletilir.
-  port.onMessage.addListener((message) => {
-    if (message && (message.type === "diag" || message.type === "video-rect") && nativePort) {
-      try {
-        nativePort.postMessage(message);
-      } catch (e) {}
-    }
-  });
-});
-
-function broadcast(message) {
-  for (const port of mediaPorts) {
-    try {
-      port.postMessage(message);
-    } catch (e) {
-      mediaPorts.delete(port);
-    }
-  }
-}
-
-// Uygulamadan gelen komutlar (ör. resim içinde resim başlıyor/bitiyor).
+// Uygulamaya kalıcı bağlantı: sayfalardan gelen video konumları buradan iletilir.
 let nativePort = null;
 function connectNative() {
   try {
     nativePort = browser.runtime.connectNative("gtarayici");
-    nativePort.onMessage.addListener((message) => {
-      if (message && message.type) broadcast(message);
-    });
     nativePort.onDisconnect.addListener(() => {
       nativePort = null;
       setTimeout(connectNative, 2000);
@@ -55,3 +27,14 @@ function connectNative() {
   }
 }
 connectNative();
+
+browser.runtime.onConnect.addListener((port) => {
+  if (port.name !== "gt-media") return;
+  port.onMessage.addListener((message) => {
+    if (message && message.type === "video-rect" && nativePort) {
+      try {
+        nativePort.postMessage(message);
+      } catch (e) {}
+    }
+  });
+});

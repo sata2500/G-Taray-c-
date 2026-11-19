@@ -1,10 +1,10 @@
 package com.gtarayici.browser.ui.screens
 
+import androidx.core.net.toUri
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
@@ -67,6 +68,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 @Composable
 fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val components = context.components
     val settings = components.settings
     val engine by settings.searchEngine.collectAsState()
@@ -214,10 +216,7 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
                 Icons.Filled.BugReport,
                 stringResource(R.string.diag_title),
                 stringResource(R.string.diag_summary),
-            ) {
-                components.extensions.requestDiagnostics()
-                diagDialog = true
-            }
+            ) { diagDialog = true }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SectionTitle(stringResource(R.string.settings_about))
@@ -312,7 +311,7 @@ private fun isDefaultBrowser(context: Context): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         context.getSystemService<RoleManager>()?.let { return it.isRoleHeld(RoleManager.ROLE_BROWSER) }
     }
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com"))
+    val intent = Intent(Intent.ACTION_VIEW, "https://example.com".toUri())
     val info = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
     return info?.activityInfo?.packageName == context.packageName
 }
@@ -325,44 +324,38 @@ private fun OverlayScaffoldSettings(onBack: () -> Unit, content: @Composable (Mo
         content = content,
     )
 
-/** Resim içinde resim tanılama kaydı: sayfalardan gelen kayıtlar kısa bir süre beklenip gösterilir. */
+/** Tanılama kaydı: resim içinde resim gibi cihaza bağlı adımların zaman çizelgesi; sorun bildirmek için paylaşılır. */
 @Composable
 private fun DiagnosticsDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
-    var text by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1200)
-        text = "G-Tarayıcı ${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE} · " +
+    val resources = LocalResources.current
+    val text = remember {
+        "G-Tarayıcı ${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE} · " +
             "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}\n" +
             "GeckoView ${org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION}\n\n" +
-            com.gtarayici.browser.diagnostics.Diagnostics.dump()
+            com.gtarayici.browser.diagnostics.Diagnostics.dump().ifBlank { resources.getString(R.string.diag_empty) }
     }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.diag_title)) },
         text = {
-            val current = text
-            if (current == null) {
-                Text(stringResource(R.string.diag_collecting))
-            } else {
-                androidx.compose.foundation.text.selection.SelectionContainer {
-                    Text(
-                        current,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        modifier = Modifier.verticalScroll(rememberScrollState()),
-                    )
-                }
+            androidx.compose.foundation.text.selection.SelectionContainer {
+                Text(
+                    text,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                )
             }
         },
         confirmButton = {
-            TextButton(enabled = text != null, onClick = {
+            TextButton(onClick = {
                 val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
                 runCatching { context.startActivity(Intent.createChooser(send, null)) }
             }) { Text(stringResource(R.string.action_share)) }
         },
         dismissButton = {
-            TextButton(enabled = text != null, onClick = {
+            TextButton(onClick = {
                 val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("G-Tarayıcı tanılama", text))
                 Toast.makeText(context, R.string.diag_copied, Toast.LENGTH_SHORT).show()
@@ -375,6 +368,7 @@ private fun DiagnosticsDialog(onDismiss: () -> Unit) {
 @Composable
 private fun PasswordDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val lock = context.components.appLock
     val hasPassword = lock.hasPassword
     var current by remember { mutableStateOf("") }
@@ -408,7 +402,7 @@ private fun PasswordDialog(onDismiss: () -> Unit) {
                             Toast.makeText(context, R.string.password_removed, Toast.LENGTH_SHORT).show()
                             onDismiss()
                         } else {
-                            error = context.getString(R.string.lock_wrong_password)
+                            error = resources.getString(R.string.lock_wrong_password)
                         }
                     }) { Text(stringResource(R.string.password_remove), color = MaterialTheme.colorScheme.error) }
                 }
@@ -417,9 +411,9 @@ private fun PasswordDialog(onDismiss: () -> Unit) {
         confirmButton = {
             TextButton(onClick = {
                 error = when {
-                    hasPassword && !lock.verifyPassword(current) -> context.getString(R.string.lock_wrong_password)
-                    new.length < AppLock.MIN_PASSWORD_LENGTH -> context.getString(R.string.password_too_short)
-                    new != repeat -> context.getString(R.string.password_mismatch)
+                    hasPassword && !lock.verifyPassword(current) -> resources.getString(R.string.lock_wrong_password)
+                    new.length < AppLock.MIN_PASSWORD_LENGTH -> resources.getString(R.string.password_too_short)
+                    new != repeat -> resources.getString(R.string.password_mismatch)
                     else -> null
                 }
                 if (error == null) {

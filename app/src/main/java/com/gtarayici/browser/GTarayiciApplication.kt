@@ -1,5 +1,6 @@
 package com.gtarayici.browser
 
+import androidx.core.content.edit
 import android.app.Application
 import android.content.Context
 import java.util.concurrent.TimeUnit
@@ -55,7 +56,7 @@ class GTarayiciApplication : Application() {
                     )
                 }
             }
-            prefs.edit().putBoolean("media_autoplay_allowed", true).apply()
+            prefs.edit { putBoolean("media_autoplay_allowed", true) }
         }
     }
 

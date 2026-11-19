@@ -40,6 +40,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -184,7 +186,7 @@ private fun ProfileEditor(
     onDismiss: () -> Unit,
 ) {
     var name by remember { mutableStateOf(initial?.name.orEmpty()) }
-    var color by remember { mutableStateOf(initial?.colorIndex ?: (1 until PROFILE_COLORS.size).random()) }
+    var color by remember { mutableIntStateOf(initial?.colorIndex ?: (1 until PROFILE_COLORS.size).random()) }
     var locked by remember { mutableStateOf(initial?.locked ?: false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
@@ -294,6 +296,7 @@ fun ProfileSwitcherSheet(controller: BrowserController) {
 @Composable
 fun LockScreen(title: String, lockKey: String, onBiometric: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val lock = context.components.appLock
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
@@ -304,7 +307,7 @@ fun LockScreen(title: String, lockKey: String, onBiometric: () -> Unit) {
         } else {
             password = ""
             val wait = lock.lockoutSeconds()
-            error = if (wait > 0) context.getString(R.string.lock_wait, wait) else context.getString(R.string.lock_wrong_password)
+            error = if (wait > 0) resources.getString(R.string.lock_wait, wait) else resources.getString(R.string.lock_wrong_password)
         }
     }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {

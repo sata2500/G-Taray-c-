@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -145,6 +146,7 @@ private fun ExtensionRow(extension: WebExtension, controller: BrowserController)
 @Composable
 fun ExtensionPrompts() {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val components = context.components
     val request by components.store.observe { it.webExtensionPromptRequest }
     val consume = { components.store.dispatch(WebExtensionAction.ConsumePromptRequestWebExtensionAction) }
@@ -210,7 +212,7 @@ fun ExtensionPrompts() {
         }
         is WebExtensionPromptRequest.AfterInstallation.PostInstallation -> LaunchedEffect(current) {
             if (current.extension.id != ExtensionManager.UBLOCK_ID) {
-                Toast.makeText(context, context.getString(R.string.extension_installed, current.extension.displayName()), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, resources.getString(R.string.extension_installed, current.extension.displayName()), Toast.LENGTH_SHORT).show()
             }
             components.extensions.refresh()
             consume()

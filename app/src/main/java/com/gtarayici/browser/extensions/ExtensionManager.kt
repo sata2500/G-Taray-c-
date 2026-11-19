@@ -26,7 +26,6 @@ import mozilla.components.concept.engine.webextension.Port
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONObject
-import com.gtarayici.browser.diagnostics.Diagnostics
 
 /**
  * Eklentileri yönetir: hazır gelen uBlock Origin ve G-Tarayıcı yardımcısını kurar,
@@ -50,39 +49,10 @@ class ExtensionManager(
 
     fun isAutoApproved(id: String): Boolean = id in autoApprove
 
-    @Volatile private var helperPort: Port? = null
-
     private val _videoRect = MutableStateFlow<VideoRect?>(null)
 
-    /** Oynayan videonun sayfadaki son konumu (CSS pikseli); PiP animasyonu ve geçiş karesi için. */
+    /** Oynayan videonun sayfadaki son konumu (CSS pikseli); PiP geçiş animasyonu ve son kare için. */
     val videoRect: StateFlow<VideoRect?> = _videoRect.asStateFlow()
-
-    /** Oynayan videoyu sayfanın tamamını kaplayacak şekilde büyütür (resim içinde resim için). */
-    fun enterVideoPip() {
-        helperPort?.postMessage(JSONObject().put("type", "pip-enter"))
-    }
-
-    fun exitVideoPip() {
-        helperPort?.postMessage(JSONObject().put("type", "pip-exit"))
-    }
-
-    /** Sayfalara PiP'in başladığını/bittiğini bildirir (tanılama kaydı ve YouTube koruması için). */
-    fun notifyPipState(active: Boolean, mode: String) {
-        helperPort?.postMessage(JSONObject().put("type", "pip-state").put("active", active).put("mode", mode))
-    }
-
-    /** PiP penceresindeki oynat/duraklat düğmesine basıldı (kullanıcının isteği). */
-    fun notifyPipUserAction(action: String) {
-        helperPort?.postMessage(JSONObject().put("type", "pip-user").put("action", action))
-    }
-
-    /** Sayfalardan tanılama kayıtlarını ister; yanıtlar [Diagnostics]'e eklenir. */
-    fun requestDiagnostics() {
-        Diagnostics.clearPages()
-        helperPort?.postMessage(JSONObject().put("type", "diag-dump"))
-    }
-
-    val helperConnected: Boolean get() = helperPort != null
 
     fun start() {
         // Uygulamayla gelen eklentilerin izin istemi kullanıcıya gösterilmeden onaylanır.
@@ -152,14 +122,6 @@ class ExtensionManager(
 
     private fun registerHelperMessages(extension: WebExtension) {
         val handler = object : MessageHandler {
-            override fun onPortConnected(port: Port) {
-                helperPort = port
-            }
-
-            override fun onPortDisconnected(port: Port) {
-                if (helperPort === port) helperPort = null
-            }
-
             override fun onPortMessage(message: Any, port: Port) {
                 val json = message as? JSONObject ?: return
                 if (json.optString("type") == "video-rect") {
@@ -167,12 +129,6 @@ class ExtensionManager(
                         json.optDouble("x"), json.optDouble("y"), json.optDouble("w"), json.optDouble("h"),
                         json.optDouble("vw"), json.optDouble("vh"),
                     )
-                    return
-                }
-                if (json.optString("type") == "diag") {
-                    val array = json.optJSONArray("lines") ?: return
-                    val lines = (0 until array.length()).map { array.optString(it) }
-                    Diagnostics.pageLog(json.optString("url"), json.optBoolean("top", true), lines)
                 }
             }
 

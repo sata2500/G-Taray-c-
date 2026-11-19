@@ -51,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -65,6 +66,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun VpnScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val vpn = context.components.vpn
     val servers by vpn.servers.collectAsState()
     val status by vpn.status.collectAsState()
@@ -89,7 +91,7 @@ fun VpnScreen(onBack: () -> Unit) {
         }
         vpn.addServer(text)
             .onSuccess { selectedId = it.id; helpOpen = false }
-            .onFailure { Toast.makeText(context, context.getString(R.string.vpn_invalid, it.message ?: ""), Toast.LENGTH_LONG).show() }
+            .onFailure { Toast.makeText(context, resources.getString(R.string.vpn_invalid, it.message ?: ""), Toast.LENGTH_LONG).show() }
     }
 
     OverlayScaffold(
@@ -151,8 +153,8 @@ fun VpnScreen(onBack: () -> Unit) {
                                     testResult = "…"
                                     scope.launch {
                                         testResult = vpn.test().fold(
-                                            { context.getString(R.string.vpn_test_result, it.ip ?: "?", it.country ?: "?", it.latencyMs.toInt()) },
-                                            { context.getString(R.string.vpn_test_failed, it.message ?: "") },
+                                            { resources.getString(R.string.vpn_test_result, it.ip ?: "?", it.country ?: "?", it.latencyMs.toInt()) },
+                                            { resources.getString(R.string.vpn_test_failed, it.message ?: "") },
                                         )
                                     }
                                 }) { Text(stringResource(R.string.vpn_test)) }
@@ -295,7 +297,7 @@ fun VpnScreen(onBack: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     if (isOpenVpn && OpenVpnConfig.needsCredentials(text) && username.isBlank()) {
-                        error = context.getString(R.string.vpn_credentials_required)
+                        error = resources.getString(R.string.vpn_credentials_required)
                         return@TextButton
                     }
                     vpn.addServer(text, username, password)
@@ -303,7 +305,7 @@ fun VpnScreen(onBack: () -> Unit) {
                             selectedId = added.id
                             close()
                         }
-                        .onFailure { error = context.getString(R.string.vpn_invalid, it.message ?: "") }
+                        .onFailure { error = resources.getString(R.string.vpn_invalid, it.message ?: "") }
                 }) { Text(stringResource(R.string.profile_save)) }
             },
             dismissButton = { TextButton(onClick = close) { Text(stringResource(R.string.action_cancel)) } },

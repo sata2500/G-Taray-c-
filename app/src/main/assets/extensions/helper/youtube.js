@@ -100,32 +100,6 @@
     if (video && !video.paused) registerHandlers();
   }, 2000);
 
-  // Resim içinde resim koruması: PiP'e geçişte (veya PiP'teki "Oynat"tan hemen sonra) YouTube videoyu
-  // kendiliğinden durdurursa oynatıcının kendi işleviyle devam ettirilir. Sınırlı deneme yapılır;
-  // kullanıcının PiP/bildirim düğmesiyle verdiği duraklatma komutuna karışılmaz.
-  let guardRetries = 0;
-  document.addEventListener(
-    "pause",
-    (event) => {
-      const pip = globalThis.gtPip;
-      const video = event.target;
-      if (!pip || !(video instanceof HTMLVideoElement) || video.ended) return;
-      if (!pip.active || pip.userPaused || Date.now() > pip.guardUntil) {
-        guardRetries = 0;
-        return;
-      }
-      if (guardRetries >= 4) return;
-      guardRetries++;
-      pip.log(`koruma: PiP sırasında beklenmeyen duraklama, devam ettiriliyor (${guardRetries}/4)`);
-      setTimeout(() => {
-        const p = player();
-        if (p && typeof p.playVideo === "function") p.playVideo();
-        else video.play().catch((e) => pip.log(`koruma: play() reddedildi: ${e}`));
-      }, 400);
-    },
-    true
-  );
-
   // Ekran kapalıyken YouTube'un kendi geçişi gecikebilir; video bitince sıradakine geçilir.
   document.addEventListener(
     "ended",

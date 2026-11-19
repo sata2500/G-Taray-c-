@@ -8,7 +8,7 @@ import org.mozilla.geckoview.GeckoPreferenceController
  * GeckoView tercihlerini (about:config) koddan ayarlar. GeckoRuntime oluşturulduktan sonra çağrılmalıdır.
  * Kullanıcı dalına yazılan değerler Gecko profilinde kalıcıdır.
  */
-@OptIn(ExperimentalGeckoViewApi::class)
+@androidx.annotation.OptIn(markerClass = [ExperimentalGeckoViewApi::class])
 object GeckoPrefs {
     private val logger = Logger("GeckoPrefs")
 

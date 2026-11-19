@@ -1,5 +1,6 @@
 package com.gtarayici.browser.media
 
+import androidx.core.view.isVisible
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -30,7 +31,7 @@ import org.mozilla.geckoview.PictureInPictureController
  * Ayrı bir etkinlik açmak yerine aynı pencere kullanılır: uygulama arka plana geçerken başka bir
  * etkinlik başlatmak Android'in arka plan kısıtlamalarına takılabilir.
  */
-@OptIn(ExperimentalGeckoViewApi::class)
+@androidx.annotation.OptIn(markerClass = [ExperimentalGeckoViewApi::class])
 class NativeVideoPip(
     context: Context,
     private val runtime: GeckoRuntime,
@@ -76,16 +77,14 @@ class NativeVideoPip(
 
     private var source: GeckoSession? = null
     private var pipSession: GeckoSession? = null
-    private var onFailure: (() -> Unit)? = null
 
     /**
-     * Oynayan video için PiP oturumu ister. Kaynak oturum bulunamazsa false döner (çağıran
-     * eski yönteme geçer). İstek sonradan başarısız olursa [failure] çağrılır.
+     * Oynayan video için PiP oynatıcısı ister. Kaynak oturum bulunamazsa false döner. Video
+     * kopyalanamazsa (ör. sayfada oynayan video yok) oynatıcı kapatılır ve sayfa gösterilir.
      */
-    fun enter(failure: () -> Unit): Boolean {
+    fun enter(): Boolean {
         val session = sourceView()?.session ?: return false
         source = session
-        onFailure = failure
         val pip = session.sessionPictureInPicture
         // Sayfa gizlendiğinde "etkin değil" duruma düşüp videoyu durdurmasın.
         pip.setKeepActive(true)
@@ -105,7 +104,7 @@ class NativeVideoPip(
         firstFrameShown = false
         pipView.visibility = View.VISIBLE
         showLastFrame()
-        // Sayfa oynayan bir video bulamazsa Gecko pencere açmadan isteği tamamlar; bu durumda eski yönteme geçilir.
+        // Sayfada oynayan video yoksa Gecko pencere açmadan isteği tamamlar; o durumda oynatıcı kapatılır.
         player.postDelayed({ if (active && source === session && pipSession == null) fail("video bulunamadı") }, ATTACH_TIMEOUT_MS)
         // Gecko oynayan videoyu odaklı çerçevede arar; uygulamadan çıkarken GeckoView odağı bırakır.
         session.setFocused(true)
@@ -137,11 +136,9 @@ class NativeVideoPip(
     }
 
     private fun fail(reason: String) {
-        logger.warn("Yerel video PiP kullanılamadı: $reason")
-        Diagnostics.log("yerel PiP başarısız: $reason")
-        val callback = onFailure
+        logger.warn("Video PiP kurulamadı: $reason")
+        Diagnostics.log("PiP oynatıcısı kurulamadı: $reason")
         exit(dismissed = false)
-        callback?.invoke()
     }
 
     /**
@@ -149,9 +146,9 @@ class NativeVideoPip(
      * kaynak sayfa da etkin olmayan duruma alınır; tarayıcıya dönüldüyse görünüm onu yeniden etkinleştirir.
      */
     fun exit(dismissed: Boolean) {
+        if (!active) return
         val session = source
         source = null
-        onFailure = null
         if (session != null && session.isOpen) {
             val pip = session.sessionPictureInPicture
             runCatching { pip.exit() }
@@ -189,7 +186,7 @@ class NativeVideoPip(
 
     private fun hidePlaceholder() {
         firstFrameShown = true
-        if (placeholder.visibility == View.VISIBLE) Diagnostics.log("PiP oynatıcısı ilk karesini çizdi")
+        if (placeholder.isVisible) Diagnostics.log("PiP oynatıcısı ilk karesini çizdi")
         placeholder.visibility = View.GONE
         placeholder.setImageDrawable(null)
     }

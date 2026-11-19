@@ -1,5 +1,7 @@
 package com.gtarayici.browser.webapk
 
+import androidx.core.graphics.createBitmap
+import androidx.core.net.toUri
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,7 +12,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.security.keystore.KeyGenParameterSpec
@@ -53,7 +54,7 @@ class WebApkInstaller(private val context: Context, private val components: Comp
 
     /** "Bilinmeyen uygulamaları yükle" izni ekranını açar. */
     fun requestPermission() {
-        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
+        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, "package:${context.packageName}".toUri())
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         runCatching { context.startActivity(intent) }
     }
@@ -92,7 +93,7 @@ class WebApkInstaller(private val context: Context, private val components: Comp
                 existing
             }
         }
-        val uri = Uri.parse(pageUrl)
+        val uri = pageUrl.toUri()
         return WebAppManifest(
             name = tab.content.title.ifBlank { uri.host.orEmpty() },
             startUrl = pageUrl,
@@ -111,7 +112,7 @@ class WebApkInstaller(private val context: Context, private val components: Comp
         val icon = runCatching { components.icons.loadIcon(request).await() }.getOrNull()
         val source = icon?.bitmap ?: tab.content.icon
         val size = 192
-        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val output = createBitmap(size, size)
         val canvas = Canvas(output)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         if (source == null) {

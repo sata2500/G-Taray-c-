@@ -19,8 +19,8 @@ android {
         // GeckoView, Android 8.0 (API 26) ve üzerini destekler.
         minSdk = 26
         targetSdk = 37
-        versionCode = 9
-        versionName = "0.4.4"
+        versionCode = 10
+        versionName = "0.4.5"
     }
 
     // Kalıcı imza anahtarı keystore.properties (repoya girmez) veya ortam değişkenlerinden okunur.
