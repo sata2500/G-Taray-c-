@@ -107,10 +107,32 @@ class PipController(
      */
     fun onUserLeaveHint() {
         leaveHintSeen = true
+        log("ayrılma ipucu")
         enterManually("ayrılma ipucu")
     }
 
+    /**
+     * Etkinlik ön plandaki "en üst" konumunu kaybetti. Bazı üreticilerin hızlı uygulama değiştirme
+     * hareketi (ör. vivo'da alt çubuğu yana kaydırmak) ayrılma ipucu vermez ve uygulama arka plana
+     * düştükten sonra PiP isteğini reddeder; bu an, uygulama henüz açıkken PiP isteyebilmenin son fırsatıdır.
+     * Uygulamanın kendi açtığı ekranlarda (paylaşım, dosya seçici, izinler) tetiklenmez.
+     */
+    fun onTopResumedChanged(isTop: Boolean) {
+        log("en üst etkinlik=$isTop")
+        if (isTop) return
+        val ownLaunch = android.os.SystemClock.uptimeMillis() - lastOwnLaunch < OWN_LAUNCH_GRACE_MS
+        if (ownLaunch) return
+        if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        enterManually("en üst konum kaybı")
+    }
+
+    /** Uygulama kendisi bir ekran açarken çağrılır (bu sırada PiP'e geçilmez). */
+    fun noteOwnLaunch() {
+        lastOwnLaunch = android.os.SystemClock.uptimeMillis()
+    }
+
     private var leaveHintSeen = false
+    private var lastOwnLaunch = 0L
 
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onResume(owner: LifecycleOwner) {
@@ -119,14 +141,26 @@ class PipController(
 
         // Ayrılma ipucu hiç gelmeden başka bir uygulama öne geçtiyse son bir deneme yapılır.
         override fun onPause(owner: LifecycleOwner) {
+            log("duraklatıldı")
             if (!leaveHintSeen && !activity.isFinishing && !activity.isChangingConfigurations) enterManually("duraklatma")
         }
+
+        override fun onStop(owner: LifecycleOwner) {
+            log("durduruldu")
+        }
+    }
+
+    /** Yalnızca video oynarken (PiP'in söz konusu olduğu durumlarda) tanılama kaydı tutulur. */
+    private fun log(event: String) {
+        if (media?.playing == true) Diagnostics.log("PiP olayı: $event (PiP=${activity.isInPictureInPictureMode})")
     }
 
     private fun enterManually(reason: String) {
         if (!enabled || media?.playing != true || activity.isInPictureInPictureMode) return
         // Otomatik geçiş bayrağı açıkken sistem, duraklatılan etkinliğin elle isteğini reddeder.
-        val entered = runCatching { activity.enterPictureInPictureMode(buildParams(autoEnter = false)) }.getOrDefault(false)
+        val entered = runCatching { activity.enterPictureInPictureMode(buildParams(autoEnter = false)) }
+            .onFailure { Diagnostics.log("PiP elle istenemedi ($reason): ${it.message}") }
+            .getOrDefault(false)
         Diagnostics.log("PiP elle istendi ($reason): ${if (entered) "kabul edildi" else "sistem reddetti"}")
     }
 
@@ -243,5 +277,6 @@ class PipController(
         const val CMD_PAUSE = "pause"
         const val CMD_NEXT = "next"
         const val CMD_PREVIOUS = "previous"
+        const val OWN_LAUNCH_GRACE_MS = 2_000L
     }
 }

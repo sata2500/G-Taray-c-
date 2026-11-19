@@ -128,6 +128,19 @@ class MainActivity : AppCompatActivity() {
         pip.onUserLeaveHint()
     }
 
+    override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
+        super.onTopResumedActivityChanged(isTopResumedActivity)
+        if (::pip.isInitialized) pip.onTopResumedChanged(isTopResumedActivity)
+    }
+
+    /** Uygulamanın kendi açtığı ekranlar (paylaşım, dosya seçici…) PiP'i tetiklemesin. */
+    @Deprecated("Tüm ekran açma çağrıları buradan geçer.")
+    override fun startActivityForResult(intent: Intent, requestCode: Int, options: Bundle?) {
+        if (::pip.isInitialized) pip.noteOwnLaunch()
+        @Suppress("DEPRECATION")
+        super.startActivityForResult(intent, requestCode, options)
+    }
+
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPictureInPicture = isInPictureInPictureMode

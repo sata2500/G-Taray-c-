@@ -199,6 +199,19 @@ class WebAppActivity : AppCompatActivity() {
         pip?.onUserLeaveHint()
     }
 
+    override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
+        super.onTopResumedActivityChanged(isTopResumedActivity)
+        pip?.onTopResumedChanged(isTopResumedActivity)
+    }
+
+    /** Uygulamanın kendi açtığı ekranlar (paylaşım, dosya seçici…) PiP'i tetiklemesin. */
+    @Deprecated("Tüm ekran açma çağrıları buradan geçer.")
+    override fun startActivityForResult(intent: Intent, requestCode: Int, options: Bundle?) {
+        pip?.noteOwnLaunch()
+        @Suppress("DEPRECATION")
+        super.startActivityForResult(intent, requestCode, options)
+    }
+
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPip = isInPictureInPictureMode
