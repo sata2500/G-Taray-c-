@@ -32,6 +32,14 @@ import com.gtarayici.browser.ui.components.MenuSheet
 import com.gtarayici.browser.ui.components.MenuState
 import com.gtarayici.browser.ui.components.ToolbarState
 import com.gtarayici.browser.ui.components.VpnIndicator
+import com.gtarayici.browser.ui.components.ReaderIndicator
+import com.gtarayici.browser.qr.QrScannerScreen
+import com.gtarayici.browser.update.UpdateDialog
+import com.gtarayici.browser.reader.ReaderControlsSheet
+import com.gtarayici.browser.translate.TranslateOfferBar
+import com.gtarayici.browser.translate.TranslateSheet
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.gtarayici.browser.ui.components.YouTubeDownloadSheet
 import com.gtarayici.browser.ui.components.observe
 import com.gtarayici.browser.ui.components.keepSizeDuringPip
@@ -70,6 +78,12 @@ private data class TabSummary(
     val canGoForward: Boolean,
     val desktopMode: Boolean,
     val hasManifest: Boolean,
+    val readerable: Boolean,
+    val readerActive: Boolean,
+    /** Okuma görünümündeyken asıl sayfanın adresi */
+    val readerUrl: String?,
+    val offerTranslate: Boolean,
+    val translated: Boolean,
 )
 
 @Composable
@@ -107,11 +121,18 @@ fun BrowserApp(
                 canGoForward = it.content.canGoForward,
                 desktopMode = it.content.desktopMode,
                 hasManifest = it.content.webAppManifest != null,
+                readerable = it.readerState.readerable,
+                readerActive = it.readerState.active,
+                readerUrl = it.readerState.activeUrl,
+                offerTranslate = it.translationsState.isOfferTranslate,
+                translated = it.translationsState.isTranslated,
             )
         }
     }
     val allTabs by store.observe { it.tabs }
     val selectedTabId by store.observe { it.selectedTabId }
+    val translationSupported by store.observe { it.translationEngine.isEngineSupported == true }
+    var dismissedOffer by remember { mutableStateOf<String?>(null) }
     val profileTabs = allTabs.filter { it.contextId == profile.contextId }
     val bookmarks by remember(profile.id) { components.database.bookmarks().all(profile.id) }.collectAsState(initial = emptyList())
 
@@ -162,9 +183,20 @@ fun BrowserApp(
                     if (controller.findInPageOpen && pageUrl != null) {
                         FindInPageBar(onClose = { controller.closeFindInPage() })
                     }
+                    val tabId = selectedTabId
+                    if (tabId != null && pageUrl != null && current?.offerTranslate == true && current.translated.not() &&
+                        dismissedOffer != pageUrl && !controller.translateOpen
+                    ) {
+                        TranslateOfferBar(
+                            tabId = tabId,
+                            onOptions = { controller.openTranslate() },
+                            onDismiss = { dismissedOffer = pageUrl },
+                        )
+                    }
                     BottomToolbar(
                         state = ToolbarState(
-                            displayUrl = pageUrl?.let(UrlInput::displayUrl).orEmpty(),
+                            displayUrl = (current?.readerUrl?.takeIf { current.readerActive } ?: pageUrl)
+                                ?.let(UrlInput::displayUrl).orEmpty(),
                             loading = current?.loading == true,
                             progress = current?.progress ?: 0,
                             secure = current?.secure,
@@ -177,7 +209,13 @@ fun BrowserApp(
                                 VpnStatus.Connecting -> VpnIndicator.ON
                                 VpnStatus.Off -> VpnIndicator.OFF
                             },
+                            reader = when {
+                                current?.readerActive == true -> ReaderIndicator.ACTIVE
+                                current?.readerable == true -> ReaderIndicator.AVAILABLE
+                                else -> ReaderIndicator.NONE
+                            },
                         ),
+                        onReaderClick = { controller.toggleReader(current?.readerActive == true) },
                         onUrlClick = { controller.open(Overlay.SEARCH) },
                         onReloadOrStop = { controller.reloadOrStop() },
                         onTabsClick = { controller.open(Overlay.TABS) },
@@ -203,6 +241,14 @@ fun BrowserApp(
                         onSubmit = { controller.submit(it) },
                         onOpenUrl = { controller.loadUrl(it) },
                         onDismiss = { controller.closeOverlay() },
+                        onScanQr = { controller.openQrScanner() },
+                    )
+                }
+                Overlay.QR -> Box(Modifier.fillMaxSize()) {
+                    QrScannerScreen(
+                        onOpen = { controller.loadUrl(it) },
+                        onSearch = { controller.submit(it) },
+                        onBack = { controller.closeOverlay() },
                     )
                 }
                 Overlay.TABS -> Box(overlayModifier) {
@@ -214,6 +260,7 @@ fun BrowserApp(
                         onClose = { controller.closeTab(it) },
                         onCloseAll = { controller.closeAllTabs(it) },
                         onNewTab = { controller.newTab(it) },
+                        onNewTabInGroup = { controller.newTabInGroup(it) },
                         onBack = { controller.closeOverlay() },
                     )
                 }
@@ -276,6 +323,8 @@ fun BrowserApp(
                         isYouTubeVideo = pageUrl?.let(YouTubeDownloader::isVideoPage) == true,
                         installableWebApp = current?.hasManifest == true && components.webAppUseCases.isInstallable(),
                         extensionActions = extensionActions,
+                        readerActive = current?.readerActive == true,
+                        canTranslate = translationSupported && current?.readerActive != true,
                     ),
                     controller = controller,
                 )
@@ -283,6 +332,11 @@ fun BrowserApp(
             if (controller.profileSwitcherOpen) ProfileSwitcherSheet(controller)
             if (controller.installDialogOpen) InstallAppDialog(controller, installable = current?.hasManifest == true)
             controller.youtubeUrl?.let { url -> YouTubeDownloadSheet(url) { controller.youtubeUrl = null } }
+            if (controller.translateOpen) {
+                selectedTabId?.let { id -> TranslateSheet(id) { controller.translateOpen = false } }
+            }
+            ReaderControlsSheet(controller.readerControls)
+            UpdateDialog()
             ExtensionPrompts()
             ExtensionPopupSheet()
 

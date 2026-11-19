@@ -88,6 +88,7 @@ class GTarayiciApplication : Application() {
     private fun restoreTabs() {
         components.applicationScope.launch {
             components.tabsUseCases.restore(components.sessionStorage)
+            components.tabGroups.start()
             components.sessionStorage
                 .autoSave(components.store)
                 .periodicallyInForeground(interval = 30, unit = TimeUnit.SECONDS)

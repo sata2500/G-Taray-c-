@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
@@ -49,7 +51,11 @@ data class ToolbarState(
     val private: Boolean,
     val profile: Profile? = null,
     val vpn: VpnIndicator = VpnIndicator.OFF,
+    val reader: ReaderIndicator = ReaderIndicator.NONE,
 )
+
+/** Okuma görünümü düğmesi: sayfa okunabilir değilse gizli, okuma görünümündeyken vurgulu. */
+enum class ReaderIndicator { NONE, AVAILABLE, ACTIVE }
 
 enum class VpnIndicator { OFF, ON, ERROR }
 
@@ -63,6 +69,7 @@ fun BottomToolbar(
     onMenuClick: () -> Unit,
     onProfileClick: () -> Unit = {},
     onVpnClick: () -> Unit = {},
+    onReaderClick: () -> Unit = {},
 ) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
         Column {
@@ -82,7 +89,7 @@ fun BottomToolbar(
                 state.profile?.let { profile ->
                     IconButton(onClick = onProfileClick) { ProfileAvatar(profile, 28.dp) }
                 }
-                UrlPill(state, onUrlClick, onReloadOrStop, Modifier.weight(1f))
+                UrlPill(state, onUrlClick, onReloadOrStop, onReaderClick, Modifier.weight(1f))
                 if (state.vpn != VpnIndicator.OFF) {
                     IconButton(onClick = onVpnClick) {
                         Icon(
@@ -106,6 +113,7 @@ private fun UrlPill(
     state: ToolbarState,
     onClick: () -> Unit,
     onReloadOrStop: () -> Unit,
+    onReaderClick: () -> Unit,
     modifier: Modifier,
 ) {
     val isHome = state.displayUrl.isEmpty()
@@ -141,6 +149,18 @@ private fun UrlPill(
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),
         )
+        if (!isHome && state.reader != ReaderIndicator.NONE) {
+            IconButton(onClick = onReaderClick) {
+                Icon(
+                    Icons.AutoMirrored.Filled.MenuBook,
+                    contentDescription = stringResource(
+                        if (state.reader == ReaderIndicator.ACTIVE) R.string.reader_close else R.string.reader_open,
+                    ),
+                    tint = if (state.reader == ReaderIndicator.ACTIVE) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
         if (!isHome) {
             IconButton(onClick = onReloadOrStop) {
                 Icon(

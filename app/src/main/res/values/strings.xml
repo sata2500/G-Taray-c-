@@ -246,4 +246,84 @@
     <string name="diag_empty">Henüz kayıt yok. Resim içinde resmi kullandıktan sonra tekrar bakın.</string>
     <string name="diag_copy">Kopyala</string>
     <string name="diag_copied">Tanılama kaydı kopyalandı</string>
+    <!-- Okuma görünümü -->
+    <string name="reader_open">Okuma görünümünü aç</string>
+    <string name="reader_close">Okuma görünümünü kapat</string>
+    <string name="reader_settings">Okuma görünümü ayarları</string>
+    <string name="reader_font">Yazı tipi</string>
+    <string name="reader_font_sans">Sans</string>
+    <string name="reader_font_serif">Serif</string>
+    <string name="reader_size">Yazı boyutu</string>
+    <string name="reader_smaller">Küçült</string>
+    <string name="reader_bigger">Büyüt</string>
+    <string name="reader_colors">Renkler</string>
+    <string name="reader_light">Açık</string>
+    <string name="reader_sepia">Sepya</string>
+    <string name="reader_dark">Koyu</string>
+
+    <!-- Çeviri -->
+    <string name="menu_translate">Sayfayı çevir</string>
+    <string name="translate_title">Sayfayı çevir</string>
+    <string name="translate_privacy">Çeviri tamamen cihazınızda yapılır; sayfa metni hiçbir sunucuya gönderilmez.</string>
+    <string name="translate_first_time">Bir dil çiftini ilk kez kullanırken küçük bir dil modeli (birkaç MB) indirilir.</string>
+    <string name="translate_unsupported">Bu cihaz sayfa çevirisini desteklemiyor.</string>
+    <string name="translate_from">Kaynak dil</string>
+    <string name="translate_to">Hedef dil</string>
+    <string name="translate_choose">Seçin</string>
+    <string name="translate_action">Çevir</string>
+    <string name="translate_options">Diller</string>
+    <string name="translate_show_original">Orijinali göster</string>
+    <string name="translate_offer">Bu sayfa %1$s. Çevrilsin mi?</string>
+    <string name="translate_error">Çevrilemedi (%1$s)</string>
+
+    <!-- QR kod -->
+    <string name="menu_scan_qr">QR kod tara</string>
+    <string name="qr_hint">QR kodu çerçevenin içine getirin</string>
+    <string name="qr_permission">QR kod taramak için kamera izni gerekiyor. Görüntü yalnızca cihazınızda işlenir.</string>
+    <string name="qr_allow">İzin ver</string>
+    <string name="qr_result">QR kod içeriği</string>
+    <string name="qr_search">Ara</string>
+    <string name="qr_copy">Kopyala</string>
+    <string name="qr_copied">Kopyalandı</string>
+
+    <!-- Sekme grupları -->
+    <string name="tab_groups_add_to">Gruba ekle</string>
+    <string name="tab_groups_remove">Gruptan çıkar</string>
+    <string name="tab_groups_new">Yeni grup</string>
+    <string name="tab_groups_edit">Grubu düzenle</string>
+    <string name="tab_groups_name">Grup adı</string>
+    <string name="tab_groups_unnamed">Adsız grup</string>
+    <string name="tab_groups_new_tab">Gruba yeni sekme</string>
+    <string name="tab_groups_ungroup">Grubu dağıt</string>
+    <string name="tab_groups_close">Gruptaki sekmeleri kapat</string>
+    <string name="tab_groups_expand">Genişlet</string>
+    <string name="tab_groups_collapse">Daralt</string>
+    <string name="tab_groups_other">Diğer sekmeler</string>
+    <string name="action_save">Kaydet</string>
+    <plurals name="tab_count">
+        <item quantity="one">%d sekme</item>
+        <item quantity="other">%d sekme</item>
+    </plurals>
+    <!-- Güncellemeler -->
+    <string name="settings_updates">Güncellemeler</string>
+    <string name="update_check">Güncellemeleri denetle</string>
+    <string name="update_check_summary">Yüklü sürüm: %1$s</string>
+    <string name="update_checking">Denetleniyor…</string>
+    <string name="update_up_to_date">G-Tarayıcı güncel (%1$s)</string>
+    <string name="update_auto">Otomatik denetle</string>
+    <string name="update_auto_summary">Günde bir kez GitHub\'da yeni sürüm olup olmadığına bakar; hiçbir kişisel veri gönderilmez</string>
+    <string name="update_title">Yeni sürüm: %1$s</string>
+    <string name="update_current">Yüklü sürüm: %1$s</string>
+    <string name="update_size">İndirme boyutu: yaklaşık %1$d MB</string>
+    <string name="update_install">Güncelle</string>
+    <string name="update_later">Sonra</string>
+    <string name="update_downloading">%1$s indiriliyor…</string>
+    <string name="update_title_failed">Güncellenemedi</string>
+    <string name="update_permission">Güncellemeyi kurmak için G-Tarayıcı\'ya uygulama yükleme izni verin, sonra tekrar deneyin.</string>
+    <string name="update_no_release">Yayınlanmış bir sürüm bulunamadı.</string>
+    <string name="update_server_error">Güncelleme sunucusu yanıt vermedi (HTTP %1$d).</string>
+    <string name="update_offline">Güncelleme sunucusuna bağlanılamadı. İnternet bağlantınızı denetleyin.</string>
+    <string name="update_invalid">İndirilen dosya geçerli bir G-Tarayıcı güncellemesi değil.</string>
+    <string name="update_signature">İndirilen güncelleme farklı bir anahtarla imzalanmış; güvenlik nedeniyle kurulmadı.</string>
+    <string name="update_install_failed">Kurulum başarısız: %1$s</string>
 </resources>

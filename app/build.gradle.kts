@@ -16,11 +16,13 @@ android {
 
     defaultConfig {
         applicationId = "com.gtarayici.browser"
-        // GeckoView, Android 8.0 (API 26) ve üzerini destekler.
-        minSdk = 26
+        // Android 9+: sürümler yalnızca APK İmza Şeması v3 (anahtar döndürme) ile imzalanır.
+        minSdk = 28
         targetSdk = 37
-        versionCode = 10
-        versionName = "0.4.5"
+        versionCode = 11
+        versionName = "0.5.0"
+        // Uygulama içi güncellemelerin alındığı GitHub deposu (sürümler GitHub Releases'ta yayınlanır).
+        buildConfigField("String", "UPDATE_REPO", "\"sata2500/G-Taray-c-\"")
     }
 
     // Kalıcı imza anahtarı keystore.properties (repoya girmez) veya ortam değişkenlerinden okunur.
@@ -110,6 +112,7 @@ dependencies {
     implementation(libs.mozilla.feature.pwa)
     implementation(libs.mozilla.feature.intent)
     implementation(libs.mozilla.feature.privatemode)
+    implementation(libs.mozilla.feature.readerview)
     implementation(libs.mozilla.support.webextensions)
     implementation(libs.mozilla.support.base)
     implementation(libs.mozilla.support.ktx)
@@ -133,6 +136,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.google.material)
     implementation(libs.androidx.biometric)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.zxing.core)
     // Cihazda üretilen web uygulaması APK'larını imzalamak için (Apache-2.0)
     implementation(libs.apksig)
 

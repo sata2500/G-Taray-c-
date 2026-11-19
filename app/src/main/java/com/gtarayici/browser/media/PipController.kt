@@ -13,7 +13,9 @@ import android.os.Build
 import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.gtarayici.browser.Components
 import com.gtarayici.browser.R
@@ -75,6 +77,7 @@ class PipController(
     fun start() {
         if (!supported) return
         ContextCompat.registerReceiver(activity, receiver, IntentFilter(ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
+        activity.lifecycle.addObserver(lifecycleObserver)
         activity.lifecycleScope.launch {
             components.store.flow()
                 .map { state -> state.mediaInfo() }
@@ -94,12 +97,37 @@ class PipController(
         if (supported) runCatching { activity.unregisterReceiver(receiver) }
     }
 
-    /** Android 12 öncesinde otomatik geçiş yoktur; uygulamadan çıkarken elle geçilir. */
+    /**
+     * Kullanıcı uygulamadan ayrılıyor (ana ekran, son uygulamalar, başka uygulamaya geçiş, bildirim).
+     *
+     * Android 12+ ana ekran hareketinde otomatik geçişi kendisi yapar ve bu durumda bu çağrı gelmez.
+     * Bazı üreticiler (ör. vivo) doğrudan uygulama değiştirmede otomatik geçişi yapmaz; o zaman
+     * sistem yine bu ipucunu verir ve geçiş elle istenir. Sistem bunu yalnızca gerçekten başka bir
+     * göreve geçilirken kabul eder; uygulama içinde açılan pencerelerde PiP başlamaz.
+     */
     fun onUserLeaveHint() {
-        if (!enabled || media?.playing != true || activity.isInPictureInPictureMode) return
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            runCatching { activity.enterPictureInPictureMode(buildParams()) }
+        leaveHintSeen = true
+        enterManually("ayrılma ipucu")
+    }
+
+    private var leaveHintSeen = false
+
+    private val lifecycleObserver = object : DefaultLifecycleObserver {
+        override fun onResume(owner: LifecycleOwner) {
+            leaveHintSeen = false
         }
+
+        // Ayrılma ipucu hiç gelmeden başka bir uygulama öne geçtiyse son bir deneme yapılır.
+        override fun onPause(owner: LifecycleOwner) {
+            if (!leaveHintSeen && !activity.isFinishing && !activity.isChangingConfigurations) enterManually("duraklatma")
+        }
+    }
+
+    private fun enterManually(reason: String) {
+        if (!enabled || media?.playing != true || activity.isInPictureInPictureMode) return
+        // Otomatik geçiş bayrağı açıkken sistem, duraklatılan etkinliğin elle isteğini reddeder.
+        val entered = runCatching { activity.enterPictureInPictureMode(buildParams(autoEnter = false)) }.getOrDefault(false)
+        Diagnostics.log("PiP elle istendi ($reason): ${if (entered) "kabul edildi" else "sistem reddetti"}")
     }
 
     fun onPictureInPictureModeChanged(inPip: Boolean) {
@@ -112,6 +140,7 @@ class PipController(
             val dismissed = !activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
             native.exit(dismissed)
             if (dismissed) tab?.mediaSessionState?.controller?.pause()
+            updateParams()
         }
     }
 
@@ -120,7 +149,7 @@ class PipController(
         runCatching { activity.setPictureInPictureParams(buildParams()) }
     }
 
-    private fun buildParams(): PictureInPictureParams {
+    private fun buildParams(autoEnter: Boolean = true): PictureInPictureParams {
         val info = media
         val builder = PictureInPictureParams.Builder()
         val hint = sourceRectHint()
@@ -136,7 +165,7 @@ class PipController(
         hint?.let { builder.setSourceRectHint(it) }
         builder.setActions(actions(info))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            builder.setAutoEnterEnabled(enabled && info?.playing == true)
+            builder.setAutoEnterEnabled(autoEnter && enabled && info?.playing == true)
             builder.setSeamlessResizeEnabled(true)
         }
         return builder.build()

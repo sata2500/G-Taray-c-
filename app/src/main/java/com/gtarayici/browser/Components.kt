@@ -22,6 +22,7 @@ import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.session.storage.SessionStorage
 import mozilla.components.browser.state.engine.EngineMiddleware
+import mozilla.components.browser.state.engine.middleware.TranslationsMiddleware
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.ThumbnailsMiddleware
 import mozilla.components.browser.thumbnails.storage.ThumbnailStorage
@@ -129,9 +130,13 @@ class Components(private val context: Context) {
                 ThumbnailsMiddleware(thumbnailStorage),
                 LastAccessMiddleware(),
                 PromptMiddleware(),
+                // Sayfa çevirisi (Firefox'un cihaz üzerinde çalışan çeviri sistemi).
+                TranslationsMiddleware(engine, applicationScope, isTranslationsEnabled = { true }),
             ) + EngineMiddleware.create(engine),
         )
     }
+
+    val tabGroups by lazy { com.gtarayici.browser.tabs.TabGroups(context, store, applicationScope) }
 
     val sessionStorage by lazy { SessionStorage(context, engine, applicationScope = applicationScope) }
 
@@ -160,6 +165,7 @@ class Components(private val context: Context) {
     val vpn by lazy { VpnManager(context, applicationScope) }
     val webApkInstaller by lazy { com.gtarayici.browser.webapk.WebApkInstaller(context, this) }
     val youtube by lazy { YouTubeDownloader(context, this) }
+    val updater by lazy { com.gtarayici.browser.update.Updater(context, settings, applicationScope) }
 
     /** Ayar ekranındaki değişiklikleri çalışan motora anında uygular. */
     fun applyPrivacySettings() {
@@ -180,6 +186,8 @@ class Components(private val context: Context) {
         GeckoPrefs.set("media.peerconnection.ice.default_address_only", true)
         // Arka planda (ör. ekran kapalıyken) oynatma listesindeki sonraki video başlayabilsin.
         GeckoPrefs.set("media.block-autoplay-until-in-foreground", false)
+        // Cihaz üzerinde sayfa çevirisi.
+        GeckoPrefs.set("browser.translations.enable", true)
     }
 
     private fun applyDns(target: mozilla.components.concept.engine.Settings) {

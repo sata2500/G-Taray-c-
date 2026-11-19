@@ -5,7 +5,8 @@
 G-Tarayıcı, Mozilla'nın **GeckoView** motoru üzerine kuruludur. Amacı, kurduğunuz anda hiçbir ayar yapmadan
 sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
-> Durum: **v0.4.0** — yol haritasındaki ana özelliklerin ilk sürümleri hazır; cihaz üzerinde kapsamlı test sürüyor.
+> Durum: **v0.5.0** — yol haritasındaki özelliklerin neredeyse tamamı hazır; sürümler kalıcı anahtarla imzalanır ve
+> uygulama içinden güncellenir.
 
 ## Özellikler
 
@@ -59,6 +60,12 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 ### Temel tarama
 - Tek elle kullanım için alttan adres çubuğu; yer imleri ve geçmişten anlık öneriler
 - Önizlemeli sekme ekranı, gizli sekmeler, sayfada bul, masaüstü sitesi modu
+- **Sekme grupları:** adlandırılmış, renkli, daraltılabilir gruplar (profile özel, kalıcı); gruptaki bir sekmeden
+  açılan bağlantılar aynı gruba katılır
+- **Okuma görünümü:** makaleleri reklamsız, sade bir sayfada okuma; yazı tipi, boyut ve açık/sepya/koyu renk
+- **Sayfa çevirisi:** Firefox'un çeviri sistemi; tamamen cihazda yapılır, sayfa metni hiçbir sunucuya gönderilmez
+- **QR kod tarayıcı:** adres çubuğundan ve menüden; görüntü cihazda işlenir
+- **Uygulama içi güncelleme:** yeni sürümler GitHub Releases'tan denetlenir, imzası doğrulanır ve tek dokunuşla kurulur
 - Geçmiş, yer imleri, indirme yöneticisi; site izinleri, dosya yükleme, tam ekran video
 - Açık/koyu/sistem teması (Android 12+ dinamik renkler), varsayılan tarayıcı olabilme
 
@@ -72,7 +79,8 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 | 4. Medya | Arka planda oynatma, resim içinde resim, YouTube indirme, SponsorBlock | ✅ |
 | 5. PWA | Bağımsız pencere ve cihazda üretilen gerçek APK (WebAPK) | ✅ |
 | 6. VPN | sing-box ile tarayıcıya özel VPN | ✅ · Profile özel VPN ⏳ |
-| 7. Kullanışlılık | Sayfada bul ✅ · Okuma modu, çeviri, QR okuyucu, kullanıcı betikleri, sekme grupları, otomatik güncelleme ⏳ | 🚧 |
+| 7. Kullanışlılık | Sayfada bul, okuma modu, çeviri, QR okuyucu, sekme grupları, uygulama içi güncelleme | ✅ |
+| 8. Dağıtım | Kalıcı imza anahtarı (anahtar döndürmeli), GitHub Actions ile otomatik sürüm | ✅ |
 
 **Bilinen sınırlamalar:** VPN ve DNS ayarları tüm profiller için ortaktır (GeckoView tek bir ağ yapılandırması kullanır).
 WebAPK yüklemek için G-Tarayıcı'ya bir kez "bilinmeyen uygulamaları yükleme" izni verilmelidir.
@@ -90,7 +98,7 @@ WebAPK yüklemek için G-Tarayıcı'ya bir kez "bilinmeyen uygulamaları yüklem
 | YouTube çözümleme | NewPipe Extractor 0.26 |
 | Reklam engelleme | uBlock Origin (hazır kurulu) |
 | Derleme | Gradle 9.9, Android Gradle Plugin 9.5 |
-| Android | En az Android 8.0 (API 26), hedef Android 17 (API 37) |
+| Android | En az Android 9 (API 28), hedef Android 17 (API 37) |
 
 ## Proje yapısı
 
@@ -105,10 +113,15 @@ app/src/main/java/com/gtarayici/browser/
 ├── extensions/               # Eklenti yönetimi (uBlock Origin, AMO)
 ├── media/                    # Medya bildirimi ve arka planda oynatma servisi
 ├── profiles/                 # Profil yönetimi
+├── qr/                       # QR kod tarayıcı (CameraX + ZXing)
+├── reader/                   # Okuma görünümü ayarları
 ├── search/                   # Arama motorları ve adres çubuğu girdisi
 ├── security/                 # Biyometrik kilit
 ├── settings/                 # Uygulama ayarları
+├── tabs/                     # Sekme grupları
 ├── thumbnails/               # Sekme önizlemeleri
+├── translate/                # Sayfa çevirisi
+├── update/                   # Uygulama içi güncelleme
 ├── vpn/                      # sing-box tabanlı tarayıcı VPN'i ve bağlantı ayrıştırıcı
 ├── webapp/                   # Yüklenen web uygulamaları (PWA) penceresi
 ├── webapk/                   # WebAPK üretimi: ikili manifest yamalama, imzalama, yükleme
@@ -123,7 +136,7 @@ native/ovpn-bridge/           # OpenVPN ↔ kullanıcı alanı ağ yığını �
 
 ## Derleme
 
-Gereksinimler: JDK 21, Android SDK (platform 37.2, build-tools 37) ve VPN çekirdeği için Go 1.25+.
+Gereksinimler: JDK 21, Android SDK (platform 37.2, build-tools 37) ve VPN çekirdeği için Go 1.26+.
 
 ```bash
 # VPN çekirdeklerini bir kez derleyin; ikili dosyalar repoya eklenmez
@@ -142,23 +155,23 @@ ANDROID_NDK_ROOT=/yol/android-ndk ./scripts/build-openvpn.sh   # OpenVPN + köpr
 Her işlemci mimarisi için ayrı APK üretilir (`app/build/outputs/apk/`). Günümüz telefonlarının
 neredeyse tamamı için doğru dosya `app-arm64-v8a-release.apk` dosyasıdır.
 
-### İmzalama
+### İmzalama ve sürüm yayınlama
 
-Release sürümü, proje kök dizinindeki `keystore.properties` dosyasından veya ortam değişkenlerinden
-okunan anahtarla imzalanır. Bu dosya ve anahtarlar **asla repoya eklenmez**.
+Sürümler kalıcı bir RSA 4096 anahtarıyla, APK İmza Şeması v3 ve **anahtar döndürme zinciri**
+([`signing/lineage.bin`](signing/README.md)) kullanılarak imzalanır. Anahtarın kendisi **asla repoya eklenmez**.
 
-```properties
-storeFile=gtarayici.jks
-storePassword=...
-keyAlias=gtarayici
-keyPassword=...
+```bash
+./gradlew :app:assembleRelease
+GT_KEYSTORE_FILE=/yol/gtarayici-release.p12 GT_KEYSTORE_PASSWORD=... scripts/sign-release.sh dist
 ```
 
-Ortam değişkenleri: `GT_KEYSTORE_FILE`, `GT_KEYSTORE_PASSWORD`, `GT_KEY_ALIAS`, `GT_KEY_PASSWORD`.
-Anahtar bulunamazsa release sürümü yalnızca deneme amaçlı olarak debug anahtarıyla imzalanır.
+`app/build.gradle.kts` içindeki `versionName` değiştiğinde GitHub Actions
+([`.github/workflows/release.yml`](.github/workflows/release.yml)) yerel kütüphaneler dahil her şeyi derler, test eder,
+imzalar ve GitHub Releases'ta yayınlar. Sürüm notları `.github/release-notes.md` dosyasından alınır.
+Gerekli depo gizli değişkenleri: `GT_KEYSTORE_BASE64`, `GT_KEYSTORE_PASSWORD`.
 
 ## Lisans
 
 G-Tarayıcı, [GNU Genel Kamu Lisansı v3.0](LICENSE) (GPL-3.0-or-later) ile lisanslanmış özgür bir yazılımdır.
 GeckoView ve Mozilla Android Components MPL-2.0; sing-box, NewPipe Extractor ve uBlock Origin GPL-3.0;
-OpenVPN GPL-2.0 (OpenSSL istisnasıyla; uygulamayla birleştirilmez, ayrı bir program olarak çalıştırılır), OpenSSL Apache-2.0, WireGuard-go/gVisor MIT/Apache-2.0 lisanslıdır.
+OpenVPN GPL-2.0 (OpenSSL istisnasıyla; uygulamayla birleştirilmez, ayrı bir program olarak çalıştırılır), OpenSSL Apache-2.0, WireGuard-go/gVisor MIT/Apache-2.0, ZXing ve CameraX Apache-2.0 lisanslıdır.

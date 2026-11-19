@@ -112,6 +112,10 @@
             android:name=".webapk.WebApkInstallReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".update.UpdateInstallReceiver"
+            android:exported="false" />
+
         <service
             android:name=".media.MediaSessionService"
             android:exported="false"

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,6 +72,7 @@ fun SearchScreen(
     onSubmit: (String) -> Unit,
     onOpenUrl: (String) -> Unit,
     onDismiss: () -> Unit,
+    onScanQr: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val db = context.components.database
@@ -142,6 +144,10 @@ fun SearchScreen(
                         if (value.text.isNotEmpty()) {
                             IconButton(onClick = { value = TextFieldValue("") }) {
                                 Icon(Icons.Filled.Close, stringResource(R.string.action_clear))
+                            }
+                        } else {
+                            IconButton(onClick = onScanQr) {
+                                Icon(Icons.Filled.QrCodeScanner, stringResource(R.string.menu_scan_qr))
                             }
                         }
                     },

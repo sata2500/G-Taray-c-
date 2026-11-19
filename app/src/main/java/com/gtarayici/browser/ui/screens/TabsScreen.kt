@@ -1,6 +1,30 @@
 package com.gtarayici.browser.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import com.gtarayici.browser.tabs.TabGroup
+import com.gtarayici.browser.tabs.TabGroups
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -65,10 +89,20 @@ fun TabsScreen(
     onClose: (String) -> Unit,
     onCloseAll: (private: Boolean) -> Unit,
     onNewTab: (private: Boolean) -> Unit,
+    onNewTabInGroup: (groupId: String) -> Unit,
     onBack: () -> Unit,
 ) {
+    val tabGroups = LocalContext.current.components.tabGroups
+    val allGroups by tabGroups.groups.collectAsState()
     var showPrivate by remember { mutableStateOf(initialPrivate) }
     val visible = tabs.filter { it.content.private == showPrivate }
+    val visibleIds = visible.map { it.id }.toSet()
+    // Bu profilde ve bu sekmede (normal/gizli) görünen sekmeleri olan gruplar
+    val groups = allGroups.filter { group -> group.tabIds.any { it in visibleIds } }
+    val grouped = groups.flatMap { it.tabIds }.toSet()
+    val ungrouped = visible.filter { it.id !in grouped }
+    var groupTarget by remember { mutableStateOf<TabSessionState?>(null) }
+    var editGroup by remember { mutableStateOf<TabGroup?>(null) }
 
     OverlayScaffold(
         title = stringResource(R.string.action_tabs),
@@ -102,26 +136,248 @@ fun TabsScreen(
             if (visible.isEmpty()) {
                 EmptyState(stringResource(R.string.tabs_empty))
             } else {
+                val byId = visible.associateBy { it.id }
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 165.dp),
                     contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 96.dp),
                 ) {
-                    items(visible, key = { it.id }) { tab ->
-                        TabCard(tab, selected = tab.id == selectedTabId, onSelect = onSelect, onClose = onClose)
+                    groups.forEach { group ->
+                        val members = group.tabIds.mapNotNull { byId[it] }
+                        item(key = "group-" + group.id, span = { GridItemSpan(maxLineSpan) }) {
+                            GroupHeader(
+                                group = group,
+                                count = members.size,
+                                onToggle = { tabGroups.toggleCollapsed(group.id) },
+                                onEdit = { editGroup = group },
+                                onNewTab = { onNewTabInGroup(group.id) },
+                                onUngroup = { tabGroups.ungroup(group.id) },
+                                onCloseGroup = { members.forEach { onClose(it.id) } },
+                            )
+                        }
+                        if (!group.collapsed) {
+                            items(members, key = { it.id }) { tab ->
+                                TabCard(
+                                    tab,
+                                    selected = tab.id == selectedTabId,
+                                    groupColor = Color(group.color),
+                                    onSelect = onSelect,
+                                    onClose = onClose,
+                                    onAddToGroup = { groupTarget = tab },
+                                    onRemoveFromGroup = { tabGroups.removeTab(tab.id) },
+                                )
+                            }
+                        }
+                    }
+                    if (groups.isNotEmpty() && ungrouped.isNotEmpty()) {
+                        item(key = "ungrouped", span = { GridItemSpan(maxLineSpan) }) {
+                            Text(
+                                stringResource(R.string.tab_groups_other),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 8.dp, top = 12.dp, bottom = 4.dp),
+                            )
+                        }
+                    }
+                    items(ungrouped, key = { it.id }) { tab ->
+                        TabCard(
+                            tab,
+                            selected = tab.id == selectedTabId,
+                            groupColor = null,
+                            onSelect = onSelect,
+                            onClose = onClose,
+                            onAddToGroup = { groupTarget = tab },
+                            onRemoveFromGroup = null,
+                        )
                     }
                 }
+            }
+        }
+    }
+
+    groupTarget?.let { tab ->
+        val candidates = allGroups.filter { it.contextId == tab.contextId && tab.id !in it.tabIds }
+        AddToGroupDialog(
+            groups = candidates,
+            onPick = { tabGroups.addTab(it.id, tab.id); groupTarget = null },
+            onCreate = { name, color -> tabGroups.create(name, color, tab); groupTarget = null },
+            onDismiss = { groupTarget = null },
+        )
+    }
+    editGroup?.let { group ->
+        GroupEditorDialog(
+            title = stringResource(R.string.tab_groups_edit),
+            initialName = group.name,
+            initialColor = group.color,
+            onSave = { name, color ->
+                tabGroups.rename(group.id, name)
+                tabGroups.setColor(group.id, color)
+                editGroup = null
+            },
+            onDismiss = { editGroup = null },
+        )
+    }
+}
+
+@Composable
+private fun GroupHeader(
+    group: TabGroup,
+    count: Int,
+    onToggle: () -> Unit,
+    onEdit: () -> Unit,
+    onNewTab: () -> Unit,
+    onUngroup: () -> Unit,
+    onCloseGroup: () -> Unit,
+) {
+    var menu by remember { mutableStateOf(false) }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(group.color).copy(alpha = 0.16f))
+            .clickable(onClick = onToggle)
+            .padding(start = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(12.dp).clip(CircleShape).background(Color(group.color)))
+        Spacer(Modifier.width(10.dp))
+        Text(
+            group.name.ifBlank { stringResource(R.string.tab_groups_unnamed) },
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        Text(
+            "  ·  $count",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.weight(1f))
+        Icon(
+            if (group.collapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
+            contentDescription = stringResource(if (group.collapsed) R.string.tab_groups_expand else R.string.tab_groups_collapse),
+        )
+        Box {
+            IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.action_menu)) }
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.tab_groups_new_tab)) }, onClick = { menu = false; onNewTab() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.tab_groups_edit)) }, onClick = { menu = false; onEdit() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.tab_groups_ungroup)) }, onClick = { menu = false; onUngroup() })
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.tab_groups_close), color = MaterialTheme.colorScheme.error) },
+                    onClick = { menu = false; onCloseGroup() },
+                )
             }
         }
     }
 }
 
 @Composable
+private fun AddToGroupDialog(
+    groups: List<TabGroup>,
+    onPick: (TabGroup) -> Unit,
+    onCreate: (String, Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var creating by remember { mutableStateOf(groups.isEmpty()) }
+    if (creating) {
+        GroupEditorDialog(
+            title = stringResource(R.string.tab_groups_new),
+            initialName = "",
+            initialColor = TabGroups.COLORS[groups.size % TabGroups.COLORS.size],
+            onSave = onCreate,
+            onDismiss = onDismiss,
+        )
+        return
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tab_groups_add_to)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                groups.forEach { group ->
+                    ListItem(
+                        leadingContent = { Box(Modifier.size(14.dp).clip(CircleShape).background(Color(group.color))) },
+                        headlineContent = { Text(group.name.ifBlank { stringResource(R.string.tab_groups_unnamed) }) },
+                        supportingContent = { Text(pluralStringResource(R.plurals.tab_count, group.tabIds.size, group.tabIds.size)) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        modifier = Modifier.clickable { onPick(group) },
+                    )
+                }
+                ListItem(
+                    leadingContent = { Icon(Icons.Filled.Add, null) },
+                    headlineContent = { Text(stringResource(R.string.tab_groups_new)) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clickable { creating = true },
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun GroupEditorDialog(
+    title: String,
+    initialName: String,
+    initialColor: Int,
+    onSave: (String, Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(initialName) }
+    var color by remember { mutableIntStateOf(initialColor) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.tab_groups_name)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                FlowRow(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    TabGroups.COLORS.forEach { option ->
+                        Box(
+                            Modifier
+                                .padding(bottom = 10.dp)
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color(option))
+                                .border(
+                                    width = if (option == color) 3.dp else 0.dp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    shape = CircleShape,
+                                )
+                                .clickable { color = option },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name, color) }) { Text(stringResource(R.string.action_save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+@Composable
 private fun TabCard(
     tab: TabSessionState,
     selected: Boolean,
+    groupColor: Color?,
     onSelect: (String) -> Unit,
     onClose: (String) -> Unit,
+    onAddToGroup: () -> Unit,
+    onRemoveFromGroup: (() -> Unit)?,
 ) {
+    var menu by remember { mutableStateOf(false) }
     val url = tab.content.url
     val isBlank = url.isBlank() || url == "about:blank"
     val title = tab.content.title.ifBlank {
@@ -136,9 +392,26 @@ private fun TabCard(
     Card(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        border = if (selected) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
-        modifier = Modifier.padding(6.dp).fillMaxWidth().clickable { onSelect(tab.id) },
+        border = when {
+            selected -> BorderStroke(3.dp, MaterialTheme.colorScheme.primary)
+            groupColor != null -> BorderStroke(2.dp, groupColor)
+            else -> null
+        },
+        modifier = Modifier.padding(6.dp).fillMaxWidth().combinedClickable(
+            onClick = { onSelect(tab.id) },
+            onLongClick = { menu = true },
+        ),
     ) {
+        // Uzun basınca: gruba ekle / gruptan çıkar
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.tab_groups_add_to)) }, onClick = { menu = false; onAddToGroup() })
+            if (onRemoveFromGroup != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.tab_groups_remove)) },
+                    onClick = { menu = false; onRemoveFromGroup() },
+                )
+            }
+        }
         Row(Modifier.padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Favicon(url, size = 18.dp, private = tab.content.private)
             Spacer(Modifier.width(8.dp))

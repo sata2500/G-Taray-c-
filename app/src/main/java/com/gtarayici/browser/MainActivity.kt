@@ -34,6 +34,7 @@ import mozilla.components.feature.downloads.DownloadsFeature
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.feature.privatemode.feature.SecureWindowFeature
+import mozilla.components.feature.readerview.ReaderViewFeature
 import mozilla.components.feature.session.FullScreenFeature
 import mozilla.components.feature.session.SessionFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature
@@ -60,6 +61,7 @@ class MainActivity : AppCompatActivity() {
     private val contextMenuFeature = ViewBoundFeatureWrapper<ContextMenuFeature>()
     private val sitePermissionsFeature = ViewBoundFeatureWrapper<SitePermissionsFeature>()
     private val thumbnailsFeature = ViewBoundFeatureWrapper<BrowserThumbnails>()
+    private val readerViewFeature = ViewBoundFeatureWrapper<ReaderViewFeature>()
 
     private var pendingPermissionFeature: (() -> PermissionsFeature?)? = null
     private val permissionLauncher =
@@ -106,6 +108,7 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) handleIntent(intent)
         requestNotificationPermissionOnce()
+        components.updater.checkIfDue()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -119,7 +122,7 @@ class MainActivity : AppCompatActivity() {
         pip.stop()
     }
 
-    /** Ana ekran tuşuna basıldığında tam ekran video oynuyorsa resim içinde resme geçer. */
+    /** Uygulamadan ayrılırken video oynuyorsa resim içinde resme geçilir. */
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         pip.onUserLeaveHint()
@@ -230,6 +233,13 @@ class MainActivity : AppCompatActivity() {
             owner = this,
             view = view,
         )
+
+        readerViewFeature.set(
+            feature = ReaderViewFeature(this, components.engine, store, controller.readerControls),
+            owner = this,
+            view = view,
+        )
+        controller.readerFeature = { readerViewFeature.get() }
 
         sitePermissionsFeature.set(
             feature = SitePermissionsFeature(

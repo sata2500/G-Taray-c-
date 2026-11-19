@@ -62,6 +62,8 @@ import com.gtarayici.browser.R
 import com.gtarayici.browser.components
 import com.gtarayici.browser.search.SearchEngine
 import com.gtarayici.browser.settings.ThemeMode
+import com.gtarayici.browser.update.UpdateState
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 
@@ -85,6 +87,8 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     val backgroundPlay by settings.backgroundPlay.collectAsState()
     val sponsorBlock by settings.sponsorBlock.collectAsState()
     val autoPip by settings.autoPictureInPicture.collectAsState()
+    val autoUpdate by settings.autoUpdateCheck.collectAsState()
+    val updateState by components.updater.state.collectAsState()
     var dnsDialog by remember { mutableStateOf(false) }
     var passwordDialog by remember { mutableStateOf(false) }
     var diagDialog by remember { mutableStateOf(false) }
@@ -217,6 +221,25 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
                 stringResource(R.string.diag_title),
                 stringResource(R.string.diag_summary),
             ) { diagDialog = true }
+
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            SectionTitle(stringResource(R.string.settings_updates))
+            ClickRow(
+                Icons.Filled.SystemUpdate,
+                stringResource(R.string.update_check),
+                when (val state = updateState) {
+                    UpdateState.Checking -> stringResource(R.string.update_checking)
+                    UpdateState.UpToDate -> stringResource(R.string.update_up_to_date, components.updater.currentVersion)
+                    is UpdateState.Available -> stringResource(R.string.update_title, state.release.version)
+                    is UpdateState.Downloading -> stringResource(R.string.update_downloading, state.release.version)
+                    else -> stringResource(R.string.update_check_summary, components.updater.currentVersion)
+                },
+            ) { components.updater.check() }
+            SwitchRow(
+                stringResource(R.string.update_auto),
+                stringResource(R.string.update_auto_summary),
+                autoUpdate,
+            ) { settings.setAutoUpdateCheck(it) }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SectionTitle(stringResource(R.string.settings_about))

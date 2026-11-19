@@ -12,6 +12,7 @@ import com.gtarayici.browser.Components
 import com.gtarayici.browser.R
 import com.gtarayici.browser.data.Bookmark
 import com.gtarayici.browser.data.Profile
+import com.gtarayici.browser.reader.ReaderControls
 import com.gtarayici.browser.search.UrlInput
 import com.gtarayici.browser.security.AppLock
 import kotlinx.coroutines.Dispatchers
@@ -20,9 +21,10 @@ import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.Engine.BrowsingData
+import mozilla.components.feature.readerview.ReaderViewFeature
 
 /** Tam ekran kaplayan ikincil ekranlar. */
-enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN }
+enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR }
 
 /**
  * Arayüzün tarayıcı üzerinde yaptığı tüm işlemleri tek bir yerde toplar.
@@ -38,6 +40,11 @@ class BrowserController(
     var youtubeUrl by mutableStateOf<String?>(null)
     var profileSwitcherOpen by mutableStateOf(false)
     var installDialogOpen by mutableStateOf(false)
+    var translateOpen by mutableStateOf(false)
+
+    /** Okuma görünümü: Mozilla bileşeni etkinlik tarafından bağlanır, ayarları arayüzde gösterilir. */
+    var readerFeature: () -> ReaderViewFeature? = { null }
+    val readerControls = ReaderControls(activity)
 
     /** Görünür sekme yokken yeni sekmelerin gizli açılıp açılmayacağı. */
     var privateMode by mutableStateOf(false)
@@ -89,6 +96,14 @@ class BrowserController(
         menuOpen = false
         privateMode = private
         components.tabsUseCases.addTab("about:blank", selectTab = true, private = private, contextId = profile.contextId)
+        overlay = Overlay.SEARCH
+    }
+
+    /** Gruba yeni boş sekme ekler ve adres girişini açar. */
+    fun newTabInGroup(groupId: String) {
+        privateMode = false
+        val id = components.tabsUseCases.addTab("about:blank", selectTab = true, private = false, contextId = profile.contextId)
+        components.tabGroups.addTab(groupId, id)
         overlay = Overlay.SEARCH
     }
 
@@ -170,6 +185,28 @@ class BrowserController(
     fun closeFindInPage() {
         findInPageOpen = false
         selectedTab?.engineState?.engineSession?.clearFindMatches()
+    }
+
+    /** Okuma görünümünü açar veya kapatır. */
+    fun toggleReader(active: Boolean) {
+        menuOpen = false
+        val feature = readerFeature() ?: return
+        if (active) feature.hideReaderView() else feature.showReaderView()
+    }
+
+    fun openReaderSettings() {
+        menuOpen = false
+        readerFeature()?.showControls()
+    }
+
+    fun openTranslate() {
+        menuOpen = false
+        translateOpen = true
+    }
+
+    fun openQrScanner() {
+        menuOpen = false
+        overlay = Overlay.QR
     }
 
     fun openYouTubeDownload() {
@@ -271,10 +308,13 @@ class BrowserController(
     fun handleBack(): Boolean {
         when {
             menuOpen -> menuOpen = false
+            readerControls.open -> readerControls.hideControls()
+            translateOpen -> translateOpen = false
             profileSwitcherOpen -> profileSwitcherOpen = false
             youtubeUrl != null -> youtubeUrl = null
             overlay != Overlay.NONE -> closeOverlay()
             findInPageOpen -> closeFindInPage()
+            readerFeature()?.onBackPressed() == true -> Unit
             selectedTab?.content?.canGoBack == true -> goBack()
             selectedTab?.parentId != null -> selectedTab?.let { closeTab(it.id) }
             else -> return false

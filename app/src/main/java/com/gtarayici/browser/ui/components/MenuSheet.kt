@@ -27,7 +27,10 @@ import androidx.compose.material.icons.filled.OndemandVideo
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.VpnKey
@@ -65,6 +68,8 @@ data class MenuState(
     val desktopMode: Boolean,
     val isYouTubeVideo: Boolean,
     val installableWebApp: Boolean,
+    val readerActive: Boolean = false,
+    val canTranslate: Boolean = false,
     val extensionActions: List<Pair<String, Action>>,
 )
 
@@ -133,8 +138,15 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
             MenuItem(Icons.Filled.Bookmarks, stringResource(R.string.menu_bookmarks)) { controller.open(Overlay.BOOKMARKS) }
             MenuItem(Icons.Filled.History, stringResource(R.string.menu_history)) { controller.open(Overlay.HISTORY) }
             MenuItem(Icons.Filled.Download, stringResource(R.string.menu_downloads)) { controller.open(Overlay.DOWNLOADS) }
+            MenuItem(Icons.Filled.QrCodeScanner, stringResource(R.string.menu_scan_qr)) { controller.openQrScanner() }
             if (state.hasPage) {
                 MenuItem(Icons.Filled.FindInPage, stringResource(R.string.menu_find_in_page)) { controller.openFindInPage() }
+                if (state.canTranslate) {
+                    MenuItem(Icons.Filled.Translate, stringResource(R.string.menu_translate)) { controller.openTranslate() }
+                }
+                if (state.readerActive) {
+                    MenuItem(Icons.Filled.TextFields, stringResource(R.string.reader_settings)) { controller.openReaderSettings() }
+                }
                 MenuItem(Icons.Filled.InstallMobile, stringResource(R.string.menu_install_app)) { controller.openInstallDialog() }
                 MenuItem(Icons.Filled.ContentCopy, stringResource(R.string.menu_copy_link)) { controller.copyLink() }
                 ListItem(
