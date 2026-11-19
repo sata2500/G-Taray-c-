@@ -1,7 +1,11 @@
 package com.gtarayici.browser.media
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Rect
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.getValue
@@ -32,19 +36,39 @@ class NativeVideoPip(
     private val runtime: GeckoRuntime,
     /** O an ekranda gösterilen sekmenin GeckoView'ı (kaynak oturum buradan alınır). */
     private val sourceView: () -> GeckoView?,
+    /** Videonun kaynak görünümdeki konumu (piksel); PiP açılırken son kareyi göstermek için. */
+    private val videoRect: (GeckoView) -> Rect? = { null },
 ) {
     private val logger = Logger("NativeVideoPip")
 
-    /** Küçük pencerede gösterilecek görünüm (yalnızca video). */
-    val pipView: GeckoView = GeckoView(context).apply {
+    /** PiP oynatıcısı (Gecko'nun kopyaladığı video). */
+    private val player: GeckoView = GeckoView(context).apply {
         // Kaynak sayfa PiP sırasında da görünür ve çizilir durumda kalır (YouTube gibi MSE oynatıcılar
         // yeni video parçalarını ancak sayfa çizilirken yükler). Bu görünüm onun üstünde durur; iki
         // SurfaceView'ın üst üste binme sırası belirsiz olduğundan TextureView ile çizilir.
         setViewBackend(GeckoView.BACKEND_TEXTURE_VIEW)
         setBackgroundColor(Color.BLACK)
-        layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+    }
+
+    /** Oynatıcı ilk karesini çizene kadar videonun son karesi gösterilir (kısa siyah ekran yerine). */
+    private val placeholder = ImageView(context).apply {
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        setBackgroundColor(Color.BLACK)
+        layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         visibility = View.GONE
     }
+
+    /** Küçük pencerede gösterilecek görünüm (yalnızca video). */
+    val pipView: View = FrameLayout(context).apply {
+        setBackgroundColor(Color.BLACK)
+        layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        addView(player)
+        addView(placeholder)
+        visibility = View.GONE
+    }
+
+    private var firstFrameShown = false
 
     /** true iken arayüz tarayıcı görünümünü gizleyip [pipView]'ı gösterir. */
     var active by mutableStateOf(false)
@@ -78,14 +102,16 @@ class NativeVideoPip(
             }
         })
         active = true
+        firstFrameShown = false
         pipView.visibility = View.VISIBLE
+        showLastFrame()
         // Sayfa oynayan bir video bulamazsa Gecko pencere açmadan isteği tamamlar; bu durumda eski yönteme geçilir.
-        pipView.postDelayed({ if (active && source === session && pipSession == null) fail("video bulunamadı") }, ATTACH_TIMEOUT_MS)
+        player.postDelayed({ if (active && source === session && pipSession == null) fail("video bulunamadı") }, ATTACH_TIMEOUT_MS)
         // Gecko oynayan videoyu odaklı çerçevede arar; uygulamadan çıkarken GeckoView odağı bırakır.
         session.setFocused(true)
         Diagnostics.log("yerel PiP isteniyor")
         pip.request().exceptionally<Void> { error ->
-            pipView.post { fail(error.message ?: "istek reddedildi") }
+            player.post { fail(error.message ?: "istek reddedildi") }
             null
         }
         return true
@@ -96,8 +122,14 @@ class NativeVideoPip(
         // Kaynak oturumun ayarları (gizli mod, profil/contextId) korunur; yalnızca yerleştirme anahtarı eklenir.
         val settings = source?.settings?.let { GeckoSessionSettings.Builder(it) } ?: GeckoSessionSettings.Builder()
         val session = GeckoSession(settings.pictureInPictureToken(token).build())
+        session.contentDelegate = object : GeckoSession.ContentDelegate {
+            override fun onFirstComposite(session: GeckoSession) {
+                // Kopya video ilk karesini çizdi; kısa bir süre sonra son kare görüntüsü kaldırılır.
+                player.postDelayed({ hidePlaceholder() }, PLACEHOLDER_GRACE_MS)
+            }
+        }
         session.open(runtime)
-        pipView.setSession(session)
+        player.setSession(session)
         session.loadUri("about:blank")
         session.compositorController.onPipModeChanged(true)
         pipSession = session
@@ -128,6 +160,7 @@ class NativeVideoPip(
             if (dismissed) session.setActive(false)
         }
         releasePipSession()
+        hidePlaceholder()
         pipView.visibility = View.GONE
         active = false
     }
@@ -136,12 +169,34 @@ class NativeVideoPip(
         val session = pipSession ?: return
         pipSession = null
         runCatching { session.compositorController.onPipModeChanged(false) }
-        pipView.releaseSession()
+        player.releaseSession()
         session.close()
+    }
+
+    /** Kaynak sayfanın görüntüsünü alır ve video alanını kırpıp yer tutucu olarak gösterir. */
+    private fun showLastFrame() {
+        val view = sourceView() ?: return
+        val rect = videoRect(view) ?: return
+        view.capturePixels().accept { bitmap ->
+            if (bitmap == null || !active || firstFrameShown) return@accept
+            val crop = Rect(rect)
+            if (!crop.intersect(0, 0, bitmap.width, bitmap.height)) return@accept
+            placeholder.setImageBitmap(Bitmap.createBitmap(bitmap, crop.left, crop.top, crop.width(), crop.height()))
+            placeholder.visibility = View.VISIBLE
+            Diagnostics.log("son kare gösteriliyor (${crop.width()}x${crop.height()})")
+        }
+    }
+
+    private fun hidePlaceholder() {
+        firstFrameShown = true
+        if (placeholder.visibility == View.VISIBLE) Diagnostics.log("PiP oynatıcısı ilk karesini çizdi")
+        placeholder.visibility = View.GONE
+        placeholder.setImageDrawable(null)
     }
 
     companion object {
         private const val ATTACH_TIMEOUT_MS = 2500L
+        private const val PLACEHOLDER_GRACE_MS = 120L
 
         /** a-c'nin motor görünümünün içindeki GeckoView'ı bulur. */
         fun findGeckoView(view: View?): GeckoView? = when (view) {

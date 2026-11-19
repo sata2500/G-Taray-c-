@@ -43,7 +43,12 @@ class PipController(
     /** Sekmenin gösterildiği motor görünümü. */
     private val engineView: () -> android.view.View? = { null },
 ) {
-    private val native = NativeVideoPip(activity, components.runtime) { NativeVideoPip.findGeckoView(engineView()) }
+    private val native = NativeVideoPip(
+        activity,
+        components.runtime,
+        sourceView = { NativeVideoPip.findGeckoView(engineView()) },
+        videoRect = { view -> components.extensions.videoRect.value?.toViewPixels(view.width, view.height) },
+    )
 
     /** Küçük pencerede gösterilen, yalnızca videoyu içeren görünüm. */
     val pipView: android.view.View get() = native.pipView
@@ -80,6 +85,7 @@ class PipController(
     fun start() {
         if (!supported) return
         ContextCompat.registerReceiver(activity, receiver, IntentFilter(ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
+        watchVideoRect()
         activity.lifecycleScope.launch {
             components.store.flow()
                 .map { state -> state.mediaInfo() }
@@ -91,6 +97,13 @@ class PipController(
                     media = info
                     updateParams()
                 }
+        }
+    }
+
+    /** Videonun ekrandaki konumu değişince geçiş animasyonu ipucu güncellenir. */
+    private fun watchVideoRect() {
+        activity.lifecycleScope.launch {
+            components.extensions.videoRect.collect { if (media?.playing == true) updateParams() }
         }
     }
 
@@ -150,20 +163,34 @@ class PipController(
     private fun buildParams(): PictureInPictureParams {
         val info = media
         val builder = PictureInPictureParams.Builder()
-        val ratio = if (info != null && info.width > 0 && info.height > 0) {
-            Rational(info.width.toInt(), info.height.toInt())
-        } else {
-            Rational(16, 9)
+        val hint = sourceRectHint()
+        val ratio = when {
+            info != null && info.width > 0 && info.height > 0 -> Rational(info.width.toInt(), info.height.toInt())
+            hint != null -> Rational(hint.width(), hint.height())
+            else -> Rational(16, 9)
         }
         // Android yalnızca 1:2.39 ile 2.39:1 arasındaki oranları kabul eder.
         val clamped = ratio.toFloat().coerceIn(1 / 2.39f, 2.39f)
         builder.setAspectRatio(if (clamped == ratio.toFloat()) ratio else Rational((clamped * 1000).toInt(), 1000))
+        // Geçiş animasyonu tüm sayfadan değil, videonun ekrandaki yerinden başlar.
+        hint?.let { builder.setSourceRectHint(it) }
         builder.setActions(actions(info))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             builder.setAutoEnterEnabled(enabled && info?.playing == true)
             builder.setSeamlessResizeEnabled(true)
         }
         return builder.build()
+    }
+
+    /** Videonun pencere koordinatlarındaki yeri (yardımcı eklentinin bildirdiği konumdan). */
+    private fun sourceRectHint(): android.graphics.Rect? {
+        if (activity.isInPictureInPictureMode) return null
+        val view = NativeVideoPip.findGeckoView(engineView()) ?: return null
+        val rect = components.extensions.videoRect.value?.toViewPixels(view.width, view.height) ?: return null
+        val location = IntArray(2)
+        view.getLocationInWindow(location)
+        rect.offset(location[0], location[1])
+        return rect
     }
 
     private fun actions(info: MediaInfo?): List<RemoteAction> {

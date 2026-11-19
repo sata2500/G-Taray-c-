@@ -217,5 +217,31 @@
   document.addEventListener("play", (e) => { if (e.target instanceof HTMLVideoElement) connect(); }, true);
   if (playingVideo()) connect();
 
+  // Oynayan videonun ekrandaki konumu uygulamaya bildirilir: PiP geçiş animasyonu videodan başlar ve
+  // PiP penceresi açılırken videonun son karesi gösterilebilir. Yalnızca ana çerçeve.
+  let lastRect = "";
+  function reportRect() {
+    if (window.top !== window || shared.active || !port) return;
+    const video = playingVideo();
+    if (!video) return;
+    const r = video.getBoundingClientRect();
+    const key = [r.left, r.top, r.width, r.height, window.innerWidth].map(Math.round).join(",");
+    if (key === lastRect || r.width < 40 || r.height < 40) return;
+    lastRect = key;
+    try {
+      port.postMessage({
+        type: "video-rect",
+        x: r.left, y: r.top, w: r.width, h: r.height,
+        vw: window.innerWidth, vh: window.innerHeight,
+      });
+    } catch (e) {}
+  }
+  if (window.top === window) {
+    document.addEventListener("playing", (e) => { if (e.target instanceof HTMLVideoElement) setTimeout(reportRect, 300); }, true);
+    window.addEventListener("resize", () => setTimeout(reportRect, 300), true);
+    window.addEventListener("scroll", () => { clearTimeout(reportRect.t); reportRect.t = setTimeout(reportRect, 250); }, true);
+    setInterval(reportRect, 2000);
+  }
+
   browser.runtime.onMessage.addListener((message) => handle(message));
 })();

@@ -52,6 +52,11 @@ class ExtensionManager(
 
     @Volatile private var helperPort: Port? = null
 
+    private val _videoRect = MutableStateFlow<VideoRect?>(null)
+
+    /** Oynayan videonun sayfadaki son konumu (CSS pikseli); PiP animasyonu ve geçiş karesi için. */
+    val videoRect: StateFlow<VideoRect?> = _videoRect.asStateFlow()
+
     /** Oynayan videoyu sayfanın tamamını kaplayacak şekilde büyütür (resim içinde resim için). */
     fun enterVideoPip() {
         helperPort?.postMessage(JSONObject().put("type", "pip-enter"))
@@ -157,6 +162,13 @@ class ExtensionManager(
 
             override fun onPortMessage(message: Any, port: Port) {
                 val json = message as? JSONObject ?: return
+                if (json.optString("type") == "video-rect") {
+                    _videoRect.value = VideoRect(
+                        json.optDouble("x"), json.optDouble("y"), json.optDouble("w"), json.optDouble("h"),
+                        json.optDouble("vw"), json.optDouble("vh"),
+                    )
+                    return
+                }
                 if (json.optString("type") == "diag") {
                     val array = json.optJSONArray("lines") ?: return
                     val lines = (0 until array.length()).map { array.optString(it) }
@@ -224,6 +236,19 @@ class ExtensionManager(
         private const val UBLOCK_AMO_URL = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
         private const val KEY_UBLOCK_INSTALLED = "ublock_installed"
         private const val KEY_LAST_UPDATE = "last_update_check"
+    }
+}
+
+/** Videonun görünür alan (viewport) içindeki konumu, CSS pikseli cinsinden. */
+data class VideoRect(val x: Double, val y: Double, val w: Double, val h: Double, val viewportWidth: Double, val viewportHeight: Double) {
+    /** Bu dikdörtgeni, genişliği [viewWidth] piksel olan motor görünümünün piksel koordinatlarına çevirir. */
+    fun toViewPixels(viewWidth: Int, viewHeight: Int): android.graphics.Rect? {
+        if (viewportWidth <= 0 || viewWidth <= 0) return null
+        val scale = viewWidth / viewportWidth
+        val rect = android.graphics.Rect(
+            (x * scale).toInt(), (y * scale).toInt(), ((x + w) * scale).toInt(), ((y + h) * scale).toInt(),
+        )
+        return if (rect.intersect(0, 0, viewWidth, viewHeight) && rect.width() > 16 && rect.height() > 16) rect else null
     }
 }
 

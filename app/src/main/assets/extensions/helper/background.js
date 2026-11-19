@@ -20,7 +20,7 @@ browser.runtime.onConnect.addListener((port) => {
   port.onDisconnect.addListener(() => mediaPorts.delete(port));
   // Sayfalardan gelen tanılama kayıtları uygulamaya iletilir.
   port.onMessage.addListener((message) => {
-    if (message && message.type === "diag" && nativePort) {
+    if (message && (message.type === "diag" || message.type === "video-rect") && nativePort) {
       try {
         nativePort.postMessage(message);
       } catch (e) {}
