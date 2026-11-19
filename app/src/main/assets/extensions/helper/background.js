@@ -18,12 +18,20 @@ browser.runtime.onConnect.addListener((port) => {
   if (port.name !== "gt-media") return;
   mediaPorts.add(port);
   port.onDisconnect.addListener(() => mediaPorts.delete(port));
+  // Sayfalardan gelen tanılama kayıtları uygulamaya iletilir.
+  port.onMessage.addListener((message) => {
+    if (message && message.type === "diag" && nativePort) {
+      try {
+        nativePort.postMessage(message);
+      } catch (e) {}
+    }
+  });
 });
 
-function broadcast(type) {
+function broadcast(message) {
   for (const port of mediaPorts) {
     try {
-      port.postMessage({ type });
+      port.postMessage(message);
     } catch (e) {
       mediaPorts.delete(port);
     }
@@ -36,7 +44,7 @@ function connectNative() {
   try {
     nativePort = browser.runtime.connectNative("gtarayici");
     nativePort.onMessage.addListener((message) => {
-      if (message && message.type) broadcast(message.type);
+      if (message && message.type) broadcast(message);
     });
     nativePort.onDisconnect.addListener(() => {
       nativePort = null;

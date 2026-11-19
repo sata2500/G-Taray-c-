@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material.icons.filled.Password
 import android.widget.Toast
 import androidx.compose.foundation.text.KeyboardOptions
@@ -83,6 +85,7 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
     val autoPip by settings.autoPictureInPicture.collectAsState()
     var dnsDialog by remember { mutableStateOf(false) }
     var passwordDialog by remember { mutableStateOf(false) }
+    var diagDialog by remember { mutableStateOf(false) }
     var dnsCustomDialog by remember { mutableStateOf(false) }
 
     var isDefault by remember { mutableStateOf(isDefaultBrowser(context)) }
@@ -207,6 +210,14 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
                 stringResource(R.string.settings_auto_pip_summary),
                 autoPip,
             ) { settings.setAutoPictureInPicture(it) }
+            ClickRow(
+                Icons.Filled.BugReport,
+                stringResource(R.string.diag_title),
+                stringResource(R.string.diag_summary),
+            ) {
+                components.extensions.requestDiagnostics()
+                diagDialog = true
+            }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SectionTitle(stringResource(R.string.settings_about))
@@ -230,6 +241,7 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
         )
     }
     if (passwordDialog) PasswordDialog(onDismiss = { passwordDialog = false })
+    if (diagDialog) DiagnosticsDialog(onDismiss = { diagDialog = false })
     if (dnsDialog) {
         ChoiceDialog(
             title = stringResource(R.string.settings_dns),
@@ -312,6 +324,52 @@ private fun OverlayScaffoldSettings(onBack: () -> Unit, content: @Composable (Mo
         onBack = onBack,
         content = content,
     )
+
+/** Resim içinde resim tanılama kaydı: sayfalardan gelen kayıtlar kısa bir süre beklenip gösterilir. */
+@Composable
+private fun DiagnosticsDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    var text by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(1200)
+        text = "G-Tarayıcı ${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE} · " +
+            "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}\n" +
+            "GeckoView ${org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION}\n\n" +
+            com.gtarayici.browser.diagnostics.Diagnostics.dump()
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.diag_title)) },
+        text = {
+            val current = text
+            if (current == null) {
+                Text(stringResource(R.string.diag_collecting))
+            } else {
+                androidx.compose.foundation.text.selection.SelectionContainer {
+                    Text(
+                        current,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = text != null, onClick = {
+                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+                runCatching { context.startActivity(Intent.createChooser(send, null)) }
+            }) { Text(stringResource(R.string.action_share)) }
+        },
+        dismissButton = {
+            TextButton(enabled = text != null, onClick = {
+                val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("G-Tarayıcı tanılama", text))
+                Toast.makeText(context, R.string.diag_copied, Toast.LENGTH_SHORT).show()
+            }) { Text(stringResource(R.string.diag_copy)) }
+        },
+    )
+}
 
 /** Uygulama parolasını belirleme, değiştirme veya kaldırma. */
 @Composable

@@ -17,6 +17,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.gtarayici.browser.Components
 import com.gtarayici.browser.R
+import com.gtarayici.browser.diagnostics.Diagnostics
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -59,9 +60,17 @@ class PipController(
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val controller = mediaTab()?.mediaSessionState?.controller ?: return
-            when (intent.getStringExtra(EXTRA_COMMAND)) {
-                CMD_PLAY -> controller.play()
-                CMD_PAUSE -> controller.pause()
+            val command = intent.getStringExtra(EXTRA_COMMAND)
+            Diagnostics.log("PiP düğmesi: $command")
+            when (command) {
+                CMD_PLAY -> {
+                    components.extensions.notifyPipUserAction("play")
+                    controller.play()
+                }
+                CMD_PAUSE -> {
+                    components.extensions.notifyPipUserAction("pause")
+                    controller.pause()
+                }
                 CMD_NEXT -> controller.nextTrack()
                 CMD_PREVIOUS -> controller.previousTrack()
             }
@@ -76,6 +85,9 @@ class PipController(
                 .map { state -> state.mediaInfo() }
                 .distinctUntilChanged()
                 .collect { info ->
+                    if (activity.isInPictureInPictureMode || info?.playing != media?.playing) {
+                        Diagnostics.log("medya: ${info?.let { "sekme=${it.tabId.take(8)} oynuyor=${it.playing} ${it.width}x${it.height}" } ?: "yok"}")
+                    }
                     media = info
                     updateParams()
                 }
@@ -98,19 +110,28 @@ class PipController(
 
     fun onPictureInPictureModeChanged(inPip: Boolean) {
         val tab = mediaTab()
+        Diagnostics.log("PiP ${if (inPip) "başladı" else "bitti"} (yaşam döngüsü=${activity.lifecycle.currentState}, tam ekran=${tab?.content?.fullScreen})")
         if (inPip) {
             if (tab == null) return
             // Önce Gecko'nun yerel video PiP'i: küçük pencerede yalnızca video oynar.
             // Kullanılamazsa eski yöntem: video CSS ile sayfayı kaplayacak şekilde büyütülür.
             val fallback = {
                 if (!tab.content.fullScreen && activity.isInPictureInPictureMode) {
+                    Diagnostics.log("yedek yöntem (CSS) kullanılıyor")
                     videoMode = true
                     components.extensions.enterVideoPip()
+                    components.extensions.notifyPipState(true, "css")
                 }
             }
-            if (!native.enter(fallback)) fallback()
+            if (native.enter(fallback)) {
+                components.extensions.notifyPipState(true, "yerel")
+            } else {
+                Diagnostics.log("yerel PiP başlatılamadı: kaynak GeckoView bulunamadı")
+                fallback()
+            }
         } else {
             val dismissed = !activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            components.extensions.notifyPipState(false, if (dismissed) "kapatıldı" else "büyütüldü")
             if (native.active) native.exit(dismissed)
             if (videoMode) {
                 videoMode = false

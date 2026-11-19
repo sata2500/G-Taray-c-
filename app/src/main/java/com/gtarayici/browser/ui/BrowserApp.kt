@@ -34,6 +34,7 @@ import com.gtarayici.browser.ui.components.ToolbarState
 import com.gtarayici.browser.ui.components.VpnIndicator
 import com.gtarayici.browser.ui.components.YouTubeDownloadSheet
 import com.gtarayici.browser.ui.components.observe
+import com.gtarayici.browser.ui.components.keepSizeDuringPip
 import com.gtarayici.browser.ui.screens.BookmarksScreen
 import com.gtarayici.browser.ui.screens.DownloadsScreen
 import com.gtarayici.browser.ui.screens.ExtensionPopupSheet
@@ -148,7 +149,7 @@ fun BrowserApp(
                 Box(Modifier.weight(1f)) {
                     // Motor görünümü her zaman yerinde kalır; aksi halde bağlı özellikler serbest bırakılır.
                     // PiP sırasında da gizlenmez: sayfa çizilmeye devam etmeli (YouTube oynatıcısı buna bağlı).
-                    AndroidView(factory = { engineView }, modifier = Modifier.fillMaxSize())
+                    AndroidView(factory = { engineView }, modifier = Modifier.keepSizeDuringPip(pictureInPicture))
                     if (showHome && !pictureInPicture) {
                         HomeScreen(
                             private = private,

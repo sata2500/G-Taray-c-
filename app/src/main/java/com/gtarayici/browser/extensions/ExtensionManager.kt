@@ -26,6 +26,7 @@ import mozilla.components.concept.engine.webextension.Port
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONObject
+import com.gtarayici.browser.diagnostics.Diagnostics
 
 /**
  * Eklentileri yönetir: hazır gelen uBlock Origin ve G-Tarayıcı yardımcısını kurar,
@@ -59,6 +60,24 @@ class ExtensionManager(
     fun exitVideoPip() {
         helperPort?.postMessage(JSONObject().put("type", "pip-exit"))
     }
+
+    /** Sayfalara PiP'in başladığını/bittiğini bildirir (tanılama kaydı ve YouTube koruması için). */
+    fun notifyPipState(active: Boolean, mode: String) {
+        helperPort?.postMessage(JSONObject().put("type", "pip-state").put("active", active).put("mode", mode))
+    }
+
+    /** PiP penceresindeki oynat/duraklat düğmesine basıldı (kullanıcının isteği). */
+    fun notifyPipUserAction(action: String) {
+        helperPort?.postMessage(JSONObject().put("type", "pip-user").put("action", action))
+    }
+
+    /** Sayfalardan tanılama kayıtlarını ister; yanıtlar [Diagnostics]'e eklenir. */
+    fun requestDiagnostics() {
+        Diagnostics.clearPages()
+        helperPort?.postMessage(JSONObject().put("type", "diag-dump"))
+    }
+
+    val helperConnected: Boolean get() = helperPort != null
 
     fun start() {
         // Uygulamayla gelen eklentilerin izin istemi kullanıcıya gösterilmeden onaylanır.
@@ -134,6 +153,15 @@ class ExtensionManager(
 
             override fun onPortDisconnected(port: Port) {
                 if (helperPort === port) helperPort = null
+            }
+
+            override fun onPortMessage(message: Any, port: Port) {
+                val json = message as? JSONObject ?: return
+                if (json.optString("type") == "diag") {
+                    val array = json.optJSONArray("lines") ?: return
+                    val lines = (0 until array.length()).map { array.optString(it) }
+                    Diagnostics.pageLog(json.optString("url"), json.optBoolean("top", true), lines)
+                }
             }
 
             override fun onMessage(message: Any, source: EngineSession?): Any =

@@ -46,6 +46,7 @@ import com.gtarayici.browser.components
 import com.gtarayici.browser.media.PipController
 import com.gtarayici.browser.search.UrlInput
 import com.gtarayici.browser.ui.components.observe
+import com.gtarayici.browser.ui.components.keepSizeDuringPip
 import com.gtarayici.browser.ui.theme.GTarayiciTheme
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.concept.engine.EngineView
@@ -165,7 +166,7 @@ class WebAppActivity : AppCompatActivity() {
                                 }
                             }
                         }
-                        AndroidView(factory = { view }, modifier = Modifier.fillMaxSize())
+                        AndroidView(factory = { view }, modifier = Modifier.keepSizeDuringPip(inPip))
                     }
                     pip?.let { controller -> AndroidView(factory = { controller.pipView }, modifier = Modifier.fillMaxSize()) }
                 }

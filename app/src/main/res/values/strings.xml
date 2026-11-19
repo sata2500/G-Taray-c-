@@ -243,4 +243,9 @@
     <string name="vpn_username">VPN kullanıcı adı</string>
     <string name="vpn_password">VPN parolası</string>
     <string name="vpn_credentials_required">Bu OpenVPN sunucusu kullanıcı adı ve parola istiyor</string>
+    <string name="diag_title">PiP tanılama kaydı</string>
+    <string name="diag_summary">Resim içinde resim sorunlarını bildirmek için: video olayları ve zaman çizelgesi</string>
+    <string name="diag_collecting">Kayıtlar toplanıyor…</string>
+    <string name="diag_copy">Kopyala</string>
+    <string name="diag_copied">Tanılama kaydı kopyalandı</string>
 </resources>

@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import mozilla.components.support.base.log.logger.Logger
+import com.gtarayici.browser.diagnostics.Diagnostics
 import org.mozilla.geckoview.ExperimentalGeckoViewApi
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
@@ -66,10 +67,12 @@ class NativeVideoPip(
         pip.setKeepActive(true)
         session.setPictureInPictureDelegate(object : PictureInPictureController.SessionPictureInPicture.Delegate {
             override fun onEnterPictureInPicture(session: GeckoSession, placementToken: String) {
+                Diagnostics.log("Gecko PiP oynatıcısı istedi (anahtar ${if (placementToken.isEmpty()) "boş" else "var"})")
                 if (placementToken.isEmpty()) fail("boş yerleştirme anahtarı") else attach(placementToken)
             }
 
             override fun onExitPictureInPicture(session: GeckoSession) {
+                Diagnostics.log("Gecko PiP penceresinin kapanmasını istedi")
                 // Gecko pencerenin kapanmasını istedi (ör. video kaldırıldı).
                 releasePipSession()
             }
@@ -80,6 +83,7 @@ class NativeVideoPip(
         pipView.postDelayed({ if (active && source === session && pipSession == null) fail("video bulunamadı") }, ATTACH_TIMEOUT_MS)
         // Gecko oynayan videoyu odaklı çerçevede arar; uygulamadan çıkarken GeckoView odağı bırakır.
         session.setFocused(true)
+        Diagnostics.log("yerel PiP isteniyor")
         pip.request().exceptionally<Void> { error ->
             pipView.post { fail(error.message ?: "istek reddedildi") }
             null
@@ -97,10 +101,12 @@ class NativeVideoPip(
         session.loadUri("about:blank")
         session.compositorController.onPipModeChanged(true)
         pipSession = session
+        Diagnostics.log("PiP oynatıcı oturumu açıldı")
     }
 
     private fun fail(reason: String) {
         logger.warn("Yerel video PiP kullanılamadı: $reason")
+        Diagnostics.log("yerel PiP başarısız: $reason")
         val callback = onFailure
         exit(dismissed = false)
         callback?.invoke()
