@@ -57,6 +57,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -134,7 +137,11 @@ fun BottomToolbar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 state.profile?.let { profile ->
-                    IconButton(onClick = onProfileClick) { ProfileAvatar(profile, 28.dp) }
+                    // Rozet yalnızca baş harfi gösterir; ekran okuyucu profilin adını ve düğmenin işini okusun.
+                    val label = "${stringResource(R.string.profile_switch)}: ${profile.name}"
+                    IconButton(onClick = onProfileClick, modifier = Modifier.semantics { contentDescription = label }) {
+                        Box(Modifier.clearAndSetSemantics { }) { ProfileAvatar(profile, 28.dp) }
+                    }
                 }
                 UrlPill(
                     state,

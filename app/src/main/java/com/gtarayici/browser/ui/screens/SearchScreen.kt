@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.R
 import com.gtarayici.browser.components
 import com.gtarayici.browser.search.SearchEngine
+import com.gtarayici.browser.search.TextMatch
 import com.gtarayici.browser.search.UrlInput
 import kotlinx.coroutines.delay
 import mozilla.components.support.ktx.util.URLStringUtils
@@ -98,10 +99,12 @@ fun SearchScreen(
         }
         list += Suggestion(Icons.Filled.Search, query, engine.title, engine.searchUrl(query))
         if (!private) {
-            db.bookmarks().search(profileId, query).forEach {
-                list += Suggestion(Icons.Filled.Bookmark, it.title, UrlInput.displayUrl(it.url), it.url)
-            }
-            db.history().search(profileId, query).forEach { h ->
+            db.bookmarks().list(profileId).asSequence()
+                .filter { TextMatch.matches(query, it.title, it.url) }.take(4).forEach {
+                    list += Suggestion(Icons.Filled.Bookmark, it.title, UrlInput.displayUrl(it.url), it.url)
+                }
+            db.history().candidates(profileId).asSequence()
+                .filter { TextMatch.matches(query, it.title, it.url) }.take(8).forEach { h ->
                 if (list.none { it.target == h.url }) {
                     list += Suggestion(Icons.Filled.History, h.title.ifBlank { h.url }, UrlInput.displayUrl(h.url), h.url)
                 }

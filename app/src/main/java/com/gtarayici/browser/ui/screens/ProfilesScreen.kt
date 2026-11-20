@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +32,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -69,6 +69,8 @@ import com.gtarayici.browser.data.DEFAULT_PROFILE_ID
 import com.gtarayici.browser.data.Profile
 import com.gtarayici.browser.profiles.PROFILE_COLORS
 import com.gtarayici.browser.ui.BrowserController
+import com.gtarayici.browser.ui.components.AddFab
+import com.gtarayici.browser.ui.components.colorOption
 import com.gtarayici.browser.ui.components.OverlayScaffold
 
 fun profileColor(profile: Profile) = Color(PROFILE_COLORS[profile.colorIndex.mod(PROFILE_COLORS.size)])
@@ -104,11 +106,7 @@ fun ProfilesScreen(controller: BrowserController, onBack: () -> Unit) {
         title = stringResource(R.string.profiles_title),
         onBack = onBack,
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { creating = true },
-                icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text(stringResource(R.string.profile_add)) },
-            )
+            AddFab(stringResource(R.string.profile_add)) { creating = true }
         },
     ) { modifier ->
         LazyColumn(modifier) {
@@ -210,7 +208,7 @@ private fun ProfileEditor(
                                 .size(28.dp)
                                 .clip(CircleShape)
                                 .background(Color(value))
-                                .clickable { color = index },
+                                .colorOption(index, PROFILE_COLORS.size, index == color) { color = index },
                             contentAlignment = Alignment.Center,
                         ) {
                             if (index == color) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
@@ -258,7 +256,10 @@ fun ProfileSwitcherSheet(controller: BrowserController) {
     val components = LocalContext.current.components
     val profiles by components.profiles.profiles.collectAsState()
     val active by components.profiles.active.collectAsState()
-    ModalBottomSheet(onDismissRequest = { controller.profileSwitcherOpen = false }) {
+    ModalBottomSheet(
+        onDismissRequest = { controller.profileSwitcherOpen = false },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
             Text(
                 stringResource(R.string.profile_switch),

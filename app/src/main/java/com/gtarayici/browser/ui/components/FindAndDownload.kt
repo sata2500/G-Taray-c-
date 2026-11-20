@@ -27,6 +27,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -104,7 +105,8 @@ fun YouTubeDownloadSheet(pageUrl: String, onDismiss: () -> Unit) {
         downloader.fetch(pageUrl).onSuccess { video = it }.onFailure { error = it.message ?: it.javaClass.simpleName }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    // Tek "Geri" basışı pencereyi kapatsın (yarı açık ara durum yok).
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp).verticalScroll(rememberScrollState())) {
             Text(
                 video?.title ?: stringResource(R.string.yt_title),

@@ -41,6 +41,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.gtarayici.browser.security.AppLock
+import com.gtarayici.browser.search.TextMatch
 import androidx.compose.material3.OutlinedTextField
 import com.gtarayici.browser.settings.DnsProvider
 import androidx.compose.material.icons.filled.Info
@@ -580,8 +581,19 @@ private val LocalSettingsQuery = staticCompositionLocalOf { "" }
 @Composable
 private fun matchesQuery(vararg texts: String): Boolean {
     val query = LocalSettingsQuery.current
-    return query.isEmpty() || texts.any { it.contains(query, ignoreCase = true) }
+    if (query.isBlank()) return true
+    if (TextMatch.containsAny(query, *texts)) return true
+    // Kısaltmalar: "pip" yazan "Resim içinde resim" ayarlarını da bulsun.
+    val synonym = SETTINGS_SYNONYMS[TextMatch.fold(query.trim())] ?: return false
+    return TextMatch.containsAny(synonym, *texts)
 }
+
+private val SETTINGS_SYNONYMS = mapOf(
+    "pip" to "resim içinde resim",
+    "doh" to "dns",
+    "reklam" to "izleyici",
+    "adblock" to "izleyici",
+)
 
 @Composable
 private fun SettingsSearchField(value: String, onChange: (String) -> Unit) {

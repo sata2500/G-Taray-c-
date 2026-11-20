@@ -58,6 +58,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -123,10 +125,14 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
             if (state.extensionActions.isNotEmpty()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.Start) {
                     state.extensionActions.forEach { (_, action) ->
-                        IconButton(onClick = {
-                            controller.menuOpen = false
-                            action.onClick()
-                        }) {
+                        IconButton(
+                            onClick = {
+                                controller.menuOpen = false
+                                action.onClick()
+                            },
+                            // Simge tek başına ekran okuyucuya bir şey söylemez; eklentinin düğme başlığı okunur.
+                            modifier = Modifier.semantics { action.title?.let { contentDescription = it } },
+                        ) {
                             BadgedBox(badge = {
                                 action.badgeText?.takeIf { it.isNotBlank() }?.let { Badge { Text(it) } }
                             }) { ExtensionActionIcon(action.loadIcon) }

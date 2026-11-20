@@ -8,7 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +57,23 @@ fun OverlayScaffold(
     ) { padding ->
         content(Modifier.padding(padding).fillMaxSize())
     }
+}
+
+/**
+ * "Ekle" türü genişletilmiş FAB. Material 3'ün ExtendedFloatingActionButton'ı içindeki metni erişilebilirlik
+ * ağacına aktarmıyor (ekran okuyucu düğmeyi etiketsiz okuyor); etiket düğmenin kendisine verilir.
+ */
+@Composable
+fun AddFab(label: String, onClick: () -> Unit) {
+    ExtendedFloatingActionButton(
+        onClick = onClick,
+        icon = { Icon(Icons.Filled.Add, null) },
+        text = { Text(label) },
+        modifier = Modifier.semantics {
+            contentDescription = label
+            role = Role.Button
+        },
+    )
 }
 
 @Composable

@@ -24,6 +24,7 @@ mozilla-browser-state = { module = "org.mozilla.components:browser-state", versi
 mozilla-browser-session-storage = { module = "org.mozilla.components:browser-session-storage", version.ref = "mozilla-components" }
 mozilla-browser-thumbnails = { module = "org.mozilla.components:browser-thumbnails", version.ref = "mozilla-components" }
 mozilla-browser-icons = { module = "org.mozilla.components:browser-icons", version.ref = "mozilla-components" }
+mozilla-browser-errorpages = { module = "org.mozilla.components:browser-errorpages", version.ref = "mozilla-components" }
 mozilla-concept-engine = { module = "org.mozilla.components:concept-engine", version.ref = "mozilla-components" }
 mozilla-concept-fetch = { module = "org.mozilla.components:concept-fetch", version.ref = "mozilla-components" }
 mozilla-feature-session = { module = "org.mozilla.components:feature-session", version.ref = "mozilla-components" }

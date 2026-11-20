@@ -17,6 +17,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -132,9 +134,13 @@ fun BrowserApp(
                 private = it.content.private,
                 loading = it.content.loading,
                 progress = it.content.progress,
-                secure = when (it.content.securityInfo) {
-                    is SecurityInfo.Secure -> true
-                    is SecurityInfo.Insecure -> false
+                secure = when {
+                    // Okuma görünümü yerel bir eklenti sayfasıdır ve motor onu "güvensiz" sayar; gösterge, içeriğin
+                    // çekildiği özgün adrese göre verilir (yoksa güvenli bir sitede uyarı üçgeni görünür).
+                    it.readerState.active && it.readerState.activeUrl != null ->
+                        it.readerState.activeUrl!!.startsWith("https://")
+                    it.content.securityInfo is SecurityInfo.Secure -> true
+                    it.content.securityInfo is SecurityInfo.Insecure -> false
                     else -> null
                 },
                 canGoBack = it.content.canGoBack,
@@ -179,8 +185,11 @@ fun BrowserApp(
     val hiddenSites by controller.hiddenSites.collectAsState()
     val frequent = remember(history, hiddenSites) { topSites(history, hiddenSites) }
 
+    // Hata sayfasında çeviri önerisi ve okuma simgesi gösterilmez (şablonun dili belirsiz, okunacak makale yok).
+    val failedUrls by components.errorPages.failedUrls.collectAsState()
     // Seçili sekme başka bir profile aitse bu profilde görünür sekme yok sayılır.
     val current = selected?.takeIf { it.contextId == profile.contextId }
+        ?.let { if (it.url in failedUrls) it.copy(offerTranslate = false, readerable = false) else it }
     val private = current?.private ?: controller.privateMode
     val showHome = current == null || current.url == "about:blank"
     val pageUrl = current?.url?.takeUnless { showHome }
@@ -275,7 +284,12 @@ fun BrowserApp(
                 )
                 }
             }
-            Column(Modifier.fillMaxSize().then(chrome).imePadding()) {
+            // Tanıtım veya tam ekran bir pencere açıkken arkadaki tarayıcı arayüzü ekran okuyucuya görünmesin.
+            val covered = controller.onboarding || controller.overlay != Overlay.NONE
+            Column(
+                Modifier.fillMaxSize().then(chrome).imePadding()
+                    .semantics { if (covered) hideFromAccessibility() },
+            ) {
                 Box(Modifier.weight(1f).clipToBounds()) {
                     // Motor görünümü her zaman yerinde kalır; aksi halde bağlı özellikler serbest bırakılır.
                     // PiP sırasında da gizlenmez: sayfa çizilmeye devam etmeli (YouTube oynatıcısı buna bağlı).

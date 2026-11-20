@@ -110,6 +110,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         pip = com.gtarayici.browser.media.PipController(this, components, engineView = { engineView.asView() }).also { it.start() }
+        com.gtarayici.browser.media.BackgroundPlayGuard(this, components).start()
         if (components.settings.securePrivateTabs.value) {
             lifecycle.addObserver(SecureWindowFeature(window, components.store))
         }
@@ -135,7 +136,9 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) handleIntent(intent)
         controller.onboarding = BrowserController.needsOnboarding(getSharedPreferences("gtarayici_state", MODE_PRIVATE))
-        requestNotificationPermissionOnce()
+        // Bildirim izni tanıtımın üstünde açılmasın: tanıtım varsa bittikten sonra sorulur.
+        controller.onOnboardingFinished = { requestNotificationPermissionOnce() }
+        if (!controller.onboarding) requestNotificationPermissionOnce()
         // Güncelleme denetimi ağ kullanır; açılıştaki sayfa yüklemesiyle yarışmasın.
         window.decorView.postDelayed({ components.updater.checkIfDue() }, UPDATE_CHECK_DELAY_MS)
     }
@@ -155,6 +158,11 @@ class MainActivity : AppCompatActivity() {
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         pip.onUserLeaveHint()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::controller.isInitialized) controller.resumePendingWebApkInstall()
     }
 
     override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {

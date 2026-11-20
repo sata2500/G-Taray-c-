@@ -14,6 +14,8 @@ import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.localization.ContentCountry
 import org.schabi.newpipe.extractor.localization.Localization
 import org.schabi.newpipe.extractor.stream.DeliveryMethod
+import org.schabi.newpipe.extractor.stream.Stream
+import java.util.Locale
 
 /** İndirme seçeneği: tek dosya (sesli video veya yalnız ses) ya da birleştirilecek görüntü + ses. */
 data class YouTubeOption(
@@ -93,7 +95,7 @@ class YouTubeDownloader(private val context: Context, private val components: Co
                 videoOnly.filter { it.height > (progressive.firstOrNull()?.height ?: 0) }.forEach { video ->
                     options += YouTubeOption(
                         label = "Video ${video.height}p${if (video.fps > 30) " ${video.fps}fps" else ""}",
-                        detail = "MP4 · görüntü ve ses birleştirilir",
+                        detail = withSize("MP4 · görüntü ve ses birleştirilir", video, bestM4a),
                         videoUrl = video.content,
                         audioUrl = bestM4a.content,
                         extension = "mp4",
@@ -102,16 +104,35 @@ class YouTubeDownloader(private val context: Context, private val components: Co
                 }
             }
             progressive.forEach { video ->
-                options += YouTubeOption("Video ${video.height}p", "MP4 · hızlı", video.content, null, "mp4", "video/mp4")
+                options += YouTubeOption("Video ${video.height}p", withSize("MP4 · hızlı", video), video.content, null, "mp4", "video/mp4")
             }
             bestM4a?.let {
-                options += YouTubeOption("Yalnız ses", "M4A · ${it.averageBitrate.coerceAtLeast(0)} kbps", null, it.content, "m4a", "audio/mp4")
+                options += YouTubeOption("Yalnız ses", withSize("M4A · ${it.averageBitrate.coerceAtLeast(0)} kbps", it), null, it.content, "m4a", "audio/mp4")
             }
             bestOpus?.let {
-                options += YouTubeOption("Yalnız ses", "Opus (WebM) · ${it.averageBitrate.coerceAtLeast(0)} kbps", null, it.content, "webm", "audio/webm")
+                options += YouTubeOption("Yalnız ses", withSize("Opus (WebM) · ${it.averageBitrate.coerceAtLeast(0)} kbps", it), null, it.content, "webm", "audio/webm")
             }
             check(options.isNotEmpty()) { "Bu video için indirilebilir bir biçim bulunamadı" }
             return YouTubeVideo(extractor.name, extractor.uploaderName.orEmpty(), options)
+        }
+
+        /** Seçeneğin yanına yaklaşık dosya boyutu eklenir (bilinmiyorsa eklenmez); büyük indirmeler önceden görünsün. */
+        private fun withSize(detail: String, vararg streams: Stream): String {
+            val lengths = streams.map { runCatching { it.itagItem?.contentLength ?: -1L }.getOrDefault(-1L) }
+            if (lengths.any { it <= 0 }) return detail
+            return sizeLabel(lengths.sum())?.let { "$detail · $it" } ?: detail
+        }
+
+        /** 24_944_676 → "~25 MB", 3_400_000 → "~3,4 MB", 1_250_000_000 → "~1,3 GB" */
+        internal fun sizeLabel(bytes: Long): String? {
+            if (bytes <= 0) return null
+            val tr = Locale.forLanguageTag("tr-TR")
+            val mb = bytes / 1_000_000.0
+            return when {
+                mb >= 1000 -> String.format(tr, "~%.1f GB", mb / 1000)
+                mb >= 10 -> String.format(tr, "~%.0f MB", mb)
+                else -> String.format(tr, "~%.1f MB", mb.coerceAtLeast(0.1))
+            }
         }
 
         fun isVideoPage(url: String): Boolean = videoId(url) != null

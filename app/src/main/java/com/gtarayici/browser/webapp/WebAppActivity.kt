@@ -145,6 +145,7 @@ class WebAppActivity : AppCompatActivity() {
         )
         manifest?.let { lifecycle.addObserver(WebAppActivityFeature(this, components.icons, it)) }
         pip = PipController(this, components, fixedTabId = id, engineView = { view }).also { it.start() }
+        com.gtarayici.browser.media.BackgroundPlayGuard(this, components, fixedTabId = id).start()
 
         val scope = manifest?.scope ?: manifest?.startUrl
         setContent {

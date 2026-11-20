@@ -50,6 +50,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.R
 import com.gtarayici.browser.components
+import com.gtarayici.browser.downloads.DownloadedFiles
+import com.gtarayici.browser.search.TextMatch
 import com.gtarayici.browser.search.UrlInput
 import com.gtarayici.browser.ui.components.EmptyState
 import com.gtarayici.browser.ui.components.Favicon
@@ -81,12 +83,12 @@ fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
         },
     ) { modifier ->
         val visible = entries.filter {
-            filter.isBlank() || it.title.contains(filter, true) || it.url.contains(filter, true)
+            filter.isBlank() || TextMatch.matches(filter, it.title, it.url)
         }
         Column(modifier) {
             if (entries.isNotEmpty()) FilterField(filter) { filter = it }
             if (visible.isEmpty()) {
-                EmptyState(stringResource(R.string.history_empty))
+                EmptyState(stringResource(if (filter.isBlank()) R.string.history_empty else R.string.search_no_results))
             } else {
                 LazyColumn {
                     historyGroups(visible).forEach { (label, group) ->
@@ -161,7 +163,7 @@ fun BookmarksScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
     ) { modifier ->
         val searching = filter.isNotBlank()
         val visible = bookmarks.filter {
-            if (searching) it.title.contains(filter, true) || it.url.contains(filter, true) else it.folder == folder
+            if (searching) TextMatch.matches(filter, it.title, it.url) else it.folder == folder
         }
         Column(modifier) {
             if (bookmarks.isNotEmpty() && folder.isEmpty()) FilterField(filter) { filter = it }
@@ -189,7 +191,7 @@ fun BookmarksScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
                 }
             }
             if (visible.isEmpty() && (searching || folders.isEmpty() || folder.isNotEmpty())) {
-                EmptyState(stringResource(R.string.bookmarks_empty))
+                EmptyState(stringResource(if (searching) R.string.search_no_results else R.string.bookmarks_empty))
             }
         }
     }
@@ -358,6 +360,28 @@ fun DownloadsScreen(onBack: () -> Unit) {
     val downloads by components.store.observe { state ->
         state.downloads.values.filter { !it.private }.sortedByDescending { it.createdTime }
     }
+    var removing by remember { mutableStateOf<DownloadState?>(null) }
+    removing?.let { download ->
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text(download.fileName.orEmpty(), maxLines = 2, overflow = TextOverflow.Ellipsis) },
+            text = { Text(stringResource(R.string.download_delete_question)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    removing = null
+                    val deleted = DownloadedFiles.delete(context, download.fileName, download.directoryPath)
+                    components.downloadsUseCases.removeDownload(download.id)
+                    if (!deleted) Toast.makeText(context, R.string.download_delete_failed, Toast.LENGTH_SHORT).show()
+                }) { Text(stringResource(R.string.download_delete_file), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    removing = null
+                    components.downloadsUseCases.removeDownload(download.id)
+                }) { Text(stringResource(R.string.download_remove_from_list)) }
+            },
+        )
+    }
 
     OverlayScaffold(title = stringResource(R.string.menu_downloads), onBack = onBack) { modifier ->
         if (downloads.isEmpty()) {
@@ -388,7 +412,10 @@ fun DownloadsScreen(onBack: () -> Unit) {
                             }
                         },
                         trailingContent = {
-                            IconButton(onClick = { components.downloadsUseCases.removeDownload(download.id) }) {
+                            IconButton(onClick = {
+                                // Tamamlanan indirmede dosyanın da silinip silinmeyeceği sorulur; diğerleri yalnızca listeden çıkar.
+                                if (done) removing = download else components.downloadsUseCases.removeDownload(download.id)
+                            }) {
                                 Icon(Icons.Filled.Close, stringResource(R.string.action_delete))
                             }
                         },

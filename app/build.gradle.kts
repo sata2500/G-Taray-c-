@@ -82,6 +82,10 @@ android {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
         // Yerel kütüphaneleri sıkıştırarak APK indirme boyutunu yarıdan fazla küçültür.
         jniLibs.useLegacyPackaging = true
+        // Mozilla app-services (megazord: nimbus, remotesettings, search…) ve çökme raporlama araçları uygulamada
+        // kullanılmıyor; çıkarılınca paket ~10 MB küçülür. Cihazda doğrulandı (test planı 14. bölüm): YouTube,
+        // indirme, eklentiler, çeviri, okuma görünümü ve dosya indirme çalışıyor, UnsatisfiedLinkError yok.
+        jniLibs.excludes += setOf("**/libmegazord.so", "**/libcrashtools.so")
     }
 }
 
@@ -99,6 +103,7 @@ dependencies {
     implementation(libs.mozilla.browser.state)
     implementation(libs.mozilla.browser.session.storage)
     implementation(libs.mozilla.browser.icons)
+    implementation(libs.mozilla.browser.errorpages)
     implementation(libs.mozilla.browser.thumbnails)
     implementation(libs.mozilla.concept.engine)
     implementation(libs.mozilla.concept.fetch)

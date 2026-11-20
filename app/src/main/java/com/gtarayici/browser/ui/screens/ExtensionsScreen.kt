@@ -49,7 +49,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.gtarayici.browser.R
 import com.gtarayici.browser.components
+import androidx.compose.foundation.layout.Box
 import com.gtarayici.browser.extensions.ExtensionManager
+import com.gtarayici.browser.extensions.ExtensionPermissions
 import com.gtarayici.browser.extensions.displayName
 import com.gtarayici.browser.ui.BrowserController
 import com.gtarayici.browser.ui.components.observe
@@ -97,6 +99,8 @@ private fun ExtensionRow(extension: WebExtension, controller: BrowserController)
     val components = LocalContext.current.components
     var menu by remember { mutableStateOf(false) }
     val metadata = extension.getMetadata()
+    // Menü satıra bağlı açılsın diye satır ve menü aynı kutuda; aksi halde menü listenin dibinde açılır.
+    Box {
     ListItem(
         leadingContent = { Icon(Icons.Filled.Extension, null) },
         headlineContent = { Text(extension.displayName()) },
@@ -140,6 +144,7 @@ private fun ExtensionRow(extension: WebExtension, controller: BrowserController)
             },
         )
     }
+    }
 }
 
 /** Eklenti kurulum izinleri, hata ve bilgi istemleri. */
@@ -156,7 +161,7 @@ fun ExtensionPrompts() {
         is WebExtensionPromptRequest.AfterInstallation.Permissions.Required -> {
             if (components.extensions.isAutoApproved(current.extension.id)) return
             var allowPrivate by remember(current) { mutableStateOf(false) }
-            val permissions = (current.permissions + current.origins).distinct()
+            val permissions = ExtensionPermissions.describe(current.permissions + current.origins)
             AlertDialog(
                 onDismissRequest = {
                     current.onConfirm(PermissionPromptResponse(isPermissionsGranted = false))
@@ -169,7 +174,7 @@ fun ExtensionPrompts() {
                             Text(stringResource(R.string.extension_no_permissions))
                         } else {
                             Text(stringResource(R.string.extension_permissions))
-                            permissions.take(12).forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+                            permissions.take(12).forEach { PermissionLine(it) }
                             if (permissions.size > 12) Text("• …", style = MaterialTheme.typography.bodySmall)
                         }
                         Row(
@@ -203,7 +208,7 @@ fun ExtensionPrompts() {
                 text = {
                     Column {
                         Text(stringResource(R.string.extension_permissions))
-                        (current.permissions + current.origins).forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+                        ExtensionPermissions.describe(current.permissions + current.origins).forEach { PermissionLine(it) }
                     }
                 },
                 confirmButton = { TextButton(onClick = { current.onConfirm(true); consume() }) { Text(stringResource(R.string.action_ok)) } },
@@ -258,6 +263,16 @@ private fun PopupEngineView(session: EngineSession, modifier: Modifier) {
         onRelease = { view -> (view as? EngineView)?.release() },
         modifier = modifier,
     )
+}
+
+@Composable
+private fun PermissionLine(line: ExtensionPermissions.Line) {
+    val text = when (line) {
+        is ExtensionPermissions.Line.Text -> stringResource(line.res)
+        is ExtensionPermissions.Line.WithArg -> stringResource(line.res, line.arg)
+        is ExtensionPermissions.Line.Raw -> line.text
+    }
+    Text("• $text", style = MaterialTheme.typography.bodySmall)
 }
 
 /** Menüde gösterilen eklenti düğmesi simgesi. */

@@ -23,3 +23,6 @@ build/
 # OpenVPN ikili dosyaları scripts/build-openvpn.sh ile üretilir.
 vpn-core/src/main/jniLibs/*/libopenvpn.so
 vpn-core/src/main/jniLibs/*/libovpnbridge.so
+
+# Cihaz testlerinin ekran görüntüleri ve logcat kayıtları
+test-results/

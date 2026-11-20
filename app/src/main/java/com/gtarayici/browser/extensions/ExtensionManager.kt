@@ -74,7 +74,9 @@ class ExtensionManager(
 
     fun refresh() {
         engine.listInstalledWebExtensions(
-            onSuccess = { list -> _installed.value = list.filterNot { it.id == HELPER_ID }.sortedBy { it.displayName() } },
+            // Yerleşik eklentiler (yardımcı eklenti, Mozilla'nın okuma görünümü) kullanıcıya gösterilmez; kapatılırsa
+            // ilgili özellikler bozulur.
+            onSuccess = { list -> _installed.value = list.filterNot { it.isBuiltIn() }.sortedBy { it.displayName() } },
             onError = { logger.warn("Eklentiler listelenemedi", it) },
         )
     }

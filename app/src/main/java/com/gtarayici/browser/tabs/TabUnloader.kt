@@ -8,6 +8,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 
 /**
@@ -37,11 +38,15 @@ class TabUnloader(
         private val CHECK_INTERVAL_MS = TimeUnit.MINUTES.toMillis(1)
         val INACTIVE_AFTER_MS = TimeUnit.MINUTES.toMillis(30)
 
-        /** Uyutulacak sekmelerin kimlikleri. */
-        internal fun candidates(state: BrowserState, now: Long): List<String> = state.tabs
+        /** Uyutulacak sekmelerin kimlikleri. [isLoaded]: sekmenin motor oturumu bellekte mi (testte değiştirilebilir). */
+        internal fun candidates(
+            state: BrowserState,
+            now: Long,
+            isLoaded: (TabSessionState) -> Boolean = { it.engineState.engineSession != null },
+        ): List<String> = state.tabs
             .filter { tab ->
                 tab.id != state.selectedTabId &&
-                    tab.engineState.engineSession != null &&
+                    isLoaded(tab) &&
                     tab.mediaSessionState == null &&
                     !tab.content.loading &&
                     now - maxOf(tab.lastAccess, tab.createdAt) > INACTIVE_AFTER_MS

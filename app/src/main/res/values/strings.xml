@@ -33,6 +33,9 @@
     <string name="menu_remove_bookmark">Yer iminden kaldır</string>
     <string name="menu_copy_link">Bağlantıyı kopyala</string>
     <string name="link_copied">Bağlantı kopyalandı</string>
+    <string name="bookmark_added">Yer imlerine eklendi</string>
+    <string name="bookmark_removed">Yer imlerinden kaldırıldı</string>
+    <string name="color_option">Renk %1$d / %2$d</string>
 
     <!-- Ana sayfa -->
     <string name="home_shortcuts">Yer imleri</string>
@@ -48,6 +51,7 @@
 
     <!-- Geçmiş, yer imleri, indirilenler -->
     <string name="history_empty">Henüz geçmiş yok</string>
+    <string name="search_no_results">Aramanızla eşleşen bir şey bulunamadı</string>
     <string name="history_clear_all">Geçmişi temizle</string>
     <string name="history_clear_confirm">Tüm tarama geçmişi silinsin mi?</string>
     <string name="bookmarks_empty">Henüz yer imi yok. Bir sayfayı menüden yer imlerine ekleyebilirsiniz.</string>
@@ -58,6 +62,10 @@
     <string name="download_paused">Duraklatıldı</string>
     <string name="download_in_progress">İndiriliyor</string>
     <string name="download_open_failed">Bu dosyayı açabilecek bir uygulama bulunamadı</string>
+    <string name="download_delete_question">Dosya telefondan da silinsin mi, yoksa yalnızca bu listeden mi kaldırılsın?</string>
+    <string name="download_delete_file">Dosyayı sil</string>
+    <string name="download_remove_from_list">Yalnızca listeden kaldır</string>
+    <string name="download_delete_failed">Dosya silinemedi; yalnızca listeden kaldırıldı</string>
     <string name="search_in_list">Ara</string>
 
     <!-- Ayarlar -->
@@ -111,7 +119,7 @@
     <string name="lock_unlock">Kilidi aç</string>
     <string name="lock_no_screen_lock">Kilidi kullanmak için cihazınızda bir ekran kilidi (PIN, desen veya parmak izi) ayarlayın</string>
     <string name="settings_lock_private">Gizli sekmeleri kilitle</string>
-    <string name="settings_lock_private_summary">Gizli sekmelere dönerken biyometrik doğrulama istenir</string>
+    <string name="settings_lock_private_summary">Gizli sekmelere dönerken parmak izi, yüz veya uygulama parolası istenir</string>
     <string name="settings_secure_private">Gizli sekmelerde ekran görüntüsünü engelle</string>
     <string name="settings_secure_private_summary">Gizli sekmeler ekran görüntüsünde ve son uygulamalar listesinde görünmez</string>
 
@@ -126,6 +134,28 @@
     <string name="extension_remove">Kaldır</string>
     <string name="extension_install_title">"%1$s" eklensin mi?</string>
     <string name="extension_permissions">Bu eklenti şunlara erişmek istiyor:</string>
+    <string name="ext_perm_all_sites">Tüm web sitelerindeki verilerinize erişme</string>
+    <string name="ext_perm_site">%1$s alan adındaki sitelerde verilerinize erişme</string>
+    <string name="ext_perm_many_sites">%1$s farklı sitedeki verilerinize erişme</string>
+    <string name="ext_perm_tabs">Tarayıcı sekmelerine erişme</string>
+    <string name="ext_perm_history">Tarama geçmişine erişme</string>
+    <string name="ext_perm_bookmarks">Yer imlerini okuma ve değiştirme</string>
+    <string name="ext_perm_downloads">Dosya indirme, indirme geçmişini okuma ve değiştirme</string>
+    <string name="ext_perm_downloads_open">İndirilen dosyaları açma</string>
+    <string name="ext_perm_clipboard_read">Panodaki verileri okuma</string>
+    <string name="ext_perm_clipboard_write">Panoya veri yazma</string>
+    <string name="ext_perm_geolocation">Konumunuza erişme</string>
+    <string name="ext_perm_notifications">Size bildirim gösterme</string>
+    <string name="ext_perm_privacy">Gizlilik ayarlarını okuma ve değiştirme</string>
+    <string name="ext_perm_browser_settings">Tarayıcı ayarlarını okuma ve değiştirme</string>
+    <string name="ext_perm_proxy">Tarayıcının vekil sunucu ayarlarını denetleme</string>
+    <string name="ext_perm_management">Eklentileri izleme ve yönetme</string>
+    <string name="ext_perm_native_messaging">Tarayıcı dışındaki programlarla mesajlaşma</string>
+    <string name="ext_perm_web_navigation">Gezinti sırasında tarayıcı etkinliğine erişme</string>
+    <string name="ext_perm_sessions">Son kapatılan sekmelere erişme</string>
+    <string name="ext_perm_tab_hide">Sekmeleri gizleme ve gösterme</string>
+    <string name="ext_perm_block_content">Her sayfada içerik engelleme</string>
+    <string name="ext_perm_pkcs11">Şifreleme cihazlarına ve sertifikalara erişme</string>
     <string name="extension_no_permissions">Bu eklenti özel bir izin istemiyor.</string>
     <string name="extension_add">Ekle</string>
     <string name="extension_installed">%1$s eklendi</string>

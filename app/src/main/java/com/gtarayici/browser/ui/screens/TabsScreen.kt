@@ -64,7 +64,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -84,6 +83,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.R
 import com.gtarayici.browser.search.UrlInput
+import com.gtarayici.browser.ui.components.AddFab
+import com.gtarayici.browser.ui.components.colorOption
 import com.gtarayici.browser.ui.components.EmptyState
 import com.gtarayici.browser.ui.components.Favicon
 import com.gtarayici.browser.ui.components.OverlayScaffold
@@ -122,11 +123,9 @@ fun TabsScreen(
             }
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { onNewTab(showPrivate) },
-                icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text(stringResource(if (showPrivate) R.string.menu_new_private_tab else R.string.menu_new_tab)) },
-            )
+            AddFab(stringResource(if (showPrivate) R.string.menu_new_private_tab else R.string.menu_new_tab)) {
+                onNewTab(showPrivate)
+            }
         },
     ) { modifier ->
         Column(modifier) {
@@ -351,7 +350,7 @@ private fun GroupEditorDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 FlowRow(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TabGroups.COLORS.forEach { option ->
+                    TabGroups.COLORS.forEachIndexed { index, option ->
                         Box(
                             Modifier
                                 .padding(bottom = 10.dp)
@@ -363,7 +362,7 @@ private fun GroupEditorDialog(
                                     color = MaterialTheme.colorScheme.onSurface,
                                     shape = CircleShape,
                                 )
-                                .clickable { color = option },
+                                .colorOption(index, TabGroups.COLORS.size, option == color) { color = option },
                         )
                     }
                 }

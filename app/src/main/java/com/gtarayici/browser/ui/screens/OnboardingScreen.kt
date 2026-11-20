@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -64,8 +65,11 @@ fun OnboardingScreen(onDone: () -> Unit) {
     val requestDefault = rememberDefaultBrowserRequest { isDefault = it }
     val last = pager.currentPage == PAGES.lastIndex
 
+    // Surface, içerik rengini (onSurface) de sağlar; yalnızca background kullanılınca renk belirtilmeyen metinler
+    // varsayılan siyahla çizilir ve koyu temada okunmaz.
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
     Column(
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).systemBarsPadding().padding(24.dp),
+        Modifier.fillMaxSize().systemBarsPadding().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -126,5 +130,6 @@ fun OnboardingScreen(onDone: () -> Unit) {
         ) {
             Text(stringResource(if (last) R.string.onboarding_start else R.string.onboarding_next))
         }
+    }
     }
 }

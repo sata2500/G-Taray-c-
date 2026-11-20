@@ -76,11 +76,9 @@ interface HistoryDao {
     @Query("SELECT * FROM history WHERE profileId = :profileId ORDER BY lastVisited DESC LIMIT :limit")
     fun recent(profileId: String, limit: Int = 500): Flow<List<HistoryEntry>>
 
-    @Query(
-        "SELECT * FROM history WHERE profileId = :profileId AND (url LIKE '%' || :query || '%' OR " +
-            "title LIKE '%' || :query || '%') ORDER BY visitCount DESC, lastVisited DESC LIMIT :limit",
-    )
-    suspend fun search(profileId: String, query: String, limit: Int = 8): List<HistoryEntry>
+    /** Öneriler için aday listesi; eşleştirme Türkçe harfleri tanıyan [com.gtarayici.browser.search.TextMatch] ile yapılır. */
+    @Query("SELECT * FROM history WHERE profileId = :profileId ORDER BY visitCount DESC, lastVisited DESC LIMIT :limit")
+    suspend fun candidates(profileId: String, limit: Int = 2000): List<HistoryEntry>
 
     @Query("SELECT * FROM history WHERE profileId = :profileId AND url = :url")
     suspend fun find(profileId: String, url: String): HistoryEntry?
@@ -109,11 +107,8 @@ interface BookmarkDao {
     @Query("SELECT EXISTS(SELECT 1 FROM bookmarks WHERE profileId = :profileId AND url = :url)")
     fun isBookmarked(profileId: String, url: String): Flow<Boolean>
 
-    @Query(
-        "SELECT * FROM bookmarks WHERE profileId = :profileId AND (url LIKE '%' || :query || '%' OR " +
-            "title LIKE '%' || :query || '%') ORDER BY createdAt DESC LIMIT :limit",
-    )
-    suspend fun search(profileId: String, query: String, limit: Int = 4): List<Bookmark>
+    @Query("SELECT * FROM bookmarks WHERE profileId = :profileId ORDER BY createdAt DESC")
+    suspend fun list(profileId: String): List<Bookmark>
 
     @Upsert
     suspend fun upsert(bookmark: Bookmark)

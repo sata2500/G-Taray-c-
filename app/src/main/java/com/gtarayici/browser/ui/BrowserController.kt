@@ -48,9 +48,13 @@ class BrowserController(
     /** İlk açılış tanıtımı gösteriliyor mu (yalnızca yeni kurulumda, bir kez). */
     var onboarding by mutableStateOf(false)
 
+    /** Tanıtım bitince çağrılır (ör. bildirim izni o zaman istenir). */
+    var onOnboardingFinished: () -> Unit = {}
+
     fun finishOnboarding() {
         onboarding = false
         activity.getSharedPreferences("gtarayici_state", android.content.Context.MODE_PRIVATE).edit { putBoolean(KEY_ONBOARDED, true) }
+        onOnboardingFinished()
     }
 
     /** Kaydırınca gizlenen adres çubuğunun durumu. */
@@ -226,6 +230,12 @@ class BrowserController(
         menuOpen = false
         val dao = components.database.bookmarks()
         val profileId = profile.id
+        // Menü kapandığı için işlemin sonucu kısa bir bildirimle gösterilir.
+        Toast.makeText(
+            activity,
+            if (isBookmarked) R.string.bookmark_removed else R.string.bookmark_added,
+            Toast.LENGTH_SHORT,
+        ).show()
         components.applicationScope.launch(Dispatchers.IO) {
             if (isBookmarked) {
                 dao.deleteByUrl(profileId, tab.content.url)
@@ -283,16 +293,21 @@ class BrowserController(
         installDialogOpen = true
     }
 
+    /** İzin ekranına gidilirken yüklenmek istenen sekme; dönüşte izin verildiyse yükleme sürdürülür. */
+    private var pendingWebApkTabId: String? = null
+
     /** Siteyi gerçek bir Android uygulaması (WebAPK) olarak yükler. */
     fun installWebApk() {
         installDialogOpen = false
         val tab = selectedTab ?: return
         val installer = components.webApkInstaller
         if (!installer.canInstall()) {
+            pendingWebApkTabId = tab.id
             Toast.makeText(activity, R.string.webapk_permission, Toast.LENGTH_LONG).show()
             installer.requestPermission()
             return
         }
+        pendingWebApkTabId = null
         Toast.makeText(activity, R.string.webapk_preparing, Toast.LENGTH_SHORT).show()
         components.applicationScope.launch {
             when (val result = installer.install(tab)) {
@@ -302,6 +317,16 @@ class BrowserController(
                 com.gtarayici.browser.webapk.WebApkInstaller.Result.Started -> Unit
             }
         }
+    }
+
+    /**
+     * Etkinlik öne gelince çağrılır: "Bilinmeyen uygulamaları yükle" ekranından dönüldüyse ve izin verildiyse
+     * yarım kalan yükleme kendiliğinden sürer; izin verilmediyse bekleyen istek bırakılır.
+     */
+    fun resumePendingWebApkInstall() {
+        val id = pendingWebApkTabId ?: return
+        pendingWebApkTabId = null
+        if (components.webApkInstaller.canInstall() && selectedTab?.id == id) installWebApk()
     }
 
     /** Ana ekrana basit bir kısayol (veya web uygulaması kısayolu) ekler. */

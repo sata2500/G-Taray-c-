@@ -82,6 +82,9 @@ class Components(private val context: Context) {
         GeckoRuntime.create(context, runtimeSettings)
     }
 
+    /** Yükleme hatalarında hata sayfası gösterir ve hangi adreslerde gösterildiğini izler. */
+    val errorPages by lazy { com.gtarayici.browser.engine.ErrorPageInterceptor(context) }
+
     val engineSettings by lazy {
         DefaultSettings().apply {
             trackingProtectionPolicy = trackingPolicy(settings.strictTracking.value)
@@ -95,6 +98,8 @@ class Components(private val context: Context) {
             remoteDebuggingEnabled = BuildConfig.DEBUG
             // Arka planda oynatma için sekme arka plandayken medya askıya alınmaz.
             suspendMediaWhenInactive = false
+            // Yükleme hatalarında (alan adı yok, bağlantı yok…) boş ekran yerine hata sayfası gösterilir.
+            requestInterceptor = errorPages
             applyDns(this)
         }
     }

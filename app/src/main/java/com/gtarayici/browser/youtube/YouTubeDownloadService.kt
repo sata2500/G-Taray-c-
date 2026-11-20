@@ -116,8 +116,8 @@ class YouTubeDownloadService : Service() {
                     download(job, job.videoUrl ?: job.audioUrl ?: error("Adres yok"), it, 0, 99)
                 }
             }
-            val directory = publish(output, job)
-            registerInDownloads(job, output.length(), directory)
+            val (directory, savedName) = publish(output, job)
+            registerInDownloads(job, savedName, output.length(), directory)
             done(job, success = true)
         } catch (e: Exception) {
             done(job, success = false, message = e.message)
@@ -210,8 +210,8 @@ class YouTubeDownloadService : Service() {
         muxer.release()
     }
 
-    /** Dosyayı herkese açık "İndirilenler" klasörüne taşır; dizin yolunu döndürür. */
-    private fun publish(file: File, job: Job): String {
+    /** Dosyayı İndirilenler klasörüne yazar; klasörü ve gerçek dosya adını döndürür (aynı ad varsa sistem "(1)" ekler). */
+    private fun publish(file: File, job: Job): Pair<String, String> {
         val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
@@ -224,19 +224,21 @@ class YouTubeDownloadService : Service() {
             values.clear()
             values.put(MediaStore.Downloads.IS_PENDING, 0)
             contentResolver.update(uri, values, null, null)
-            return publicDir.absolutePath
+            val savedName = contentResolver.query(uri, arrayOf(MediaStore.Downloads.DISPLAY_NAME), null, null, null)
+                ?.use { if (it.moveToFirst()) it.getString(0) else null } ?: job.fileName
+            return publicDir.absolutePath to savedName
         }
         val dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: filesDir
         file.copyTo(File(dir, job.fileName), overwrite = true)
-        return dir.absolutePath
+        return dir.absolutePath to job.fileName
     }
 
-    private suspend fun registerInDownloads(job: Job, size: Long, directory: String) = withContext(Dispatchers.Main) {
+    private suspend fun registerInDownloads(job: Job, fileName: String, size: Long, directory: String) = withContext(Dispatchers.Main) {
         components.store.dispatch(
             DownloadAction.AddDownloadAction(
                 DownloadState(
                     url = "https://www.youtube.com/",
-                    fileName = job.fileName,
+                    fileName = fileName,
                     contentType = job.mime,
                     contentLength = size,
                     currentBytesCopied = size,

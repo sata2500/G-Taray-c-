@@ -15,6 +15,15 @@ class YouTubeExtractTest {
         assertEquals(null, YouTubeDownloader.videoId("https://www.youtube.com/feed/subscriptions"))
     }
 
+    @Test
+    fun formatsApproximateSizes() {
+        assertEquals("~25 MB", YouTubeDownloader.sizeLabel(24_944_676))
+        assertEquals("~3,4 MB", YouTubeDownloader.sizeLabel(3_400_000))
+        assertEquals("~1,3 GB", YouTubeDownloader.sizeLabel(1_250_000_000))
+        assertEquals("~0,1 MB", YouTubeDownloader.sizeLabel(20_000))
+        assertEquals(null, YouTubeDownloader.sizeLabel(-1))
+    }
+
     /** Gerçek ağ testi: yalnızca GT_NETWORK_TESTS=1 iken çalışır. */
     @Test
     fun extractsDownloadOptions() {

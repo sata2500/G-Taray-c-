@@ -38,8 +38,58 @@ object UrlInput {
     /** Adres çubuğunda gösterilecek sade metin: şema ve "www." gizlenir. */
     fun displayUrl(url: String): String {
         if (url.isBlank() || url == "about:blank") return ""
-        return url.removePrefix("https://").removePrefix("http://").removePrefix("www.").trimEnd('/')
+        val plain = url.removePrefix("https://").removePrefix("http://").removePrefix("www.").trimEnd('/')
+        // Yol kısmındaki "%C4%B0stanbul" gibi kodlamalar okunur hale getirilir; alan adına dokunulmaz.
+        val slash = plain.indexOf('/')
+        return if (slash < 0) plain else plain.substring(0, slash) + decodeForDisplay(plain.substring(slash))
     }
+
+    /**
+     * Yüzde kodlamalarını yalnızca gösterim için çözer. Anlamı değiştirecek ayraçlar (/ ? # & = % +) ve boşluk,
+     * denetim karakterleri kodlu bırakılır; geçersiz UTF-8 dizileri olduğu gibi kalır.
+     */
+    internal fun decodeForDisplay(text: String): String {
+        if ('%' !in text) return text
+        val out = StringBuilder(text.length)
+        var i = 0
+        while (i < text.length) {
+            if (text[i] == '%') {
+                // Ardışık %XX dizisini baytlara topla.
+                val bytes = java.io.ByteArrayOutputStream()
+                var j = i
+                while (j + 2 < text.length && text[j] == '%' && text[j + 1].isHex() && text[j + 2].isHex()) {
+                    bytes.write(text.substring(j + 1, j + 3).toInt(16))
+                    j += 3
+                }
+                if (j == i) {
+                    out.append(text[i]); i++; continue
+                }
+                out.append(decodeRun(text.substring(i, j), bytes.toByteArray()))
+                i = j
+            } else {
+                out.append(text[i]); i++
+            }
+        }
+        return out.toString()
+    }
+
+    private fun Char.isHex() = this in '0'..'9' || this in 'a'..'f' || this in 'A'..'F'
+
+    private fun decodeRun(encoded: String, bytes: ByteArray): String {
+        val decoder = Charsets.UTF_8.newDecoder()
+            .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+            .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+        val decoded = runCatching { decoder.decode(java.nio.ByteBuffer.wrap(bytes)).toString() }.getOrNull()
+            ?: return encoded
+        if (decoded.any { it.code <= 0x20 || it.code == 0x7F || it in KEEP_ENCODED || Character.isISOControl(it) ||
+                Character.getType(it) == Character.FORMAT.toInt() }
+        ) {
+            return encoded
+        }
+        return decoded
+    }
+
+    private const val KEEP_ENCODED = "/?#&=%+"
 
     private val DIRECT_SCHEMES = listOf("about:", "view-source:", "data:", "moz-extension:")
 

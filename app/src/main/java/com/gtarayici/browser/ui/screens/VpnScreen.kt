@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,6 +59,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.R
 import com.gtarayici.browser.components
+import com.gtarayici.browser.ui.components.AddFab
 import com.gtarayici.browser.ui.components.OverlayScaffold
 import com.gtarayici.browser.vpn.OpenVpnConfig
 import com.gtarayici.browser.vpn.VpnStatus
@@ -108,11 +108,7 @@ fun VpnScreen(onBack: () -> Unit) {
         title = stringResource(R.string.vpn_title),
         onBack = onBack,
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { adding = true },
-                icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text(stringResource(R.string.vpn_add)) },
-            )
+            AddFab(stringResource(R.string.vpn_add)) { adding = true }
         },
     ) { modifier ->
         LazyColumn(modifier) {
