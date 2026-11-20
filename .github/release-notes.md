@@ -1,15 +1,23 @@
-## G-Tarayıcı 0.7.0 — Daha hafif, daha sade
+## G-Tarayıcı 0.7.1 — Cihaz testi düzeltmeleri
 
-**Daha hafif**
-- Uygulama yaklaşık 20 MB küçüldü: tarayıcı VPN'inin çekirdekleri artık ayrı bir "VPN bileşeni" olarak gelir
-  ve yalnızca VPN'i ilk kez kullandığınızda bir kez indirilir. VPN kullanıyorsanız VPN ekranından
-  "İndir ve kur"a dokunun.
-- Daha hızlı açılış: acil olmayan işler ilk ekrandan sonra yapılır
-- Kullanılmayan sekmeler uyutulur: 30 dakikadır açılmayan sekmeler bellekten boşaltılır, dokununca yeniden yüklenir
+Uygulama bir telefonda baştan sona test edildi; bulunan 29 sorun düzeltildi.
 
-**Daha sade**
-- Kaydırınca gizlenen adres çubuğu: sayfayı aşağı kaydırınca çubuk iner, yukarı kaydırınca geri gelir
-- Ayarlar kategorilere ayrıldı ve aranabilir oldu
-- İlk açılışta kısa bir tanıtım
-- Geçmiş "Bugün / Dün / Bu hafta" diye gruplanır
-- Yer imleri düzenlenebilir ve klasörlere ayrılabilir
+**Öne çıkanlar**
+- Paket yaklaşık 10 MB daha küçüldü (kullanılmayan iki Mozilla kütüphanesi çıkarıldı)
+- Sayfa yüklenemeyince (adres bulunamadı, bağlantı yok) artık Türkçe hata sayfası ve "Yeniden dene" çıkıyor
+- "Arka planda oynatma" kapalıyken uygulamadan çıkınca video gerçekten duruyor; bu ve SponsorBlock ayarları
+  artık doğru uygulanıyor
+- Adres çubuğunda Türkçe karakterli adresler okunur görünüyor; önerilerde ve aramalarda "istanbul" yazınca
+  "İstanbul" da bulunuyor (ayarlarda da: "cubuk" → "çubuğu", "pip")
+- Geçmişte başlıksız kayıtlar ve çevrilmiş başlıklar düzeltildi
+
+**İndirmeler**
+- YouTube indirme seçeneklerinde yaklaşık dosya boyutu görünüyor; aynı adlı ikinci dosya doğru açılıyor
+- İndirilenler'de "Dosyayı sil" ile "Yalnızca listeden kaldır" ayrıldı; silme yalnızca seçilen dosyayı siliyor
+
+**Diğer**
+- Koyu temada ilk açılış rehberi okunur; bildirim izni rehberden sonra soruluyor
+- Okuma görünümünde güvenli sitelerde kilit simgesi doğru görünüyor
+- Eklenti kurarken izinler Türkçe ve anlaşılır biçimde listeleniyor
+- Uygulama yükleme izni verilip dönülünce web uygulaması kurulumu kendiliğinden sürüyor
+- Ekran okuyucu (TalkBack) için etiketler ve birçok küçük düzeltme

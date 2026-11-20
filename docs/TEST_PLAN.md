@@ -152,6 +152,7 @@ Her adımda: ekran görüntüsü (açık tema, koyu tema, gizli sekme), `logcat`
 | 26 | Geçmiş / Yer imleri araması | Aramaya uyan kayıt yoksa "Henüz geçmiş yok" / "Henüz yer imi yok" yazıyor; liste aslında boş değil | Düzeltildi: aramada "Aramanızla eşleşen bir şey bulunamadı" (`LibraryScreens.kt`) |
 | 27 | Geçmiş + sayfa çevirisi | Çevrilen sayfanın belge başlığı da çevriliyor ve geçmişe bu başlık yazılıyor (`en.wikipedia.org/wiki/Istanbul` → "İstanbul - Vikipedi") | Düzeltildi: çevrilmiş sekmede başlık güncellenmiyor (`HistoryRecorder.kt`) |
 | 28 | Boyut deneyi (14. bölüm) | `libmegazord.so` (açılmış 22,6 MB) ve `libcrashtools.so` (6 MB) pakette ama kullanılmıyor | Kalıcı yapıldı: `packaging.jniLibs.excludes`. Kütüphaneler olmadan YouTube, indirme, eklentiler, çeviri, okuma görünümü ve dosya indirme cihazda denendi; `UnsatisfiedLinkError` ve çökme yok (`app/build.gradle.kts`) |
+| 29 | İndirilenler → "Dosyayı sil" (kod incelemesi) | Dosya MediaStore'da yalnızca adıyla aranıyordu; İndirilenler'in başka bir alt klasöründe G-Tarayıcı'nın kaydettiği aynı adlı dosya varsa o da (veya yalnızca o) silinebilirdi | Düzeltildi: arama ad + klasör (`RELATIVE_PATH`) ile (`DownloadedFiles.kt`, `DownloadedFilesTest`) |
 
 ### Bilinen davranışlar (hata sayılmadı)
 
