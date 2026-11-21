@@ -154,7 +154,7 @@ fun QrScannerScreen(onOpen: (String) -> Unit, onSearch: (String) -> Unit, onBack
             dismissButton = {
                 TextButton(onClick = {
                     context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("QR", text))
-                    context.components.messenger.success(UiText.res(R.string.qr_copied))
+                    context.components.messenger.copied(UiText.res(R.string.qr_copied))
                     result = null
                 }) { Text(stringResource(R.string.qr_copy)) }
             },

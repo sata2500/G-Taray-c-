@@ -154,7 +154,7 @@ fun DiagnosticsLogDialog(onDismiss: () -> Unit) {
         dismissButton = {
             TextButton(onClick = {
                 com.gtarayici.browser.diagnostics.ReportActions.copy(context, "G-Tarayıcı tanılama", text)
-                context.components.messenger.success(UiText.res(R.string.diag_copied))
+                context.components.messenger.copied(UiText.res(R.string.diag_copied))
             }) { Text(stringResource(R.string.diag_copy)) }
         },
     )

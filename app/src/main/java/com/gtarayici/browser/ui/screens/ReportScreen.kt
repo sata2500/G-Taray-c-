@@ -155,7 +155,7 @@ fun ReportScreen(request: ReportRequest, onOpenUrl: (String) -> Unit, onBack: ()
                 },
                 onCopy = {
                     ReportActions.copy(context, "G-Tarayıcı sorun bildirimi", report.title + "\n\n" + report.body())
-                    components.messenger.success(UiText.res(R.string.report_copied))
+                    components.messenger.copied(UiText.res(R.string.report_copied))
                 },
             )
         }

@@ -88,7 +88,7 @@ class PageController(private val ctx: ControllerContext, private val tabs: TabAc
         val tab = ctx.selectedTab ?: return
         ctx.ui.menuOpen = false
         activity.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("URL", tab.content.url))
-        ctx.messenger.success(UiText.res(R.string.link_copied))
+        ctx.messenger.copied(UiText.res(R.string.link_copied))
     }
 
     override fun pasteAndGo() {

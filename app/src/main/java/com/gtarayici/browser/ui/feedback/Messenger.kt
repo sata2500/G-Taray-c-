@@ -70,6 +70,14 @@ class Messenger {
     fun error(text: UiText, action: MessageAction? = null) = show(Message(text, MessageKind.Error, action))
 
     /**
+     * Panoya kopyalama onayı. Android 13 ve sonrası kendi "Kopyalandı" bildirimini gösterdiği için orada ikinci
+     * bir mesaj gösterilmez (ikisi üst üste biniyordu).
+     */
+    fun copied(text: UiText) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) success(text)
+    }
+
+    /**
      * Geri alınabilir bir silme sonrası "Geri al" mesajı. Aynı [key] ile gelen yeni silme öncekinin yerini alır
      * (yalnızca son silme geri alınabilir; mesajlar kuyrukta birikmez).
      */

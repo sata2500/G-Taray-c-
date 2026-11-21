@@ -329,7 +329,10 @@ fun BrowserApp(
             if (!pictureInPicture) {
                 MessageHost(
                     messenger,
-                    Modifier.align(Alignment.BottomCenter).systemBarsPadding().imePadding().padding(bottom = 72.dp),
+                    // Yüzen "Yeni sekme/Ekle" düğmesi olan sayfalarda mesaj düğmenin üstünde durur (M3: snackbar FAB'ı örtmez).
+                    Modifier.align(Alignment.BottomCenter).systemBarsPadding().imePadding().padding(
+                        bottom = if (controller.overlay in PAGES_WITH_FAB) 88.dp else 72.dp,
+                    ),
                 )
             }
 
@@ -340,3 +343,6 @@ fun BrowserApp(
         }
     }
 }
+
+/** Yüzen eylem düğmesi (AddFab) olan tam ekran sayfalar. */
+private val PAGES_WITH_FAB = setOf(Overlay.TABS, Overlay.VPN, Overlay.PROFILES)
