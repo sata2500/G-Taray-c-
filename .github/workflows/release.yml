@@ -89,6 +89,9 @@ jobs:
 
       - name: Derle ve test et
         if: steps.check.outputs.build == 'true'
+        env:
+          # Anonim sorun bildirimi aracısı (tools/report-relay); tanımlı değilse seçenek uygulamada görünmez.
+          GT_REPORT_RELAY_URL: ${{ vars.GT_REPORT_RELAY_URL }}
         run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleRelease :vpn-core:assembleRelease
 
       - name: İmzala

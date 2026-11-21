@@ -1,0 +1,129 @@
+# YouTube sık sık değişir; YouTube indirmesini çalışır tutan NewPipe Extractor da buna göre güncellenir.
+# Bu iş akışı her gece yeni NewPipe Extractor sürümüne bakar. Yeni sürüm varsa kütüphaneyi yükseltir ve tüm
+# testleri (gerçek YouTube videolarıyla indirme testi dahil) çalıştırır:
+#   - Testler geçerse sürüm numarasını yükseltip main'e gönderir ve "Sürüm yayınla" iş akışını başlatır;
+#     telefonlar güncellemeyi uygulama içinden alır.
+#   - Geçmezse hiçbir şey yayınlamaz, bir hata kaydı (issue) açar.
+name: NewPipe güncellemesi
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: newpipe-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Yeni sürüm var mı
+        id: check
+        run: |
+          current="$(sed -n 's/^newpipe-extractor = "\(.*\)"/\1/p' gradle/libs.versions.toml)"
+          latest="$(curl -fsS https://jitpack.io/api/builds/com.github.TeamNewPipe/NewPipeExtractor/latest \
+            | python3 -c 'import sys,json; print(json.load(sys.stdin).get("latestOk",""))' || true)"
+          if [ -z "$latest" ]; then
+            latest="$(git ls-remote --tags https://github.com/TeamNewPipe/NewPipeExtractor | grep -o 'refs/tags/v[0-9.]*$' | sed 's#refs/tags/##' | sort -V | tail -1)"
+          fi
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          newest="$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -1)"
+          if [ -n "$latest" ] && [ "$latest" != "$current" ] && [ "$newest" = "$latest" ]; then
+            echo "update=true" >> "$GITHUB_OUTPUT"
+            echo "NewPipe Extractor $current → $latest" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            echo "NewPipe Extractor güncel ($current)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/setup-java@v6
+        if: steps.check.outputs.update == 'true'
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Android SDK bileşenleri
+        if: steps.check.outputs.update == 'true'
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.2" "build-tools;37.0.0" >/dev/null
+
+      - uses: gradle/actions/setup-gradle@v6
+        if: steps.check.outputs.update == 'true'
+
+      - name: Yükselt ve test et
+        id: test
+        if: steps.check.outputs.update == 'true'
+        continue-on-error: true
+        env:
+          GT_NETWORK_TESTS: "1"
+          LATEST: ${{ steps.check.outputs.latest }}
+        run: |
+          sed -i "s/^newpipe-extractor = \".*\"/newpipe-extractor = \"$LATEST\"/" gradle/libs.versions.toml
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Sürümü yükselt ve yayınla
+        if: steps.check.outputs.update == 'true' && steps.test.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LATEST: ${{ steps.check.outputs.latest }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          path = "app/build.gradle.kts"
+          s = open(path, encoding="utf-8").read()
+          code = int(re.search(r"versionCode = (\d+)", s).group(1)) + 1
+          name = re.search(r'versionName = "(\d+)\.(\d+)\.(\d+)"', s)
+          version = f"{name.group(1)}.{name.group(2)}.{int(name.group(3)) + 1}"
+          s = re.sub(r"versionCode = \d+", f"versionCode = {code}", s, count=1)
+          s = re.sub(r'versionName = "[^"]+"', f'versionName = "{version}"', s, count=1)
+          open(path, "w", encoding="utf-8").write(s)
+          notes = (
+              f"## G-Tarayıcı {version}\n\n"
+              "**Otomatik güncelleme**\n"
+              f"- YouTube indirmesinin çalışır kalması için NewPipe Extractor {os.environ['LATEST']} sürümüne güncellendi.\n"
+              "  Güncelleme, gerçek YouTube videolarıyla yapılan indirme testinden geçtikten sonra yayınlandı.\n"
+          )
+          open(".github/release-notes.md", "w", encoding="utf-8").write(notes)
+          open(os.environ["GITHUB_ENV"], "a").write(f"VERSION={version}\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gradle/libs.versions.toml app/build.gradle.kts .github/release-notes.md
+          git commit -m "deps: NewPipe Extractor $LATEST (otomatik, testler geçti) — $VERSION"
+          git push origin HEAD:main
+          # GITHUB_TOKEN ile yapılan gönderim başka iş akışlarını tetiklemez; sürüm yayınlama elle başlatılır.
+          gh workflow run release.yml --ref main
+          echo "$VERSION yayınlanıyor (NewPipe Extractor $LATEST)." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Test geçmedi — hata kaydı aç
+        if: steps.check.outputs.update == 'true' && steps.test.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LATEST: ${{ steps.check.outputs.latest }}
+          CURRENT: ${{ steps.check.outputs.current }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="NewPipe Extractor $LATEST otomatik güncellemesi testten geçmedi"
+          if [ -n "$(gh issue list --state open --search "$title in:title" --json number --jq '.[].number')" ]; then
+            echo "Bu sürüm için açık bir kayıt zaten var." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh issue create --title "$title" --body "$(printf '%s\n\n%s\n%s\n\n%s' \
+            "NewPipe Extractor $CURRENT → $LATEST yükseltmesi denendi ama testler geçmedi; sürüm yayınlanmadı." \
+            "- İş akışı: $RUN_URL" \
+            "- Olası nedenler: kütüphanenin arayüzü değişti (kod uyarlaması gerekir) veya YouTube GitHub sunucularından gelen istekleri engelledi (\"bot olmadığınızı doğrulayın\")." \
+            "Elle deneme: \`GT_NETWORK_TESTS=1 ./gradlew :app:testDebugUnitTest --tests '*YouTubeExtractTest*'\`")"

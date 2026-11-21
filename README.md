@@ -209,6 +209,15 @@ GT_KEYSTORE_FILE=/yol/gtarayici-release.p12 GT_KEYSTORE_PASSWORD=... scripts/sig
 imzalar ve GitHub Releases'ta yayınlar. Sürüm notları `.github/release-notes.md` dosyasından alınır.
 Gerekli depo gizli değişkenleri: `GT_KEYSTORE_BASE64`, `GT_KEYSTORE_PASSWORD`.
 
+### Otomatik bakım
+
+- **NewPipe güncellemesi** ([`.github/workflows/newpipe-update.yml`](.github/workflows/newpipe-update.yml)): her gece
+  NewPipe Extractor'ın yeni sürümüne bakar; varsa yükseltir, gerçek YouTube videolarıyla indirme testini çalıştırır,
+  geçerse yeni sürümü kendiliğinden yayınlar, geçmezse hata kaydı açar.
+- **Anonim sorun bildirimi** ([`tools/report-relay`](tools/report-relay/README.md)): uygulamadaki "Sorun bildir"
+  ekranından gelen raporlar, hesap gerektirmeden GitHub'da hata kaydı olarak açılır (Cloudflare Worker aracısı;
+  `GT_REPORT_RELAY_URL` depo değişkeni).
+
 ## Lisans
 
 G-Tarayıcı, [GNU Genel Kamu Lisansı v3.0](LICENSE) (GPL-3.0-or-later) ile lisanslanmış özgür bir yazılımdır.

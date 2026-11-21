@@ -1,5 +1,12 @@
 package com.gtarayici.browser.ui.screens
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.rememberCoroutineScope
+import com.gtarayici.browser.diagnostics.AnonymousReporter
+import com.gtarayici.browser.ui.feedback.HumanErrors
+import kotlinx.coroutines.launch
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.Image
@@ -89,6 +96,8 @@ fun ReportScreen(request: ReportRequest, onOpenUrl: (String) -> Unit, onBack: ()
     var includeScreenshot by rememberSaveable { mutableStateOf(false) }
     var includeCrash by rememberSaveable { mutableStateOf(request.crash != null) }
     var previewing by rememberSaveable { mutableStateOf(false) }
+    var sending by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val logLines = remember { Diagnostics.lineCount().coerceAtMost(REPORT_LOG_LINES) }
 
     val screenshot = request.screenshot.takeIf { includeScreenshot }
@@ -156,6 +165,30 @@ fun ReportScreen(request: ReportRequest, onOpenUrl: (String) -> Unit, onBack: ()
                 onCopy = {
                     ReportActions.copy(context, "G-Tarayıcı sorun bildirimi", report.title + "\n\n" + report.body())
                     components.messenger.copied(UiText.res(R.string.report_copied))
+                },
+                sending = sending,
+                onSend = if (AnonymousReporter.available) {
+                    {
+                        sending = true
+                        scope.launch {
+                            AnonymousReporter.send(report, components.vpn.javaProxy())
+                                .onSuccess { number ->
+                                    Diagnostics.log("sorun bildirimi anonim gönderildi (#$number, ${category.tag})", "bildirim")
+                                    components.messenger.success(UiText.res(R.string.report_sent, number))
+                                    finished()
+                                }
+                                .onFailure { error ->
+                                    Diagnostics.log("anonim bildirim gönderilemedi: ${HumanErrors.detail(error)}", "bildirim")
+                                    components.messenger.error(
+                                        if (error is AnonymousReporter.RateLimited) UiText.res(R.string.report_rate_limited)
+                                        else UiText.res(R.string.report_send_failed),
+                                    )
+                                }
+                            sending = false
+                        }
+                    }
+                } else {
+                    null
                 },
             )
         }
@@ -274,6 +307,9 @@ private fun ReportPreview(
     onGitHub: () -> Unit,
     onShare: () -> Unit,
     onCopy: () -> Unit,
+    /** Hesapsız gönderim (aracı yapılandırıldıysa). */
+    onSend: (() -> Unit)? = null,
+    sending: Boolean = false,
 ) {
     Column(modifier.navigationBarsPadding()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen)) {
@@ -305,10 +341,32 @@ private fun ReportPreview(
         }
         Surface(color = MaterialTheme.colorScheme.surfaceContainerLow) {
             Column(Modifier.fillMaxWidth().padding(Spacing.screen), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Button(onClick = onGitHub, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Icon(Icons.AutoMirrored.Rounded.OpenInNew, null)
-                    Spacer(Modifier.padding(start = Spacing.sm))
-                    Text(stringResource(R.string.report_open_github))
+                if (onSend != null) {
+                    Button(onClick = onSend, enabled = !sending, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        if (sending) {
+                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.AutoMirrored.Rounded.Send, null)
+                        }
+                        Spacer(Modifier.padding(start = Spacing.sm))
+                        Text(stringResource(R.string.report_send_anonymous))
+                    }
+                    Text(
+                        stringResource(R.string.report_send_anonymous_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedButton(onClick = onGitHub, enabled = !sending, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, null)
+                        Spacer(Modifier.padding(start = Spacing.sm))
+                        Text(stringResource(R.string.report_open_github))
+                    }
+                } else {
+                    Button(onClick = onGitHub, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, null)
+                        Spacer(Modifier.padding(start = Spacing.sm))
+                        Text(stringResource(R.string.report_open_github))
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     OutlinedButton(onClick = onShare, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {

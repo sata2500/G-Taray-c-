@@ -626,6 +626,11 @@
         <item quantity="one">%d bağlantı</item>
         <item quantity="other">%d bağlantı</item>
     </plurals>
+    <string name="report_send_anonymous">Gönder (hesap gerekmez)</string>
+    <string name="report_send_anonymous_note">Yukarıdaki metin G-Tarayıcı geliştiricilerine anonim olarak gönderilir ve herkese açık bir hata kaydı olarak yayımlanır. Ekran görüntüsü gönderilmez.</string>
+    <string name="report_sent">Bildiriminiz alındı (#%1$d). Teşekkürler!</string>
+    <string name="report_send_failed">Bildirim gönderilemedi. İnternet bağlantınızı denetleyip yeniden deneyin ya da dosya olarak paylaşın.</string>
+    <string name="report_rate_limited">Kısa sürede çok fazla bildirim gönderildi. Biraz sonra yeniden deneyin.</string>
 </resources>
 
 

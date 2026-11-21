@@ -24,6 +24,11 @@ android {
         versionName = "0.9.1"
         // Uygulama içi güncellemelerin alındığı GitHub deposu (sürümler GitHub Releases'ta yayınlanır).
         buildConfigField("String", "UPDATE_REPO", "\"sata2500/G-Taray-c-\"")
+        // Anonim sorun bildirimi aracısının adresi (tools/report-relay). GitHub'da "GT_REPORT_RELAY_URL" depo
+        // değişkeninden gelir; tanımlı değilse uygulamada anonim gönderim seçeneği görünmez.
+        val relay = (System.getenv("GT_REPORT_RELAY_URL") ?: providers.gradleProperty("gtReportRelayUrl").orNull ?: "")
+            .trim().trimEnd('/').filter { it.isLetterOrDigit() || it in ":/.-_" }
+        buildConfigField("String", "REPORT_RELAY_URL", "\"$relay\"")
     }
 
     // Kalıcı imza anahtarı keystore.properties (repoya girmez) veya ortam değişkenlerinden okunur.

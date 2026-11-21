@@ -1,0 +1,13 @@
+# Cloudflare Workers yapılandırması: `npx wrangler deploy` ile yayınlanır (bkz. README.md).
+name = "gtarayici-report-relay"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+REPO = "sata2500/G-Taray-c-"
+
+# Kötüye kullanıma karşı sınır (isteğe bağlı ama önerilir). `npx wrangler kv namespace create RATE`
+# komutunun verdiği kimliği aşağıya yazıp satırların başındaki # işaretlerini kaldırın.
+# [[kv_namespaces]]
+# binding = "RATE"
+# id = "BURAYA_KV_KIMLIGI"
