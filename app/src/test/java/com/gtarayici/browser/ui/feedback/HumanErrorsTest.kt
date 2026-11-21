@@ -34,9 +34,6 @@ class HumanErrorsTest {
 
     @Test
     fun `NewPipe kısıtlamaları ve ayrıştırma hataları`() {
-        class AgeRestrictedContentException(message: String) : Exception(message)
-        class ParsingException(message: String) : Exception(message)
-        class ReCaptchaException(message: String) : Exception(message)
         assertEquals(Problem.VideoUnavailable, classify(ErrorArea.VideoInfo, AgeRestrictedContentException("age restricted")))
         assertEquals(Problem.VideoExtraction, classify(ErrorArea.VideoInfo, ParsingException("Could not get video id")))
         assertEquals(Problem.RateLimited, classify(ErrorArea.VideoInfo, ReCaptchaException("reCaptcha Challenge requested")))
@@ -107,3 +104,10 @@ class HumanErrorsTest {
         }
     }
 }
+
+// NewPipe istisnalarının taklitleri: sınıflandırma yalnızca sınıf adına bakar. Dosya düzeyinde tanımlanır;
+// Türkçe adlı bir test fonksiyonunun içinde tanımlanırsa .class dosya adına Türkçe harfler girer ve
+// UTF-8 olmayan ortamlarda derleme bozulur.
+private class AgeRestrictedContentException(message: String) : Exception(message)
+private class ParsingException(message: String) : Exception(message)
+private class ReCaptchaException(message: String) : Exception(message)
