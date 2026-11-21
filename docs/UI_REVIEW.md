@@ -153,7 +153,7 @@ Ekran görüntüleri `test-results/ui/sonra/`, ölçüm `test-results/ui/olcum-s
 | P1 | ✅ | Ayar değişince `FLAG_SECURE` anında açılıp kapanıyor |
 | P2 | ✅ | Kilit ekranı açıkken alttaki arayüz erişilebilirlik ağacından gizli |
 | E1 | ✅ | Renk daireleri 48 dp dokunma alanında |
-| E3 | ⏳ | %200 yazı ve yatay mod görüntüleri kullanıcı ayarlayınca çekilecek (sistem ayarı) |
+| E3 | ✅ | Telefonun en büyük yazı boyutu (%154; bu vivo'da %200 seçilemiyor) ve yatay modda denendi; 6 sorun bulunup düzeltildi (aşağıda). %200, bileşen önizlemelerinde (fontScale = 2) duruyor |
 | A1 | ⏳ | Menü ilk açılış p99 300 ms, hata ayıklama sürümünde değişmedi. Sürüm yapısında Baseline Profile menü yolunu da içeriyor; ölçüm için `StartupBenchmark.menuAndTabsFrames` hazır, çalıştırılmadı |
 | A2 | ✅ | Önizleme okuma/küçültme `Dispatchers.Default`'ta; sekme ekranında takılan kare %11,5 → %7,8, p99 250 → 133 ms |
 | A3 | ✅ | StrictMode (hata ayıklama; açılıştan sonra, günlüğe yazar); Baseline Profile üretildi (20 366 kural) ve pakete girdi: sürüm yapısında soğuk açılış 698 → 490 ms |
@@ -193,3 +193,24 @@ bulunup düzeltildi: StrictMode'un açılışta 752 satır günlük yazması (~1
 tanılama kaydının dosyadan ana iş parçacığında okunması (~210 ms; artık arka planda). Asıl ölçüt sürüm yapısıdır.
 
 Pil "önce" ölçümünde %3'teydi; "sonra" ölçümleri %43–50'de alındı.
+
+### Büyük yazı, yatay mod, WebAPK ve VPN (telefonda, kullanıcıyla birlikte)
+
+| Bulgu | Düzeltme |
+|---|---|
+| Sekme sayacında iki basamaklı sayı kutudan taşıyor | Rakam simgenin parçası, sabit boyutta |
+| Kutucuk etiketleri kelime ortasından bölünüyor ("İndirilenl-er") | En uzun kelime sığmazsa yazı en çok %30 küçülür |
+| "hurriyet.com.tr" sık ziyaret edilenlerde "Com" | İki parçalı ülke uzantıları tanınıyor (birim testli) |
+| Ayar açıklamaları 4 satırda kesiliyor | Sınır kaldırıldı |
+| Profil ekle: biyometrik kilit açıklaması dar sütunda | Açıklama anahtarın altında tam genişlikte |
+| Yatayda tam ekran sayfalar ekran boyunca uzuyor | İçerik en fazla 720 dp, ortada |
+| **"Bağlantıyı kes" uygulamayı çökertiyor** (VPN çekirdeği çıktı okuyucusu) | Okuma kapanışta beklenen hatayı yakalar; 3 bağlan/kes turunda çökme yok |
+
+Doğrulananlar: WebAPK (Squoosh) kuruldu ve kendi penceresinde açıldı; VPN bileşeni indirilip kuruldu; geçersiz
+bağlantıda yazarken uyarı; ulaşılamayan sunucuda "Bağlantı testi yapılamadı. Sunucuya ulaşılamadı. Bağlantı
+bilgilerini kontrol edin veya başka bir sunucu deneyin."; çökme raporu bir sonraki açılışta soruldu ve önizlemede
+maskeli yığın iziyle göründü. Görüntüler: `test-results/ui/sonra/200-*`, `yatay-*`, `webapk-*`, `vpn-*`, `cokme-*`.
+
+Açık: VPN bileşeni indirilirken yalnızca yüzde gösteriliyor (kalan süre yok); eski bir hatalı adres
+("Olmayan-alan-adi-gt") düzeltmeden önce geçmişe yazıldığı için sık ziyaret edilenlerde duruyor (uzun basıp
+"Kaldır" ile silinebilir; otomatik silme, internet yokken gerçek geçmişi de silebileceği için yapılmadı).

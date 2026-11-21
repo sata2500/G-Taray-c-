@@ -34,4 +34,8 @@ mesajlar.
 - Açılamayan adresler geçmişe ve sık ziyaret edilenlere girmiyor; aynı adlı siteler ayırt ediliyor ("Wikipedia (tr)")
 - Eklenti kaldırırken onay soruluyor (geri alınamaz)
 - Renk seçicilerde daha büyük dokunma alanı; kilit ekranı açıkken arkadaki sayfa ekran okuyucuya kapalı
+- Büyük yazı boyutunda sekme sayacı, kutucuk etiketleri, ayar açıklamaları ve profil penceresi düzgün görünüyor;
+  yatay ekranda sayfalar okunur genişlikte
+- "hurriyet.com.tr" gibi siteler sık ziyaret edilenlerde doğru adla ("Com" değil) görünüyor
+- VPN'de "Bağlantıyı kes" uygulamayı kapatmıyor
 - Sekme önizlemeleri ana iş parçacığını yormadan yükleniyor; açılış için önceden derlenmiş kod profili (Baseline Profile)
