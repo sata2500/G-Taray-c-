@@ -103,6 +103,11 @@ fun YouTubeDownloadSheet(pageUrl: String, onDismiss: () -> Unit) {
         downloader.fetch(pageUrl).onSuccess { video = it }.onFailure {
             error = com.gtarayici.browser.ui.feedback.HumanErrors.detail(it)
             com.gtarayici.browser.diagnostics.Diagnostics.log("video bilgisi alınamadı: $error", "video")
+            // YouTube değiştiğinde çözümleyici bozulur; düzeltme yeni sürümle gelir. Varsa güncelleme hemen önerilir.
+            val problem = com.gtarayici.browser.ui.feedback.HumanErrors.classify(com.gtarayici.browser.ui.feedback.ErrorArea.VideoInfo, error)
+            if (problem == com.gtarayici.browser.ui.feedback.Problem.VideoExtraction || problem == com.gtarayici.browser.ui.feedback.Problem.Unknown) {
+                context.components.updater.check(userInitiated = false)
+            }
         }
     }
 

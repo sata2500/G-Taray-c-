@@ -20,8 +20,8 @@ android {
         // Android 9+: sürümler yalnızca APK İmza Şeması v3 (anahtar döndürme) ile imzalanır.
         minSdk = 28
         targetSdk = 37
-        versionCode = 18
-        versionName = "0.9.0"
+        versionCode = 19
+        versionName = "0.9.1"
         // Uygulama içi güncellemelerin alındığı GitHub deposu (sürümler GitHub Releases'ta yayınlanır).
         buildConfigField("String", "UPDATE_REPO", "\"sata2500/G-Taray-c-\"")
     }
