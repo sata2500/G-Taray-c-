@@ -5,7 +5,7 @@
 G-Tarayıcı, Mozilla'nın **GeckoView** motoru üzerine kuruludur. Amacı, kurduğunuz anda hiçbir ayar yapmadan
 sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
-> Durum: **v0.7.0** — yol haritasındaki özelliklerin neredeyse tamamı hazır; sürümler kalıcı anahtarla imzalanır ve
+> Durum: **v0.8.0** — yol haritasındaki özelliklerin neredeyse tamamı hazır; sürümler kalıcı anahtarla imzalanır ve
 > uygulama içinden güncellenir.
 
 ## Özellikler

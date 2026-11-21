@@ -1,4 +1,4 @@
-## G-Tarayıcı 0.8.0 — Yeni görünüm, anlaşılır mesajlar, sorun bildirme (TASLAK)
+## G-Tarayıcı 0.8.0 — Yeni görünüm, anlaşılır mesajlar, sorun bildirme
 
 Arayüz baştan ele alındı: tek bir tasarım dili, yumuşak geçişler ve her durumda ne olduğunu ve ne yapılacağını söyleyen
 mesajlar.
