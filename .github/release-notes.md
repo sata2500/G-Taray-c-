@@ -1,23 +1,37 @@
-## G-Tarayıcı 0.7.1 — Cihaz testi düzeltmeleri
+## G-Tarayıcı 0.8.0 — Yeni görünüm, anlaşılır mesajlar, sorun bildirme (TASLAK)
 
-Uygulama bir telefonda baştan sona test edildi; bulunan 29 sorun düzeltildi.
+Arayüz baştan ele alındı: tek bir tasarım dili, yumuşak geçişler ve her durumda ne olduğunu ve ne yapılacağını söyleyen
+mesajlar.
 
-**Öne çıkanlar**
-- Paket yaklaşık 10 MB daha küçüldü (kullanılmayan iki Mozilla kütüphanesi çıkarıldı)
-- Sayfa yüklenemeyince (adres bulunamadı, bağlantı yok) artık Türkçe hata sayfası ve "Yeniden dene" çıkıyor
-- "Arka planda oynatma" kapalıyken uygulamadan çıkınca video gerçekten duruyor; bu ve SponsorBlock ayarları
-  artık doğru uygulanıyor
-- Adres çubuğunda Türkçe karakterli adresler okunur görünüyor; önerilerde ve aramalarda "istanbul" yazınca
-  "İstanbul" da bulunuyor (ayarlarda da: "cubuk" → "çubuğu", "pip")
-- Geçmişte başlıksız kayıtlar ve çevrilmiş başlıklar düzeltildi
+**Yeni görünüm**
+- Material 3 Expressive: yaylı, akıcı geçişler; tam ekran sayfalar kayarak açılıp kapanıyor, geri hareketi (destekleyen
+  telefonlarda) sayfayı parmakla birlikte küçültüyor
+- Ana sayfa yenilendi: tek arama kutusu, koruma durumu çipi, okunur kısayollar
+- Menü ve Ayarlar gruplanmış kartlar hâlinde; ayarlarda arama tüm satırları buluyor
+- Yeni marka rengi (dinamik renk kapalıysa camgöbeği–yeşil) ve Android 13+ temalı uygulama simgesi
+- Koyu temada ana sayfa ve kilit ekranı yazıları artık okunuyor
 
-**İndirmeler**
-- YouTube indirme seçeneklerinde yaklaşık dosya boyutu görünüyor; aynı adlı ikinci dosya doğru açılıyor
-- İndirilenler'de "Dosyayı sil" ile "Yalnızca listeden kaldır" ayrıldı; silme yalnızca seçilen dosyayı siliyor
+**Anlaşılır mesajlar**
+- Tüm bildirimler tek, tutarlı bir mesaj çubuğunda; kaydırarak kapatılabiliyor
+- Hatalar Türkçe ve ne yapılacağını söylüyor ("Sunucuya ulaşılamadı. Bağlantı bilgilerini kontrol edin veya başka bir
+  sunucu deneyin"); teknik ayrıntı "Ayrıntılar"da
+- Sekme, yer imi ve geçmiş silindiğinde "Geri al"
+- İnternet kesilince ve gelince haber veriliyor
+- İndirmelerde ilerleme ve kalan süre; bitince "Aç"
+- DNS adresi, yer imi adresi ve VPN bağlantısı yazarken denetleniyor
+- Bir özelliği ilk kullandığınızda tek seferlik kısa ipuçları (Ayarlar › Genel'den kapatılabilir)
 
-**Diğer**
-- Koyu temada ilk açılış rehberi okunur; bildirim izni rehberden sonra soruluyor
-- Okuma görünümünde güvenli sitelerde kilit simgesi doğru görünüyor
-- Eklenti kurarken izinler Türkçe ve anlaşılır biçimde listeleniyor
-- Uygulama yükleme izni verilip dönülünce web uygulaması kurulumu kendiliğinden sürüyor
-- Ekran okuyucu (TalkBack) için etiketler ve birçok küçük düzeltme
+**Sorun bildirme**
+- Menü › Sorun bildir: tür seçin, isterseniz açıklama yazın; site alan adı, ekran görüntüsü ve tanılama kaydı isteğe
+  bağlı. Gönderilecek metni önce görürsünüz; GitHub'da hazır bildirim açılır ya da dosya olarak paylaşılır
+- Tanılama kaydı yalnızca telefonda tutulur, adresler alan adına indirgenir, e-posta/IP/kimlikler gizlenir; Ayarlar ›
+  Tanılama ve sorun bildirme'den kapatılabilir veya temizlenebilir
+- Uygulama beklenmedik şekilde kapanırsa bir sonraki açılışta bildirmek ister misiniz diye sorulur; hiçbir şey kendiliğinden
+  gönderilmez
+
+**Düzeltmeler**
+- "Gizli sekmelerde ekran görüntüsünü engelle" ayarı artık uygulamayı yeniden başlatmadan uygulanıyor
+- Açılamayan adresler geçmişe ve sık ziyaret edilenlere girmiyor; aynı adlı siteler ayırt ediliyor ("Wikipedia (tr)")
+- Eklenti kaldırırken onay soruluyor (geri alınamaz)
+- Renk seçicilerde daha büyük dokunma alanı; kilit ekranı açıkken arkadaki sayfa ekran okuyucuya kapalı
+- Sekme önizlemeleri ana iş parçacığını yormadan yükleniyor; açılış için önceden derlenmiş kod profili (Baseline Profile)

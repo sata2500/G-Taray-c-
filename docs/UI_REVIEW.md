@@ -122,3 +122,74 @@ mod sistem ayarı olduğu için henüz çekilmedi (bkz. "Açık konular").
 
 - %200 yazı boyutu ve yatay mod görüntüleri: sistem ayarı; kullanıcı tarafından ayarlanıp çekilecek.
 - Web uygulaması penceresi ve VPN bileşeni: "Bilinmeyen uygulamaları yükleme" izni kullanıcı tarafından verilmeli.
+
+## 4. Sonra (0.8.0 çalışması, 2026-11-21)
+
+Ekran görüntüleri `test-results/ui/sonra/`, ölçüm `test-results/ui/olcum-sonra.txt`.
+
+### Bulguların durumu
+
+| # | Durum | Nasıl |
+|---|---|---|
+| G1, G2, E2 | ✅ | Ana sayfa ve kilit ekranı `Surface` içinde; metin içerik rengini alıyor (koyu temada okunur, cihazda doğrulandı) |
+| G3, G4 | ✅ | Ayarlar tek veri modelinden: bölüm başlıkları, segmentli kartlar, her satırda ton dairesinde simge; arama aynı satırları gösteriyor |
+| G5, M1, M2, K2 | ✅ | 25 `Toast` → tek mesaj kanalı; geri alınabilir silmeler "Geri al", onay penceresi yalnız geri alınamaz işlerde |
+| G6, K5 | ✅ (kısmen) | `Tokens.kt` (boşluk, şekil, boyut); yeni/elden geçen ekranlarda elle `dp` yok. Eski ekranların (sekme kartı, VPN, profiller) iç ölçüleri henüz belirteçlere taşınmadı |
+| G7 | ⏳ | Mozilla hata sayfası şablonu hâlâ kendi stilinde |
+| G8 | ✅ | Renk seçici yeniden yazıldı (48 dp, okunur onay işareti) |
+| G9 | ✅ | Açılamayan adresler geçmişe/sık ziyaret edilenlere girmiyor; aynı adlı siteler "Wikipedia (tr)" gibi ayırt ediliyor (birim testli) |
+| G10 | ✅ (kısmen) | `ListItem` ve `rememberModalBottomSheetState` kalmadı; 3 `PasswordVisualTransformation` (parola alanları) kaldı — `SecureTextField`'a geçiş ayrı iş |
+| M3, K4 | ✅ | `OverlayHost`: kayarak giriş/çıkış, `PredictiveBackHandler`. Test telefonu (vivo) geri hareketinin ilerlemesini iletmiyor; tamamlanınca kapanış animasyonu oynuyor |
+| M4 | ✅ | Boş durumlarda simge (geçmiş, yer imleri, indirilenler, arama sonucu yok) |
+| M5 | ✅ (kısmen) | Yeni ana sayfa (amblem, büyük arama kutusu, koruma çipi). Alt çubukta ikinci arama kutusu hâlâ var |
+| M6 | ✅ | `MotionScheme.expressive()` |
+| M7 | ✅ (kısmen) | 21 `@Preview` (tasarım sistemi, ana sayfa, mesaj, hata, ayar satırları, renk seçici, sorun bildirme; açık/koyu/%200 yazı). Uygulama bileşenlerine doğrudan bağlı ekranlarda yok |
+| M8 | ✅ | Menü: eylem satırı + ızgara + segmentli kartlar, aynı dil |
+| D1 | ✅ | `HumanErrors`: 9 ham metin kaldırıldı; hata türü → "ne oldu. ne yapılmalı"; ham metin "Ayrıntılar"da ve tanılama kaydında |
+| D2 | ✅ | İndirmelerde bayt ve kalan süre, YouTube bildiriminde kalan süre, bitince "İndirildi · Aç" |
+| D3 | ✅ | İnternet kesildi / yeniden kuruldu (2 sn'den kısa kopmalar yok sayılır) |
+| D4 | ✅ | Sekme, yer imi (menü ve liste), geçmiş satırı, tanılama kaydı: "Geri al" (cihazda doğrulandı). Eklenti kaldırma: onay (geri alınamaz) |
+| D5 | ✅ | DNS adresi, yer imi adresi, VPN bağlantısı yazarken denetleniyor |
+| P1 | ✅ | Ayar değişince `FLAG_SECURE` anında açılıp kapanıyor |
+| P2 | ✅ | Kilit ekranı açıkken alttaki arayüz erişilebilirlik ağacından gizli |
+| E1 | ✅ | Renk daireleri 48 dp dokunma alanında |
+| E3 | ⏳ | %200 yazı ve yatay mod görüntüleri kullanıcı ayarlayınca çekilecek (sistem ayarı) |
+| A1 | ⏳ | Menü ilk açılış p99 300 ms, hata ayıklama sürümünde değişmedi. Sürüm yapısında Baseline Profile menü yolunu da içeriyor; ölçüm için `StartupBenchmark.menuAndTabsFrames` hazır, çalıştırılmadı |
+| A2 | ✅ | Önizleme okuma/küçültme `Dispatchers.Default`'ta; sekme ekranında takılan kare %11,5 → %7,8, p99 250 → 133 ms |
+| A3 | ✅ | StrictMode (hata ayıklama; açılıştan sonra, günlüğe yazar); Baseline Profile üretildi (20 366 kural) ve pakete girdi: sürüm yapısında soğuk açılış 698 → 490 ms |
+| K1, K3 | ✅ | `BrowserController` 4 parçaya; Settings/Library/Tabs/BrowserApp bölündü. En uzun dosya artık `MainActivity.kt` (410) |
+
+### Yeni: sorun bildirme ve tanılama
+
+"PiP tanılama kaydı" kaldırıldı. Yerine: genel tanılama kaydı (500 satırlık halka, dosyada kalıcı, kategori etiketli,
+tekrarlar birleşir, gizlilik filtresinden geçer), çökme raporu (bir sonraki açılışta sorulur), "Sorun bildir" (tür,
+açıklama, isteğe bağlı alan adı/ekran görüntüsü/kayıt/çökme → önizleme → GitHub'da hazır bildirim, dosya olarak paylaş
+veya kopyala), `.github/ISSUE_TEMPLATE`. Cihazda uçtan uca denendi: önizleme maskeli, GitHub giriş sayfası hazır
+bildirimi `return_to` ile taşıyor, ekran görüntüsü Resimler › G-Tarayıcı'ya kaydediliyor.
+
+### Kod ölçüleri
+
+| | Önce | Sonra |
+|---|---|---|
+| `Toast` | 25 | 0 |
+| Ham `%1$s` hata metni | 9 | 0 |
+| `@Preview` | 0 | 21 |
+| Birim testi | 27 | 86 (2 atlanan, 0 hata) |
+| En uzun dosya | `SettingsScreen.kt` 614 | `MainActivity.kt` 410 |
+
+### Ölçümler (`test-results/ui/olcum-sonra.txt`)
+
+| Ölçüm | Önce | Sonra |
+|---|---|---|
+| Sekme ekranı aç + kaydır | %11,5 takılan, p99 250 ms | **%6,4–7,8 takılan, p99 133–200 ms** |
+| Sekme değiştirme (çubuk) | %3,9, p99 48 ms | %3,6, p99 69 ms (fark gürültü içinde) |
+| Menü aç/kapa | %12,3, p99 300 ms | %12,1–12,4, p99 300 ms — **değişmedi** (A1 açık) |
+| Soğuk açılış, sürüm yapısı | ölçülmemişti | profilsiz **698 ms** → Baseline Profile ile **490 ms** (ortanca, −%30) |
+| Soğuk açılış, hata ayıklama | 1638 ms | 1425–3154 ms arası; cihaz durumuna bağlı, karşılaştırılabilir değil (aşağıda) |
+
+Hata ayıklama sürümünde açılış süresi aynı kodla 1,4–3,1 sn arasında oynadı (seçili sekme, sekme sayısı, pil/ısı);
+"önce" ölçümüyle doğrudan karşılaştırmak yanıltıcı olur. Zaman damgalı ölçümde uygulamanın kendi payında iki şey
+bulunup düzeltildi: StrictMode'un açılışta 752 satır günlük yazması (~1 sn; artık açılıştan 5 sn sonra açılıyor) ve
+tanılama kaydının dosyadan ana iş parçacığında okunması (~210 ms; artık arka planda). Asıl ölçüt sürüm yapısıdır.
+
+Pil "önce" ölçümünde %3'teydi; "sonra" ölçümleri %43–50'de alındı.

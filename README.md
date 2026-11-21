@@ -77,6 +77,11 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 - **Uygulama içi güncelleme:** yeni sürümler GitHub Releases'tan denetlenir, imzası doğrulanır ve tek dokunuşla kurulur
 - Geçmiş, yer imleri, indirme yöneticisi; site izinleri, dosya yükleme, tam ekran video
 - Açık/koyu/sistem teması (Android 12+ dinamik renkler), varsayılan tarayıcı olabilme
+- **Anlaşılır mesajlar:** hatalar Türkçe ve ne yapılacağını söyler; silmelerde "Geri al", indirmelerde kalan süre ve
+  "Aç", internet kesilince/gelince bilgi, yazarken denetim; bir özelliği ilk kullanırken tek seferlik ipuçları
+- **Sorun bildirme:** Menü › Sorun bildir — gönderilecek metni önce görürsünüz; GitHub'da hazır bildirim açılır ya
+  da dosya olarak paylaşılır. Tanılama kaydı yalnızca cihazda tutulur ve kişisel bilgiler maskelenir; çökme sonrası
+  bildirmek isteyip istemediğiniz sorulur, hiçbir şey kendiliğinden gönderilmez
 
 ## Yol haritası
 
@@ -101,7 +106,7 @@ WebAPK yüklemek için G-Tarayıcı'ya bir kez "bilinmeyen uygulamaları yüklem
 | Tarayıcı motoru | GeckoView 160 |
 | Mozilla Android Components | 160.0.1 |
 | Dil | Kotlin 2.4 |
-| Arayüz | Jetpack Compose (BOM 2026.09) + Material 3 |
+| Arayüz | Jetpack Compose (BOM 2026.11) + Material 3 Expressive (1.5) |
 | Veritabanı | Room 2.8 |
 | VPN çekirdeği | sing-box 1.14, OpenVPN 2.7.8 (OpenSSL 3.5 LTS) + Go/gVisor köprüsü |
 | YouTube çözümleme | NewPipe Extractor 0.26 |
@@ -117,6 +122,7 @@ app/src/main/java/com/gtarayici/browser/
 ├── Components.kt             # Motor, durum deposu ve kullanım senaryoları (tek örnek)
 ├── MainActivity.kt           # Tarayıcı özellikleri (oturum, indirme, istemler, izinler…)
 ├── data/                     # Room veritabanı: profiller, geçmiş, yer imleri
+├── diagnostics/              # Tanılama kaydı, gizlilik filtresi, çökme raporu, sorun bildirme
 ├── downloads/                # Arka plan indirme servisi
 ├── engine/                   # Gecko tercihleri
 ├── extensions/               # Eklenti yönetimi (uBlock Origin, AMO)
@@ -135,12 +141,14 @@ app/src/main/java/com/gtarayici/browser/
 ├── webapp/                   # Yüklenen web uygulamaları (PWA) penceresi
 ├── webapk/                   # WebAPK üretimi: ikili manifest yamalama, imzalama, yükleme
 ├── youtube/                  # YouTube indirme ve birleştirme
-└── ui/                       # Compose arayüzü (araç çubuğu, menü, ekranlar, tema)
+└── ui/                       # Compose arayüzü: designsystem/ (ortak bileşenler), feedback/ (mesajlar,
+                              #   hatalar, ipuçları), navigation/, controller/, screens/, theme/
 app/src/main/assets/extensions/
 ├── ublock_origin.xpi         # Hazır kurulu reklam engelleyici (imzalı, AMO)
 └── helper/                   # Arka planda oynatma, resim içinde resim, medya kontrolleri, SponsorBlock
 webapk-shell/                 # Cihazda kişiselleştirilen 8 KB'lık WebAPK şablonu (saf Java)
 vpn-core/                     # VPN bileşeni: yalnızca VPN çekirdeklerini taşıyan kodsuz paket
+baselineprofile/              # Baseline Profile üreticisi ve açılış ölçümü (macrobenchmark)
 docs/TEST_PLAN.md             # Cihaz üzerinde baştan sona test planı
 native/ovpn-bridge/           # OpenVPN ↔ kullanıcı alanı ağ yığını ↔ SOCKS5 köprüsü (Go)
 ```
@@ -162,6 +170,19 @@ ANDROID_NDK_ROOT=/yol/android-ndk ./scripts/build-openvpn.sh   # OpenVPN + köpr
 # Optimize edilmiş sürüm ve VPN bileşeni
 ./gradlew :app:assembleRelease :vpn-core:assembleRelease
 ```
+
+### Baseline Profile (açılış hızı)
+
+Uygulamayla birlikte önceden derlenmiş kod profili gelir (`app/src/release/generated/baselineProfiles/`). Yeniden
+üretmek veya açılışı ölçmek için bağlı bir telefonda:
+
+```bash
+./gradlew :app:generateBaselineProfile
+./gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest
+```
+
+Ölçüm, ayrı paket adlı bir kopyayla (`com.gtarayici.browser.benchmark`) yapılır; telefonda kurulu asıl uygulamaya
+dokunulmaz.
 
 Her işlemci mimarisi için ayrı APK üretilir (`app/build/outputs/apk/`). Günümüz telefonlarının
 neredeyse tamamı için doğru dosya `app-arm64-v8a-release.apk` dosyasıdır.

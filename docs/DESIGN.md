@@ -92,3 +92,18 @@ Kurallar: ekranlarda elle `dp`/`Color` yok; her bileşenin açık/koyu/gizli/bü
 Tek mesaj kanalı (`ui/feedback/Messenger`): başarı / bilgi / uyarı / hata türleri, isteğe bağlı eylem ("Geri al",
 "Aç", "Yeniden dene", "Ayarlar"), aynı anda tek mesaj, kuyrukta tekrarlar birleştirilir. Görünüm: alt araç çubuğunun
 hemen üstünde, `lg` şekilli, türüne göre simgeli kart. Tüm `Toast`'lar kaldırılır.
+
+## 9. Uygulama durumu (0.8.0)
+
+| Konu | Durum |
+|---|---|
+| BOM 2026.11.01, `MotionScheme.expressive()`, yedek camgöbeği palet, temalı simge katmanı | Yapıldı |
+| Belirteçler (`Tokens.kt`), `SectionCard`/`SectionHeader`/`NavRow`/`SwitchRow`, `Tile`/`TileGrid`/`StatusChip` | Yapıldı |
+| `ListRow` (eskimiş `ListItem` yerine, 24 kullanım), `OverlayScaffold`, `AddFab`, `EmptyState` (simge + eylem), `LoadingState` (Expressive `LoadingIndicator`), `ErrorNotice` (ne oldu + ne yapılmalı + "Ayrıntılar"), `ColorSwatch`/`ColorPicker` (48 dp), `rememberFullSheetState` | Yapıldı |
+| Tek gezinme katmanı `OverlayHost` (kayarak giriş/çıkış, `PredictiveBackHandler`) | Yapıldı. Not: test telefonu (vivo, OriginOS 6) geri hareketinin ilerlemesini uygulamaya iletmiyor; orada hareket tamamlanınca normal kapanış animasyonu oynar. Stok Android 14+ cihazlarda sayfa parmakla küçülür. |
+| Ana sayfa, menü, ayarlar (tek veri modeli), sorun bildirme, tanılama ayarları | Yapıldı |
+| Tek mesaj kanalı (`Messenger`): başarı/bilgi/uyarı/hata/ipucu, "Geri al", "Aç"; Android 13+ kopyalama onayı sisteme bırakılır | Yapıldı |
+| `@Preview` | Tasarım sistemi bileşenleri, ana sayfa, mesaj kartı, hata bildirimi, ayar satırları, renk seçici, sorun bildirme önizlemesi (açık/koyu/%200 yazı). Uygulama bileşenlerine (`components`) doğrudan bağlı ekranlarda (sekmeler, VPN, eklentiler) önizleme yok — bunlar için önce durumun ekrandan ayrılması gerekiyor. |
+| Ana sayfada tek arama noktası (alt çubukta arama kutusu yerine yalnızca sayaç ve menü) | **Yapılmadı** — alt çubuk hâlâ arama kutusunu gösteriyor |
+| `WavyProgressIndicator` (sayfa yükleme), `ButtonGroup` (menü eylem satırı), sekme ↔ sayfa paylaşılan öğe geçişi | **Yapılmadı** — sonraki sürüme |
+| `AppDialog`: yalnız geri alınamaz işler (veri temizleme, geçmişin tamamını silme, indirilen dosyayı silme, eklenti kaldırma) | Kural uygulandı; bileşen olarak ayrı sarmalayıcı yok (Material `AlertDialog`) |
