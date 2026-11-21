@@ -199,20 +199,11 @@ private fun ProfileEditor(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PROFILE_COLORS.forEachIndexed { index, value ->
-                        Box(
-                            Modifier
-                                .size(28.dp)
-                                .clip(CircleShape)
-                                .background(Color(value))
-                                .colorOption(index, PROFILE_COLORS.size, index == color) { color = index },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (index == color) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        }
-                    }
-                }
+                com.gtarayici.browser.ui.designsystem.ColorPicker(
+                    colors = PROFILE_COLORS.map { Color(it) },
+                    selected = color,
+                    onSelect = { color = it },
+                )
                 Spacer(Modifier.height(8.dp))
                 ListRow(
                     leading = { Icon(Icons.Filled.Fingerprint, null) },

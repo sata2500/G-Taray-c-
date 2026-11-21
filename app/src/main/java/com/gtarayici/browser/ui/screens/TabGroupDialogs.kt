@@ -175,23 +175,12 @@ internal fun GroupEditorDialog(
                     label = { Text(stringResource(R.string.tab_groups_name)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                FlowRow(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TabGroups.COLORS.forEachIndexed { index, option ->
-                        Box(
-                            Modifier
-                                .padding(bottom = 10.dp)
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(Color(option))
-                                .border(
-                                    width = if (option == color) 3.dp else 0.dp,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    shape = CircleShape,
-                                )
-                                .colorOption(index, TabGroups.COLORS.size, option == color) { color = option },
-                        )
-                    }
-                }
+                com.gtarayici.browser.ui.designsystem.ColorPicker(
+                    colors = TabGroups.COLORS.map { Color(it) },
+                    selected = TabGroups.COLORS.indexOf(color),
+                    onSelect = { color = TabGroups.COLORS[it] },
+                    modifier = Modifier.padding(top = 16.dp),
+                )
             }
         },
         confirmButton = {
