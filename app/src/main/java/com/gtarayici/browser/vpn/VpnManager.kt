@@ -221,9 +221,13 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         val started = ProcessBuilder(command).redirectErrorStream(true).start()
         process = started
         Thread {
-            started.inputStream.bufferedReader().forEachLine { line ->
-                appendLog(line)
-                onLine(line)
+            // Bağlantı kesilirken süreç kapatılınca okuma "read interrupted by close()" ile biter; bu beklenen bir
+            // durumdur. Yakalanmazsa bu iş parçacığı uygulamayı çökertiyordu ("Bağlantıyı kes").
+            runCatching {
+                started.inputStream.bufferedReader().forEachLine { line ->
+                    appendLog(line)
+                    onLine(line)
+                }
             }
             val code = runCatching { started.waitFor() }.getOrDefault(-1)
             onLine("GTOVPN EXIT")
