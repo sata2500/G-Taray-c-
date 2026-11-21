@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.baselineprofile)
 }
 
 android {
@@ -56,6 +57,24 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
+        // Baseline Profile üretimi ve ölçüm için (baselineprofile eklentisi bu adlı yapı türlerini kullanır).
+        // Ayrı paket adı: telefonda kurulu gerçek sürümün (com.gtarayici.browser) üzerine kurulmaz, verisine dokunulmaz.
+        create("nonMinifiedRelease") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".benchmark"
+            versionNameSuffix = "-benchmark"
+            isMinifyEnabled = false
+            isShrinkResources = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
+        }
+        create("benchmarkRelease") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".benchmark"
+            versionNameSuffix = "-benchmark"
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
+        }
     }
 
     buildFeatures {
@@ -98,6 +117,9 @@ ksp {
 }
 
 dependencies {
+    // Açılış ve sık kullanılan ekranlar için önceden derlenmiş kod profili (baselineprofile modülü üretir).
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
     // Mozilla Android Components (GeckoView motoru dahil)
     implementation(libs.mozilla.browser.engine.gecko)
     implementation(libs.mozilla.browser.state)
