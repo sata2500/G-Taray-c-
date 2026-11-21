@@ -22,24 +22,30 @@ class GTarayiciApplication : Application() {
         if (!isMainProcess()) return
 
         // Hata ayıklama sürümünde ana iş parçacığında disk/ağ erişimi ve sızıntılar günlüğe yazılır (logcat: StrictMode).
+        // Açılıştan sonra (ilk kare çizildikten sonra) açılır: açılıştaki ihlallerin neredeyse tamamı Gecko/Mozilla
+        // kitaplıklarından gelir ve günlüğe yazmak açılışı ~1,2 sn yavaşlatıp ölçümleri bozuyordu. İlk "boşta" anı
+        // etkinlik açılmadan önce gelebildiği için süreli gecikme kullanılır.
         if (BuildConfig.DEBUG) {
-            android.os.StrictMode.setThreadPolicy(
-                android.os.StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build(),
-            )
-            android.os.StrictMode.setVmPolicy(
-                android.os.StrictMode.VmPolicy.Builder()
-                    .detectLeakedClosableObjects()
-                    .detectLeakedRegistrationObjects()
-                    .detectActivityLeaks()
-                    .penaltyLog()
-                    .build(),
-            )
+            android.os.Handler(Looper.getMainLooper()).postDelayed({
+                android.os.StrictMode.setThreadPolicy(
+                    android.os.StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build(),
+                )
+                android.os.StrictMode.setVmPolicy(
+                    android.os.StrictMode.VmPolicy.Builder()
+                        .detectLeakedClosableObjects()
+                        .detectLeakedRegistrationObjects()
+                        .detectActivityLeaks()
+                        .penaltyLog()
+                        .build(),
+                )
+            }, STRICT_MODE_DELAY_MS)
         }
 
         // Tanılama kaydı ve çökme yakalayıcı her şeyden önce kurulur ki açılıştaki sorunlar da kaydedilsin.
-        com.gtarayici.browser.diagnostics.Diagnostics.init(java.io.File(filesDir, "diagnostics/log.txt")) {
-            components.settings.diagnosticsLog.value
-        }
+        com.gtarayici.browser.diagnostics.Diagnostics.init(
+            java.io.File(filesDir, "diagnostics/log.txt"),
+            enabled = { components.settings.diagnosticsLog.value },
+        )
         components.crashReporter.install()
         com.gtarayici.browser.diagnostics.Diagnostics.log("uygulama açıldı · ${BuildConfig.VERSION_NAME}", "uygulama")
 
@@ -150,3 +156,6 @@ private val MEDIA_SITES = listOf(
 
 val Context.components: Components
     get() = (applicationContext as GTarayiciApplication).components
+
+/** Hata ayıklama sürümünde StrictMode, açılış ölçümünü etkilemesin diye bu kadar sonra açılır. */
+private const val STRICT_MODE_DELAY_MS = 5_000L

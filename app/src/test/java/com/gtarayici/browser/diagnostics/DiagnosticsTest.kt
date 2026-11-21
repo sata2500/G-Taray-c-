@@ -17,7 +17,7 @@ class DiagnosticsTest {
     fun setUp() {
         dir = Files.createTempDirectory("tanilama").toFile()
         Diagnostics.clear()
-        Diagnostics.init(File(dir, "log.txt")) { enabled }
+        Diagnostics.init(File(dir, "log.txt"), enabled = { enabled }, async = false)
     }
 
     @After
@@ -64,7 +64,7 @@ class DiagnosticsTest {
         Diagnostics.flush()
         val before = Diagnostics.dump()
         Diagnostics.clear()
-        Diagnostics.init(File(dir, "log.txt")) { true }
+        Diagnostics.init(File(dir, "log.txt"), enabled = { true }, async = false)
         assertEquals(before, Diagnostics.dump())
     }
 

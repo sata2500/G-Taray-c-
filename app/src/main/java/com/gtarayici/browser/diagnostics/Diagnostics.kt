@@ -27,16 +27,26 @@ object Diagnostics {
     private var enabled: () -> Boolean = { true }
     private var saveScheduled = false
 
-    /** Uygulama açılışında bir kez çağrılır: önceki kaydı dosyadan yükler. */
-    @Synchronized
-    fun init(file: File, enabled: () -> Boolean) {
-        this.file = file
-        this.enabled = enabled
-        // Dosyadaki önceki oturum önce, bu oturumda başlatmadan önce yazılanlar sonra gelir.
+    /**
+     * Uygulama açılışında bir kez çağrılır: önceki kaydı dosyadan yükler. Okuma ve ayrıştırma (500 satır) ana iş
+     * parçacığında ~200 ms sürdüğü için varsayılan olarak arka planda yapılır; bu arada yazılan satırlar kaybolmaz.
+     */
+    fun init(file: File, enabled: () -> Boolean, async: Boolean = true) {
+        synchronized(this) {
+            this.file = file
+            this.enabled = enabled
+        }
+        if (async) writer.execute { load(file) } else load(file)
+    }
+
+    private fun load(file: File) {
         val previous = runCatching { if (file.exists()) file.readLines().mapNotNull(::parse) else emptyList() }.getOrDefault(emptyList())
-        val current = entries.toList()
-        entries.clear()
-        (previous + current).takeLast(MAX_LINES).forEach(entries::addLast)
+        synchronized(this) {
+            // Dosyadaki önceki oturum önce, bu oturumda yüklemeden önce yazılanlar sonra gelir.
+            val current = entries.toList()
+            entries.clear()
+            (previous + current).takeLast(MAX_LINES).forEach(entries::addLast)
+        }
     }
 
     fun log(message: String, category: String = "genel") = add(category, message)
