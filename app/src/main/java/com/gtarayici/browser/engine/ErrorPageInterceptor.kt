@@ -45,6 +45,8 @@ class ErrorPageInterceptor(private val context: Context) : RequestInterceptor {
         uri: String?,
     ): RequestInterceptor.ErrorResponse {
         if (uri != null) failed.update { (it + uri).toList().takeLast(MAX_TRACKED).toSet() }
+        // Yalnızca hata türü yazılır; adres (gizli sekme olabilir) kayda girmez.
+        com.gtarayici.browser.diagnostics.Diagnostics.log("yüklenemedi (${errorType.name})", "sayfa")
         return RequestInterceptor.ErrorResponse(ErrorPages.createUrlEncodedErrorPage(context, errorType, uri))
     }
 

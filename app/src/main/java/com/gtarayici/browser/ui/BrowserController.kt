@@ -1,10 +1,11 @@
 package com.gtarayici.browser.ui
 
+import com.gtarayici.browser.components
+import com.gtarayici.browser.ui.feedback.UiText
 import android.content.ClipData
 import androidx.core.content.edit
 import android.content.ClipboardManager
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -26,7 +27,7 @@ import mozilla.components.concept.engine.Engine.BrowsingData
 import mozilla.components.feature.readerview.ReaderViewFeature
 
 /** Tam ekran kaplayan ikincil ekranlar. */
-enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR }
+enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR, REPORT }
 
 /**
  * Arayüzün tarayıcı üzerinde yaptığı tüm işlemleri tek bir yerde toplar.
@@ -86,6 +87,29 @@ class BrowserController(
 
     fun closeOverlay() {
         overlay = Overlay.NONE
+    }
+
+    /** Sayfanın o anki tam çözünürlüklü görüntüsünü alır (etkinlik bağlar; gizli sekmede kullanılmaz). */
+    var captureScreenshot: ((android.graphics.Bitmap?) -> Unit) -> Unit = { it(null) }
+
+    /** "Sorun bildir" için toplanan bağlam; [Overlay.REPORT] açıkken dolu. */
+    var reportRequest by mutableStateOf<com.gtarayici.browser.ui.screens.ReportRequest?>(null)
+        private set
+
+    /**
+     * Sorun bildirme sayfasını açar. Açık sayfanın adresi ve görüntüsü yalnızca normal sekmede alınır (gizli sekmeden
+     * hiçbir şey rapora girmez); kullanıcı yine de sayfada bunları rapordan çıkarabilir.
+     */
+    fun openReport() {
+        menuOpen = false
+        val tab = selectedTab?.takeUnless { it.content.private }
+        val site = tab?.content?.url?.takeIf { it.startsWith("http") }
+        val crash = components.crashReporter.pending()
+        val show = { shot: android.graphics.Bitmap? ->
+            reportRequest = com.gtarayici.browser.ui.screens.ReportRequest(site, shot, crash)
+            overlay = Overlay.REPORT
+        }
+        if (site != null) captureScreenshot(show) else show(null)
     }
 
     /** Adres çubuğuna yazılanı açar: adresse gider, değilse arar. */
@@ -153,7 +177,7 @@ class BrowserController(
         val clipboard = activity.getSystemService(ClipboardManager::class.java)
         val text = clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(activity)?.toString()?.trim()
         if (text.isNullOrEmpty()) {
-            Toast.makeText(activity, R.string.toolbar_clipboard_empty, Toast.LENGTH_SHORT).show()
+            activity.components.messenger.info(UiText.res(R.string.toolbar_clipboard_empty))
             return
         }
         submit(text)
@@ -222,7 +246,7 @@ class BrowserController(
         menuOpen = false
         val clipboard = activity.getSystemService(ClipboardManager::class.java)
         clipboard.setPrimaryClip(ClipData.newPlainText("URL", tab.content.url))
-        Toast.makeText(activity, R.string.link_copied, Toast.LENGTH_SHORT).show()
+        activity.components.messenger.success(UiText.res(R.string.link_copied))
     }
 
     fun toggleBookmark(isBookmarked: Boolean) {
@@ -230,16 +254,20 @@ class BrowserController(
         menuOpen = false
         val dao = components.database.bookmarks()
         val profileId = profile.id
-        // Menü kapandığı için işlemin sonucu kısa bir bildirimle gösterilir.
-        Toast.makeText(
-            activity,
-            if (isBookmarked) R.string.bookmark_removed else R.string.bookmark_added,
-            Toast.LENGTH_SHORT,
-        ).show()
+        // Menü kapandığı için işlemin sonucu bir mesajla gösterilir; kaldırma "Geri al" ile geri alınabilir.
         components.applicationScope.launch(Dispatchers.IO) {
             if (isBookmarked) {
+                val removed = dao.list(profileId).firstOrNull { it.url == tab.content.url }
                 dao.deleteByUrl(profileId, tab.content.url)
+                if (removed != null) {
+                    components.messenger.undoable(UiText.res(R.string.bookmark_removed), UNDO_BOOKMARK_KEY) {
+                        components.applicationScope.launch(Dispatchers.IO) { dao.upsert(removed) }
+                    }
+                } else {
+                    components.messenger.info(UiText.res(R.string.bookmark_removed))
+                }
             } else {
+                components.messenger.success(UiText.res(R.string.bookmark_added))
                 dao.upsert(
                     Bookmark(
                         profileId = profileId,
@@ -303,16 +331,16 @@ class BrowserController(
         val installer = components.webApkInstaller
         if (!installer.canInstall()) {
             pendingWebApkTabId = tab.id
-            Toast.makeText(activity, R.string.webapk_permission, Toast.LENGTH_LONG).show()
+            activity.components.messenger.info(UiText.res(R.string.webapk_permission))
             installer.requestPermission()
             return
         }
         pendingWebApkTabId = null
-        Toast.makeText(activity, R.string.webapk_preparing, Toast.LENGTH_SHORT).show()
+        activity.components.messenger.info(UiText.res(R.string.webapk_preparing))
         components.applicationScope.launch {
             when (val result = installer.install(tab)) {
                 is com.gtarayici.browser.webapk.WebApkInstaller.Result.Failed ->
-                    Toast.makeText(activity, activity.getString(R.string.webapk_failed, result.message), Toast.LENGTH_LONG).show()
+                    activity.components.messenger.error(com.gtarayici.browser.ui.feedback.HumanErrors.message(com.gtarayici.browser.ui.feedback.ErrorArea.WebApk, result.message))
                 com.gtarayici.browser.webapk.WebApkInstaller.Result.NeedsPermission -> installer.requestPermission()
                 com.gtarayici.browser.webapk.WebApkInstaller.Result.Started -> Unit
             }
@@ -334,7 +362,7 @@ class BrowserController(
         menuOpen = false
         installDialogOpen = false
         if (!components.webAppUseCases.isPinningSupported()) {
-            Toast.makeText(activity, R.string.webapp_not_supported, Toast.LENGTH_LONG).show()
+            activity.components.messenger.warning(UiText.res(R.string.webapp_not_supported))
             return
         }
         components.applicationScope.launch {
@@ -388,7 +416,7 @@ class BrowserController(
             forgetClosedTabs()
             withContext(Dispatchers.IO) { components.database.history().clearAll() }
             components.engine.clearData(BrowsingData.all())
-            Toast.makeText(activity, R.string.settings_data_cleared, Toast.LENGTH_SHORT).show()
+            activity.components.messenger.success(UiText.res(R.string.settings_data_cleared))
         }
     }
 
@@ -417,6 +445,7 @@ class BrowserController(
 
     companion object {
         private const val KEY_HIDDEN_SITES = "home_hidden_sites"
+        private const val UNDO_BOOKMARK_KEY = "geri-al-yer-imi"
         const val KEY_ONBOARDED = "onboarding_done"
 
         /** Yeni kurulumsa (önceki sürümlerden kalma durum yoksa) tanıtım gösterilir. */

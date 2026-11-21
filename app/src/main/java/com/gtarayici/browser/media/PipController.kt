@@ -177,7 +177,7 @@ class PipController(
             ) {
                 earlyMode = true
                 prefs.edit { putBoolean(KEY_EARLY_MODE, true) }
-                Diagnostics.log("PiP: bu cihaz tamamlanmış geçişte PiP'e izin vermiyor; bundan sonra hareket sürerken istenecek")
+                Diagnostics.pip("PiP: bu cihaz tamamlanmış geçişte PiP'e izin vermiyor; bundan sonra hareket sürerken istenecek")
             }
             leaving = false
         }
@@ -191,25 +191,25 @@ class PipController(
 
     /** Yalnızca video oynarken (PiP'in söz konusu olduğu durumlarda) tanılama kaydı tutulur. */
     private fun log(event: String) {
-        if (media?.playing == true) Diagnostics.log("PiP olayı: $event (PiP=${activity.isInPictureInPictureMode})")
+        if (media?.playing == true) Diagnostics.pip("PiP olayı: $event (PiP=${activity.isInPictureInPictureMode})")
     }
 
     private fun enterManually(reason: String) {
         if (!enabled || media?.playing != true || activity.isInPictureInPictureMode) return
         // Otomatik geçiş bayrağı açıkken sistem, duraklatılan etkinliğin elle isteğini reddeder.
         val entered = runCatching { activity.enterPictureInPictureMode(buildParams(autoEnter = false)) }
-            .onFailure { Diagnostics.log("PiP elle istenemedi ($reason): ${it.message}") }
+            .onFailure { Diagnostics.pip("PiP elle istenemedi ($reason): ${it.message}") }
             .getOrDefault(false)
-        Diagnostics.log("PiP elle istendi ($reason): ${if (entered) "kabul edildi" else "sistem reddetti"}")
+        Diagnostics.pip("PiP elle istendi ($reason): ${if (entered) "kabul edildi" else "sistem reddetti"}")
     }
 
     fun onPictureInPictureModeChanged(inPip: Boolean) {
         val tab = mediaTab()
-        Diagnostics.log("PiP ${if (inPip) "başladı" else "bitti"} (yaşam döngüsü=${activity.lifecycle.currentState})")
+        Diagnostics.pip("PiP ${if (inPip) "başladı" else "bitti"} (yaşam döngüsü=${activity.lifecycle.currentState})")
         if (inPip) {
             // Geçiş başarıyla PiP'e döndü; sonradan pencere kapatılınca bu "başarısız geçiş" sayılmamalı.
             leaving = false
-            if (tab != null && !native.enter()) Diagnostics.log("PiP: kaynak görünüm bulunamadı")
+            if (tab != null && !native.enter()) Diagnostics.pip("PiP: kaynak görünüm bulunamadı")
         } else {
             // Pencere kapatıldıysa etkinlik artık görünür değildir; büyütüldüyse tarayıcıya dönülür.
             val dismissed = !activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)

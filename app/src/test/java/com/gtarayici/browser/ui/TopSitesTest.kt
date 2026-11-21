@@ -29,4 +29,27 @@ class TopSitesTest {
         val sites = topSites(listOf(visit("https://www.youtube.com/", 5, 1)), hidden = setOf("youtube.com"))
         assertEquals(emptyList<Any>(), sites)
     }
+
+    @Test
+    fun skipsFailedUrls() {
+        val sites = topSites(
+            listOf(visit("https://yok.example.com/", 5, 1), visit("https://var.example.com/", 3, 2)),
+            hidden = emptySet(),
+            failed = setOf("https://yok.example.com/"),
+        )
+        assertEquals(listOf("https://var.example.com/"), sites.map { it.url })
+    }
+
+    @Test
+    fun disambiguatesSameShortName() {
+        val sites = topSites(
+            listOf(
+                visit("https://tr.wikipedia.org/", 5, 1),
+                visit("https://en.m.wikipedia.org/", 3, 2),
+                visit("https://www.youtube.com/", 2, 3),
+            ),
+            hidden = emptySet(),
+        )
+        assertEquals(listOf("Wikipedia (tr)", "Wikipedia (en)", "Youtube"), sites.map { it.title })
+    }
 }

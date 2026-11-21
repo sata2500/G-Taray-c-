@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.TabListAction
@@ -31,8 +32,11 @@ class TabThumbnails(private val storage: ThumbnailStorage, private val scope: Co
 
     suspend fun load(tabId: String, private: Boolean): Bitmap? {
         cache.get(tabId)?.let { return it }
-        val bitmap = storage.loadThumbnail(ImageLoadRequest(tabId, TARGET_WIDTH, private)).await() ?: return null
-        return downscale(bitmap).also { cache.put(tabId, it) }
+        // Diskten okuma ve küçültme ana iş parçacığında yapılmaz (sekme ızgarası kaydırılırken takılma olmasın).
+        return withContext(Dispatchers.Default) {
+            val bitmap = storage.loadThumbnail(ImageLoadRequest(tabId, TARGET_WIDTH, private)).await() ?: return@withContext null
+            downscale(bitmap).also { cache.put(tabId, it) }
+        }
     }
 
     private fun put(tabId: String, bitmap: Bitmap) {

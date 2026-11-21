@@ -65,6 +65,21 @@ class Components(private val context: Context) {
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     val settings by lazy { AppSettings(context) }
+
+    /** Uygulama genelindeki tek mesaj kanalı (bkz. ui/feedback). */
+    val messenger = com.gtarayici.browser.ui.feedback.Messenger()
+
+    /** Bir kez gösterilen bağlamsal ipuçları (en fazla biri, ayarlardan kapatılabilir). */
+    val hints by lazy {
+        com.gtarayici.browser.ui.feedback.Hints(com.gtarayici.browser.ui.feedback.HintRules(settings.hintStore), messenger)
+    }
+    /** Çökme raporları: yalnızca cihazda, bir sonraki açılışta kullanıcıya sorulur. */
+    val crashReporter by lazy {
+        com.gtarayici.browser.diagnostics.CrashReporter(java.io.File(context.filesDir, "diagnostics/crash.txt")) {
+            com.gtarayici.browser.diagnostics.DiagnosticsEnvironment.describe(context)
+        }
+    }
+
     val database by lazy { AppDatabase.create(context) }
     val profiles by lazy {
         ProfileManager(context, database, applicationScope, context.getString(R.string.profile_default_name))
@@ -158,7 +173,13 @@ class Components(private val context: Context) {
     val trackingProtectionUseCases by lazy { TrackingProtectionUseCases(store, engine) }
 
     val historyRecorder by lazy {
-        HistoryRecorder(store, database.history(), applicationScope) { contextId -> profiles.byContextId(contextId)?.id }
+        HistoryRecorder(
+            store,
+            database.history(),
+            applicationScope,
+            profileIdFor = { contextId -> profiles.byContextId(contextId)?.id },
+            isFailed = { url -> url in errorPages.failedUrls.value },
+        )
     }
 
     val extensions by lazy { ExtensionManager(context, engine, store, settings, applicationScope) }

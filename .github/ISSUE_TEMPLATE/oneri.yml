@@ -1,0 +1,16 @@
+name: Öneri
+description: Yeni bir özellik veya iyileştirme önerin
+title: "[Öneri] "
+body:
+  - type: textarea
+    id: ihtiyac
+    attributes:
+      label: Ne yapmak istiyorsunuz?
+      description: Hangi işi kolaylaştırmak istediğinizi anlatın; nasıl çözüleceğini düşündüyseniz onu da yazın.
+    validations:
+      required: true
+  - type: textarea
+    id: simdi
+    attributes:
+      label: Şu an nasıl yapıyorsunuz?
+      description: Varsa, bugünkü geçici çözümünüz.

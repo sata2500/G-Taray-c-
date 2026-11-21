@@ -1,6 +1,6 @@
 package com.gtarayici.browser.ui.components
 
-import android.widget.Toast
+import com.gtarayici.browser.ui.feedback.UiText
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -100,7 +100,10 @@ fun YouTubeDownloadSheet(pageUrl: String, onDismiss: () -> Unit) {
     var video by remember { mutableStateOf<YouTubeVideo?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(pageUrl) {
-        downloader.fetch(pageUrl).onSuccess { video = it }.onFailure { error = it.message ?: it.javaClass.simpleName }
+        downloader.fetch(pageUrl).onSuccess { video = it }.onFailure {
+            error = com.gtarayici.browser.ui.feedback.HumanErrors.detail(it)
+            com.gtarayici.browser.diagnostics.Diagnostics.log("video bilgisi alınamadı: $error", "video")
+        }
     }
 
     // Tek "Geri" basışı pencereyi kapatsın (yarı açık ara durum yok).
@@ -113,10 +116,13 @@ fun YouTubeDownloadSheet(pageUrl: String, onDismiss: () -> Unit) {
             )
             val current = video
             when {
-                error != null -> Text(
-                    stringResource(R.string.yt_error, error.orEmpty()),
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(24.dp),
+                error != null -> com.gtarayici.browser.ui.designsystem.ErrorNotice(
+                    message = com.gtarayici.browser.ui.feedback.HumanErrors.message(
+                        com.gtarayici.browser.ui.feedback.ErrorArea.VideoInfo,
+                        error,
+                    ),
+                    detail = error,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
                 current == null -> Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -132,7 +138,7 @@ fun YouTubeDownloadSheet(pageUrl: String, onDismiss: () -> Unit) {
                             supporting = { Text(option.detail) },
                             modifier = Modifier.clickable {
                                 downloader.start(current, option)
-                                Toast.makeText(context, R.string.yt_started, Toast.LENGTH_SHORT).show()
+                                context.components.messenger.info(UiText.res(R.string.yt_started))
                                 onDismiss()
                             },
                         )

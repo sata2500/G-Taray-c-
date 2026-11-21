@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 
 /**
  * Alttan açılan sayfaların ortak durumu: yarı açık ara durum yoktur, tek "Geri" ya da aşağı kaydırma kapatır.
- * (Material 3 1.5'te kullanımdan kalkan com.gtarayici.browser.ui.designsystem.rememberFullSheetState() yerine.)
+ * (Material 3 1.5'te kullanımdan kalkan rememberModalBottomSheetState(skipPartiallyExpanded = true) yerine.)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -75,6 +75,9 @@ class AppSettings(context: Context) {
     private val toolbarSwipePref = bool("toolbar_swipe_tabs", true)
     private val unloadTabsPref = bool("unload_inactive_tabs", true)
     private val hideToolbarPref = bool("hide_toolbar_on_scroll", true)
+    private val hintsPref = bool("contextual_hints", true)
+    private val diagnosticsPref = bool("diagnostics_log", true)
+    private val crashPromptPref = bool("crash_prompt", true)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -96,6 +99,9 @@ class AppSettings(context: Context) {
     val toolbarSwipeTabs get() = toolbarSwipePref.flow
     val unloadInactiveTabs get() = unloadTabsPref.flow
     val hideToolbarOnScroll get() = hideToolbarPref.flow
+    val contextualHints get() = hintsPref.flow
+    val diagnosticsLog get() = diagnosticsPref.flow
+    val crashPrompt get() = crashPromptPref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -117,6 +123,19 @@ class AppSettings(context: Context) {
     fun setToolbarSwipeTabs(value: Boolean) = toolbarSwipePref.set(value)
     fun setUnloadInactiveTabs(value: Boolean) = unloadTabsPref.set(value)
     fun setHideToolbarOnScroll(value: Boolean) = hideToolbarPref.set(value)
+    fun setContextualHints(value: Boolean) = hintsPref.set(value)
+    fun setDiagnosticsLog(value: Boolean) = diagnosticsPref.set(value)
+    fun setCrashPrompt(value: Boolean) = crashPromptPref.set(value)
+
+    /** Bağlamsal ipuçlarının kalıcı durumu (bkz. ui/feedback/Hints). */
+    val hintStore = object : com.gtarayici.browser.ui.feedback.HintStore {
+        override val enabled get() = hintsPref.flow.value
+        override fun isSeen(hint: com.gtarayici.browser.ui.feedback.Hint) = hint.key in seenHints()
+        override fun markSeen(hint: com.gtarayici.browser.ui.feedback.Hint) =
+            prefs.edit { putStringSet("hints_seen", seenHints() + hint.key) }
+    }
+
+    private fun seenHints(): Set<String> = prefs.getStringSet("hints_seen", null).orEmpty()
 
     /** Seçili DNS sağlayıcısının DoH adresi; kapalıysa null. */
     fun dohUrl(): String? = when (dnsProvider.value) {

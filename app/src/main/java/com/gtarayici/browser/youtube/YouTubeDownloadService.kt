@@ -120,8 +120,11 @@ class YouTubeDownloadService : Service() {
             registerInDownloads(job, savedName, output.length(), directory)
             done(job, success = true)
         } catch (e: Exception) {
-            done(job, success = false, message = e.message)
+            val detail = com.gtarayici.browser.ui.feedback.HumanErrors.detail(e)
+            com.gtarayici.browser.diagnostics.Diagnostics.log("indirme başarısız: $detail", "video")
+            done(job, success = false, message = detail)
         } finally {
+            estimators.remove(job.notificationId)
             work.deleteRecursively()
         }
     }
@@ -141,7 +144,7 @@ class YouTubeDownloadService : Service() {
                     connection.setRequestProperty("User-Agent", YouTubeDownloader.USER_AGENT)
                     connection.setRequestProperty("Range", "bytes=$downloaded-$end")
                     val code = connection.responseCode
-                    if (code !in 200..299) error("Sunucu hatası: $code")
+                    if (code !in 200..299) error("HTTP $code")
                     if (total < 0) {
                         total = connection.getHeaderField("Content-Range")?.substringAfter('/')?.toLongOrNull()
                             ?: connection.contentLengthLong.takeIf { it > 0 } ?: Long.MAX_VALUE
@@ -149,8 +152,10 @@ class YouTubeDownloadService : Service() {
                     var read = 0L
                     connection.inputStream.use { input ->
                         read = copy(input, out) { bytes ->
-                            val percent = fromPercent + ((downloaded + bytes) * (toPercent - fromPercent) / total.coerceAtLeast(1))
-                            update(job, getString(R.string.yt_downloading), percent.toInt())
+                            val percent = fromPercent + (downloaded + bytes).toDouble() * (toPercent - fromPercent) / total.coerceAtLeast(1)
+                            val estimator = estimators.getOrPut(job.notificationId) { com.gtarayici.browser.ui.feedback.ProgressEstimator() }
+                            val remaining = estimator.update((percent * 100).toLong(), 100_00L)
+                            update(job, getString(R.string.yt_downloading), percent.toInt(), remaining)
                         }
                     }
                     connection.disconnect()
@@ -162,6 +167,7 @@ class YouTubeDownloadService : Service() {
         }
 
     private var lastUpdate = 0L
+    private val estimators = java.util.concurrent.ConcurrentHashMap<Int, com.gtarayici.browser.ui.feedback.ProgressEstimator>()
 
     private fun copy(input: InputStream, out: java.io.OutputStream, onProgress: (Long) -> Unit): Long {
         val buffer = ByteArray(64 * 1024)
@@ -268,8 +274,10 @@ class YouTubeDownloadService : Service() {
             .build()
 
     @SuppressLint("MissingPermission")
-    private fun update(job: Job, text: String, percent: Int) {
-        runCatching { notifications.notify(FOREGROUND_ID, progressNotification(job, "$text · %$percent", percent)) }
+    private fun update(job: Job, text: String, percent: Int, remainingMs: Long? = null) {
+        // "İndiriliyor · %45 · yaklaşık 2 dk kaldı"
+        val parts = listOfNotNull(text, "%$percent", remainingMs?.let { com.gtarayici.browser.ui.feedback.ProgressEstimator.remainingText(it).resolve(this) })
+        runCatching { notifications.notify(FOREGROUND_ID, progressNotification(job, parts.joinToString(" · "), percent)) }
     }
 
     @SuppressLint("MissingPermission")
@@ -278,7 +286,7 @@ class YouTubeDownloadService : Service() {
             .setSmallIcon(if (success) android.R.drawable.stat_sys_download_done else android.R.drawable.stat_notify_error)
             .setContentTitle(job.title)
             .setContentText(
-                if (success) getString(R.string.yt_done, job.fileName) else getString(R.string.yt_failed, message.orEmpty()),
+                if (success) getString(R.string.yt_done, job.fileName) else com.gtarayici.browser.ui.feedback.HumanErrors.message(com.gtarayici.browser.ui.feedback.ErrorArea.VideoDownload, message).resolve(this),
             )
             .setAutoCancel(true)
             .setContentIntent(contentIntent())

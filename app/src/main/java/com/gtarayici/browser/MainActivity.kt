@@ -103,6 +103,7 @@ class MainActivity : AppCompatActivity() {
             setColorSchemeColors(MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary, 0xFF0B57D0.toInt()))
         }
         controller.dynamicToolbar.engineView = engineView
+        controller.captureScreenshot = { onResult -> engineView.captureThumbnail { onResult(it) } }
         scrollContainer = ScrollTrackingLayout(this, engineView, controller.dynamicToolbar, swipeRefresh)
         setupFeatures()
         lifecycleScope.launch {
@@ -111,8 +112,21 @@ class MainActivity : AppCompatActivity() {
 
         pip = com.gtarayici.browser.media.PipController(this, components, engineView = { engineView.asView() }).also { it.start() }
         com.gtarayici.browser.media.BackgroundPlayGuard(this, components).start()
-        if (components.settings.securePrivateTabs.value) {
-            lifecycle.addObserver(SecureWindowFeature(window, components.store))
+        // Gizli sekmede ekran görüntüsü engeli: ayar değişince uygulamayı yeniden başlatmadan uygulanır.
+        lifecycleScope.launch {
+            var secure: SecureWindowFeature? = null
+            components.settings.securePrivateTabs.collect { enabled ->
+                if (enabled && secure == null) {
+                    secure = SecureWindowFeature(window, components.store).also { lifecycle.addObserver(it) }
+                } else if (!enabled) {
+                    secure?.let {
+                        lifecycle.removeObserver(it)
+                        it.stop()
+                    }
+                    secure = null
+                    window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                }
+            }
         }
 
         setContent {

@@ -21,12 +21,42 @@ class GTarayiciApplication : Application() {
         // GeckoView içerik süreçleri de bu sınıfı başlatır; yalnızca ana süreçte kurulum yapılır.
         if (!isMainProcess()) return
 
+        // Hata ayıklama sürümünde ana iş parçacığında disk/ağ erişimi ve sızıntılar günlüğe yazılır (logcat: StrictMode).
+        if (BuildConfig.DEBUG) {
+            android.os.StrictMode.setThreadPolicy(
+                android.os.StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build(),
+            )
+            android.os.StrictMode.setVmPolicy(
+                android.os.StrictMode.VmPolicy.Builder()
+                    .detectLeakedClosableObjects()
+                    .detectLeakedRegistrationObjects()
+                    .detectActivityLeaks()
+                    .penaltyLog()
+                    .build(),
+            )
+        }
+
+        // Tanılama kaydı ve çökme yakalayıcı her şeyden önce kurulur ki açılıştaki sorunlar da kaydedilsin.
+        com.gtarayici.browser.diagnostics.Diagnostics.init(java.io.File(filesDir, "diagnostics/log.txt")) {
+            components.settings.diagnosticsLog.value
+        }
+        components.crashReporter.install()
+        com.gtarayici.browser.diagnostics.Diagnostics.log("uygulama açıldı · ${BuildConfig.VERSION_NAME}", "uygulama")
+
         components.engine.warmUp()
         components.applyGeckoPrefs()
         initExtensions()
         components.vpn.restore()
         components.mediaSessionFeature.start()
         components.historyRecorder.start()
+        com.gtarayici.browser.diagnostics.startDiagnosticsWatchers(components)
+        com.gtarayici.browser.ui.feedback.startNetworkMonitor(
+            this,
+            com.gtarayici.browser.ui.feedback.NetworkStatusReporter(components.messenger, components.applicationScope),
+        )
+        com.gtarayici.browser.downloads.DownloadCompletionNotifier(components.store, components.messenger, components.applicationScope) {
+            components.downloadFileUtils.openFile(fileName = it.fileName, directoryPath = it.directoryPath, contentType = it.contentType)
+        }.start()
         restoreTabs()
         // Açılışı geciktirmemek için acil olmayan işler ilk ekran çizildikten sonra (ana iş parçacığı boşken) yapılır.
         Looper.myQueue().addIdleHandler {

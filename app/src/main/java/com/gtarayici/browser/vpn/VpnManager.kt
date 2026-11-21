@@ -138,7 +138,7 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
                 logger.warn("VPN başlatılamadı", error)
                 // Kapalı başarısızlık: vekil ayarı ölü bir porta yönlendirilir, trafik sızmaz.
                 applyProxy(DEAD_PORT)
-                _status.value = VpnStatus.Error(error.message ?: "Bilinmeyen hata")
+                _status.value = VpnStatus.Error(com.gtarayici.browser.ui.feedback.HumanErrors.detail(error))
             }
         }
     }
@@ -291,17 +291,7 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
 
     // --- Kalıcılık -----------------------------------------------------------------------
 
-    private fun splitInput(input: String): List<String> {
-        val text = input.trim()
-        if (text.startsWith("{") || text.contains("[Interface]", ignoreCase = true)) return listOf(text)
-        // Abonelik içeriği gibi birden fazla satırlık bağlantı listeleri (düz veya base64).
-        val decoded = if (!text.contains("://")) {
-            runCatching { String(java.util.Base64.getMimeDecoder().decode(text)) }.getOrDefault(text)
-        } else {
-            text
-        }
-        return decoded.lines().map(String::trim).filter { it.contains("://") && !it.startsWith("#") }
-    }
+    private fun splitInput(input: String): List<String> = splitVpnInput(input)
 
     private fun loadServers(): List<VpnServer> = runCatching {
         val array = JSONArray(prefs.getString(KEY_SERVERS, "[]"))

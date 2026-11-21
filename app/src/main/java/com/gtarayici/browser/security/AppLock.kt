@@ -1,11 +1,12 @@
 package com.gtarayici.browser.security
 
+import com.gtarayici.browser.components
+import com.gtarayici.browser.ui.feedback.UiText
 import android.app.KeyguardManager
 import android.content.Context
 import android.os.Build
 import android.os.SystemClock
 import android.util.Base64
-import android.widget.Toast
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -111,7 +112,7 @@ class AppLock(context: Context) {
         val biometrics = hasBiometrics(activity)
         if (hasPassword && !biometrics) return onResult(false)
         if (!hasPassword && !biometrics && !deviceSecure(activity)) {
-            Toast.makeText(activity, R.string.lock_no_screen_lock, Toast.LENGTH_LONG).show()
+            activity.components.messenger.warning(UiText.res(R.string.lock_no_screen_lock))
             unlocked[key] = true
             return onResult(true)
         }

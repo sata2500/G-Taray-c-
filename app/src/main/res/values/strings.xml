@@ -191,7 +191,6 @@
     <string name="menu_download_video">Videoyu indir</string>
     <string name="yt_title">Videoyu indir</string>
     <string name="yt_loading">Video bilgileri alınıyor…</string>
-    <string name="yt_error">Video bilgileri alınamadı: %1$s</string>
     <string name="yt_notice">Yalnızca indirme hakkına sahip olduğunuz içerikleri indirin. YouTube\'un kullanım şartları ve telif hakları kullanıcının sorumluluğundadır.</string>
     <string name="yt_started">İndirme başladı, bildirimden takip edebilirsiniz</string>
     <string name="yt_channel_name">Video indirmeleri</string>
@@ -199,7 +198,6 @@
     <string name="yt_downloading">İndiriliyor</string>
     <string name="yt_merging">Görüntü ve ses birleştiriliyor</string>
     <string name="yt_done">%1$s indirildi</string>
-    <string name="yt_failed">İndirme başarısız: %1$s</string>
 
     <!-- PWA -->
     <string name="menu_install_app">Uygulamayı yükle</string>
@@ -224,14 +222,11 @@
     <string name="vpn_off">Kapalı</string>
     <string name="vpn_connecting">Bağlanıyor…</string>
     <string name="vpn_connected">Bağlı: %1$s</string>
-    <string name="vpn_error">Bağlantı hatası: %1$s</string>
     <string name="vpn_error_blocked">Güvenliğiniz için VPN kapatılana veya yeniden bağlanana kadar internet trafiği engellendi.</string>
     <string name="vpn_connect">Bağlan</string>
     <string name="vpn_disconnect">Bağlantıyı kes</string>
     <string name="vpn_test">Bağlantıyı test et</string>
     <string name="vpn_test_result">Çıkış IP: %1$s (%2$s) · %3$d ms</string>
-    <string name="vpn_test_failed">Test başarısız: %1$s</string>
-    <string name="vpn_invalid">Bağlantı okunamadı: %1$s</string>
     <string name="vpn_logs">Günlük</string>
 
     <!-- Uygulama parolası -->
@@ -272,14 +267,11 @@
     <string name="webapk_preparing">Uygulama hazırlanıyor…</string>
     <string name="webapk_permission">Uygulama yükleyebilmek için açılan ekranda G-Tarayıcı\'ya "Bu kaynaktan izin ver" iznini verin, sonra tekrar deneyin</string>
     <string name="webapk_installed">%1$s yüklendi</string>
-    <string name="webapk_failed">Uygulama yüklenemedi: %1$s</string>
     <string name="vpn_openvpn_detected">OpenVPN yapılandırması algılandı</string>
     <string name="vpn_username">VPN kullanıcı adı</string>
     <string name="vpn_password">VPN parolası</string>
     <string name="vpn_credentials_required">Bu OpenVPN sunucusu kullanıcı adı ve parola istiyor</string>
-    <string name="diag_title">PiP tanılama kaydı</string>
-    <string name="diag_summary">Resim içinde resim sorunlarını bildirmek için adımların zaman çizelgesi</string>
-    <string name="diag_empty">Henüz kayıt yok. Resim içinde resmi kullandıktan sonra tekrar bakın.</string>
+    <string name="diag_empty">Henüz kayıt yok. Bir sorun yaşadıktan sonra buraya dönün.</string>
     <string name="diag_copy">Kopyala</string>
     <string name="diag_copied">Tanılama kaydı kopyalandı</string>
     <!-- Okuma görünümü -->
@@ -310,7 +302,6 @@
     <string name="translate_options">Diller</string>
     <string name="translate_show_original">Orijinali göster</string>
     <string name="translate_offer">Bu sayfa %1$s. Çevrilsin mi?</string>
-    <string name="translate_error">Çevrilemedi (%1$s)</string>
 
     <!-- QR kod -->
     <string name="menu_scan_qr">QR kod tara</string>
@@ -361,7 +352,6 @@
     <string name="update_offline">Güncelleme sunucusuna bağlanılamadı. İnternet bağlantınızı denetleyin.</string>
     <string name="update_invalid">İndirilen dosya geçerli bir G-Tarayıcı güncellemesi değil.</string>
     <string name="update_signature">İndirilen güncelleme farklı bir anahtarla imzalanmış; güvenlik nedeniyle kurulmadı.</string>
-    <string name="update_install_failed">Kurulum başarısız: %1$s</string>
     <string name="settings_video_download_button">Video indirme düğmesi</string>
     <string name="settings_video_download_button_summary">Yüklü web uygulamalarında (ör. YouTube) video açıkken kenarda küçük bir indirme düğmesi gösterir; parmakla taşınabilir</string>
     <string name="menu_tile_new_tab">Yeni sekme</string>
@@ -405,20 +395,17 @@
     <string name="vpn_core_install">İndir ve kur</string>
     <string name="vpn_core_downloading">VPN bileşeni indiriliyor… %%%1$d</string>
     <string name="vpn_core_installing">Kuruluyor…</string>
-    <string name="vpn_core_failed">VPN bileşeni kurulamadı: %1$s</string>
     <string name="vpn_core_permission">VPN bileşenini kurmak için G-Tarayıcı\'ya uygulama yükleme izni verin, sonra tekrar deneyin.</string>
     <string name="vpn_core_not_found">VPN bileşeni sürüm sayfasında bulunamadı.</string>
     <string name="vpn_core_invalid">İndirilen dosya geçerli bir VPN bileşeni değil.</string>
     <string name="vpn_core_missing_error">VPN bileşeni yüklü değil. VPN ekranından kurun veya VPN\'i kapatın.</string>
     <string name="settings_appearance">Görünüm ve hareketler</string>
-    <string name="settings_advanced">Gelişmiş</string>
     <string name="settings_search_hint">Ayarlarda ara</string>
     <string name="settings_page_general_summary">Arama motoru, varsayılan tarayıcı, sekmeler</string>
     <string name="settings_page_appearance_summary">Tema, adres çubuğu, kaydırma hareketleri</string>
     <string name="settings_page_privacy_summary">İzleyiciler, güvenli DNS, kilitler, veri temizleme</string>
     <string name="settings_page_media_summary">Arka planda oynatma, resim içinde resim, SponsorBlock</string>
     <string name="settings_page_updates_summary">Yeni sürümleri denetle</string>
-    <string name="settings_page_advanced_summary">Tanılama kaydı</string>
     <string name="settings_page_about_summary">Sürüm, motor, lisans</string>
     <string name="settings_hide_toolbar">Kaydırınca adres çubuğunu gizle</string>
     <string name="settings_hide_toolbar_summary">Sayfayı aşağı kaydırınca çubuk iner, yukarı kaydırınca geri gelir</string>
@@ -451,4 +438,119 @@
         <item quantity="one">%d yer imi</item>
         <item quantity="other">%d yer imi</item>
     </plurals>
+    <!-- İnsan diliyle hatalar (ui/feedback/HumanErrors): "<ne oldu>. <ne yapılmalı>" -->
+    <string name="err_format">%1$s. %2$s</string>
+    <string name="err_lead_video_info">Video bilgileri alınamadı</string>
+    <string name="err_lead_video_download">İndirme tamamlanamadı</string>
+    <string name="err_lead_vpn_connect">VPN bağlanamadı</string>
+    <string name="err_lead_vpn_test">Bağlantı testi yapılamadı</string>
+    <string name="err_lead_vpn_link">Sunucu eklenemedi</string>
+    <string name="err_lead_vpn_core">VPN bileşeni kurulamadı</string>
+    <string name="err_lead_webapk">Uygulama ana ekrana yüklenemedi</string>
+    <string name="err_lead_translate">Sayfa çevrilemedi</string>
+    <string name="err_lead_install">Kurulum tamamlanamadı</string>
+    <string name="err_lead_update">Güncelleme alınamadı</string>
+    <string name="err_no_connection">İnternet bağlantısı yok ya da adres bulunamadı. Bağlantınızı kontrol edip yeniden deneyin.</string>
+    <string name="err_connection_lost">Bağlantı yarıda kesildi. İnternetinizi kontrol edip yeniden deneyin.</string>
+    <string name="err_timeout">Sunucu zamanında yanıt vermedi. Biraz sonra yeniden deneyin.</string>
+    <string name="err_unreachable">Sunucuya ulaşılamadı. Biraz sonra yeniden deneyin.</string>
+    <string name="err_vpn_unreachable">Sunucuya ulaşılamadı. Bağlantı bilgilerini kontrol edin veya başka bir sunucu deneyin.</string>
+    <string name="err_secure">Güvenli bağlantı kurulamadı. Cihazın tarih ve saatini kontrol edin; bulunduğunuz ağ bağlantıyı engelliyor olabilir.</string>
+    <string name="err_access_denied">Sunucu isteği reddetti. Biraz sonra yeniden deneyin.</string>
+    <string name="err_rate_limited">Sunucu kısa sürede çok fazla istek aldı. Birkaç dakika bekleyip yeniden deneyin.</string>
+    <string name="err_not_found">İstenen içerik sunucuda bulunamadı. Adresin doğru olduğunu kontrol edin.</string>
+    <string name="err_server">Sunucuda geçici bir sorun var. Biraz sonra yeniden deneyin.</string>
+    <string name="err_auth">Kullanıcı adı veya parola kabul edilmedi. Bilgileri kontrol edip yeniden girin.</string>
+    <string name="err_no_space">Cihazda yeterli boş alan yok. Biraz yer açıp yeniden deneyin.</string>
+    <string name="err_install_conflict">Cihazdaki başka bir sürümle çakışıyor. Eski uygulamayı kaldırıp yeniden deneyin.</string>
+    <string name="err_install_blocked">Kurulum cihaz tarafından engellendi. Bu uygulamaya "Bilinmeyen uygulamaları yükle" izni verip yeniden deneyin.</string>
+    <string name="err_install_incompatible">Bu paket cihazınızla uyumlu değil.</string>
+    <string name="err_install_invalid">Kurulum dosyası bozuk. Yeniden indirip deneyin.</string>
+    <string name="err_invalid_link">Bağlantının biçimi tanınmadı. Bağlantıyı eksiksiz kopyalayıp yeniden deneyin.</string>
+    <string name="err_video_unavailable">Video gizli, yaş sınırlı ya da bölgenizde kullanılamıyor.</string>
+    <string name="err_video_extraction">YouTube video bilgilerini beklenen biçimde vermedi. Videoyu yeniden açıp deneyin; sürerse uygulamayı güncelleyin.</string>
+    <string name="err_language_unsupported">Bu dil çifti desteklenmiyor. Başka bir dil seçin.</string>
+    <string name="err_translate_model">Dil modeli indirilemedi. İnternet bağlantınızı kontrol edip yeniden deneyin.</string>
+    <string name="err_unknown">Yeniden deneyin. Sorun sürerse Ayarlar › Sorun bildir ile bize iletin.</string>
+    <string name="err_details_show">Ayrıntılar</string>
+    <string name="err_details_hide">Ayrıntıları gizle</string>
+
+
+    <!-- Bağlamsal ipuçları (ui/feedback/Hints) -->
+    <string name="action_got_it">Anladım</string>
+    <string name="hint_youtube_video">İpucu: Menü › Videoyu indir ile bu videoyu kaydedebilirsiniz. Ana ekrana geçerseniz video küçük pencerede oynamaya devam eder.</string>
+    <string name="hint_many_tabs">İpucu: Alt çubuğu sağa veya sola kaydırarak sekmeler arasında hızlıca geçebilirsiniz.</string>
+    <string name="hint_vpn_error">İpucu: VPN bağlanamazsa "Günlük" düğmesiyle ayrıntıları görebilir, Ayarlar › Sorun bildir ile bize iletebilirsiniz.</string>
+    <string name="settings_hints">Bağlamsal ipuçları</string>
+    <string name="settings_hints_summary">Bir özelliği ilk kullandığınızda kısa bir ipucu gösterilir</string>
+    <string name="network_lost">İnternet bağlantısı kesildi. Wi-Fi veya mobil veriyi kontrol edin.</string>
+    <string name="network_back">İnternet bağlantısı yeniden kuruldu</string>
+    <string name="history_entry_deleted">Geçmişten silindi</string>
+    <string name="extension_remove_confirm">%1$s kaldırılsın mı? Ayarları da silinir; yeniden kurmanız gerekir.</string>
+
+    <!-- Yazarken denetim (ui/feedback/InputValidation) -->
+    <string name="validation_no_spaces">Adreste boşluk olamaz</string>
+    <string name="validation_doh_https">Adres https:// ile başlamalı</string>
+    <string name="validation_doh_host">Geçerli bir sunucu adresi girin (ör. https://dns.ornek.com/dns-query)</string>
+    <string name="validation_url_empty">Adres boş olamaz</string>
+    <string name="validation_url_invalid">Geçerli bir adres girin (ör. ornek.com)</string>
+    <string name="validation_vpn_unknown">Bu bir sunucu bağlantısına benzemiyor. vless://, vmess://, trojan://, ss://, hysteria2://, tuic:// bağlantısı ya da WireGuard/OpenVPN yapılandırması yapıştırın.</string>
+    <string name="validation_vpn_broken">Bağlantı eksik veya bozuk görünüyor. Tamamını kopyaladığınızdan emin olun.</string>
+
+    <!-- İlerleme ve kalan süre (ui/feedback/Progress) -->
+    <string name="progress_seconds_left">yaklaşık %1$d sn kaldı</string>
+    <string name="progress_minutes_left">yaklaşık %1$d dk kaldı</string>
+    <string name="progress_hours_left">yaklaşık %1$d sa %2$d dk kaldı</string>
+    <string name="progress_bytes">%1$s / %2$s</string>
+    <string name="download_finished_message">İndirildi: %1$s</string>
+    <string name="action_open">Aç</string>
+    <!-- Tanılama ve sorun bildirme (diagnostics/) -->
+    <string name="diag_settings_title">Tanılama ve sorun bildirme</string>
+    <string name="diag_settings_summary">Sorun bildir, tanılama kaydı, çökme raporları</string>
+    <string name="diag_log_enabled">Tanılama kaydı tut</string>
+    <string name="diag_log_enabled_summary">Hataları ve önemli olayları yalnızca bu cihazda saklar. Adresler alan adına indirgenir; e-posta, IP ve kimlikler gizlenir.</string>
+    <string name="diag_crash_prompt">Çökmeden sonra bildirmeyi öner</string>
+    <string name="diag_crash_prompt_summary">Uygulama beklenmedik şekilde kapanırsa bir sonraki açılışta sorulur. Hiçbir şey otomatik gönderilmez.</string>
+    <string name="diag_view">Kaydı görüntüle</string>
+    <string name="diag_view_summary">%1$d satır</string>
+    <string name="diag_clear">Kaydı temizle</string>
+    <string name="diag_cleared">Tanılama kaydı temizlendi</string>
+    <string name="diag_log_title">Tanılama kaydı</string>
+    <string name="diag_section_report">Bildir</string>
+    <string name="diag_section_log">Kayıt</string>
+    <string name="report_title">Sorun bildir</string>
+    <string name="report_summary">GitHub\'da önceden doldurulmuş bir bildirim açar veya dosya olarak paylaşır</string>
+    <string name="report_category">Ne ile ilgili?</string>
+    <string name="report_description">Ne oldu? (isteğe bağlı)</string>
+    <string name="report_description_hint">Ör. "YouTube\'da tam ekrana geçince ses kesiliyor"</string>
+    <string name="report_include_site">Sitenin alan adını ekle</string>
+    <string name="report_include_log">Tanılama kaydını ekle</string>
+    <string name="report_include_log_summary">Son %1$d satır, kişisel bilgiler maskelenmiş</string>
+    <string name="report_include_screenshot">Ekran görüntüsü ekle</string>
+    <string name="report_include_screenshot_summary">Sayfanın şu anki görüntüsü</string>
+    <string name="report_include_crash">Son çökme raporunu ekle</string>
+    <string name="report_preview">Önizle</string>
+    <string name="report_preview_title">Gönderilecek metin</string>
+    <string name="report_preview_note">Gönderilecek metnin tamamı aşağıda; kişisel bilgiler maskelendi. GitHub\'da göndermek için bir GitHub hesabı gerekir.</string>
+    <string name="report_open_github">GitHub\'da aç</string>
+    <string name="report_share_file">Dosya olarak paylaş</string>
+    <string name="report_copy">Kopyala</string>
+    <string name="report_copied">Sorun bildirimi kopyalandı</string>
+    <string name="report_log_in_clipboard">Kaydın tamamı panoya kopyalandı. GitHub sayfasında açıklamanın sonuna yapıştırın.</string>
+    <string name="report_screenshot_saved">Ekran görüntüsü Resimler › G-Tarayıcı klasörüne kaydedildi; GitHub sayfasında ekleyebilirsiniz.</string>
+    <string name="report_cat_crash">Çökme veya kapanma</string>
+    <string name="report_cat_page">Sayfa açılmıyor veya bozuk</string>
+    <string name="report_cat_video">Video ve resim içinde resim</string>
+    <string name="report_cat_download">İndirme</string>
+    <string name="report_cat_vpn">VPN</string>
+    <string name="report_cat_extensions">Eklentiler</string>
+    <string name="report_cat_other">Diğer</string>
+    <string name="report_cat_idea">Öneri</string>
+    <string name="crash_prompt_title">G-Tarayıcı beklenmedik şekilde kapandı</string>
+    <string name="crash_prompt_text">Bildirirseniz sorunu bulup düzeltmemize yardımcı olur. Gönderilecek metni önce görürsünüz; kişisel bilgiler maskelenir.</string>
+    <string name="crash_prompt_report">Bildir</string>
+    <string name="crash_prompt_dismiss">Şimdi değil</string>
+    <string name="menu_report">Sorun bildir</string>
 </resources>
+
+

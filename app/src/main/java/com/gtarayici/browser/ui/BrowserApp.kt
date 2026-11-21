@@ -2,7 +2,6 @@ package com.gtarayici.browser.ui
 
 import android.app.Activity
 import android.view.View
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,22 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Surface
+import com.gtarayici.browser.ui.navigation.OverlayHost
+import com.gtarayici.browser.ui.feedback.Hint
+import com.gtarayici.browser.ui.feedback.HintRules
+import com.gtarayici.browser.ui.feedback.Message
+import com.gtarayici.browser.ui.feedback.MessageAction
+import com.gtarayici.browser.ui.feedback.MessageHost
+import com.gtarayici.browser.ui.feedback.UiText
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
@@ -38,10 +52,6 @@ import com.gtarayici.browser.ui.components.ReaderIndicator
 import com.gtarayici.browser.ui.components.SiteInfoSheet
 import com.gtarayici.browser.ui.components.ToolbarActions
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
@@ -63,6 +73,7 @@ import com.gtarayici.browser.ui.components.YouTubeDownloadSheet
 import com.gtarayici.browser.ui.components.observe
 import com.gtarayici.browser.ui.components.keepSizeDuringPip
 import com.gtarayici.browser.ui.screens.BookmarksScreen
+import com.gtarayici.browser.ui.screens.ReportScreen
 import com.gtarayici.browser.ui.screens.DownloadsScreen
 import com.gtarayici.browser.ui.screens.ExtensionPopupSheet
 import com.gtarayici.browser.ui.screens.ExtensionPrompts
@@ -77,13 +88,14 @@ import com.gtarayici.browser.ui.screens.LockScreen
 import com.gtarayici.browser.ui.screens.ProfileSwitcherSheet
 import com.gtarayici.browser.ui.screens.ProfilesScreen
 import com.gtarayici.browser.ui.screens.SearchScreen
-import com.gtarayici.browser.ui.screens.SettingsScreen
+import com.gtarayici.browser.ui.screens.settings.SettingsScreen
 import com.gtarayici.browser.ui.screens.TabsScreen
 import com.gtarayici.browser.ui.screens.VpnScreen
 import com.gtarayici.browser.ui.theme.GTarayiciTheme
 import com.gtarayici.browser.ui.theme.isDarkTheme
 import com.gtarayici.browser.vpn.VpnStatus
 import com.gtarayici.browser.youtube.YouTubeDownloader
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.SecurityInfo
@@ -162,31 +174,29 @@ fun BrowserApp(
     val hideToolbar by components.settings.hideToolbarOnScroll.collectAsState()
     // Kapatılan sekmeler: birkaç saniye "Geri al" çubuğu gösterilir.
     val undo by store.observe { it.undoHistory.tag to it.undoHistory.tabs.size }
-    val snackbar = remember { SnackbarHostState() }
-    val undoLabel = stringResource(R.string.action_undo)
+    val messenger = components.messenger
     val closedOne = stringResource(R.string.tab_closed)
     val closedMany = pluralStringResource(R.plurals.tabs_closed, undo.second, undo.second)
     LaunchedEffect(undo) {
-        if (undo.second == 0) {
-            snackbar.currentSnackbarData?.dismiss()
-            return@LaunchedEffect
-        }
-        val result = snackbar.showSnackbar(
-            message = if (undo.second == 1) closedOne else closedMany,
-            actionLabel = undoLabel,
-            duration = SnackbarDuration.Short,
+        // Önceki "Geri al" mesajı artık geçersiz: kaldırılır, gerekiyorsa güncel sayıyla yenisi gösterilir.
+        messenger.dismissKey(UNDO_TABS_KEY)
+        if (undo.second == 0) return@LaunchedEffect
+        messenger.show(
+            Message(
+                UiText.Plain(if (undo.second == 1) closedOne else closedMany),
+                action = MessageAction(UiText.res(R.string.action_undo)) { controller.undoCloseTabs() },
+                key = UNDO_TABS_KEY,
+            ),
         )
-        if (result == SnackbarResult.ActionPerformed) controller.undoCloseTabs()
     }
     var dismissedOffer by remember { mutableStateOf<String?>(null) }
     val profileTabs = allTabs.filter { it.contextId == profile.contextId }
     val bookmarks by remember(profile.id) { components.database.bookmarks().all(profile.id) }.collectAsState(initial = emptyList())
     val history by remember(profile.id) { components.database.history().recent(profile.id, 500) }.collectAsState(initial = emptyList())
     val hiddenSites by controller.hiddenSites.collectAsState()
-    val frequent = remember(history, hiddenSites) { topSites(history, hiddenSites) }
-
     // Hata sayfasında çeviri önerisi ve okuma simgesi gösterilmez (şablonun dili belirsiz, okunacak makale yok).
     val failedUrls by components.errorPages.failedUrls.collectAsState()
+    val frequent = remember(history, hiddenSites, failedUrls) { topSites(history, hiddenSites, failed = failedUrls) }
     // Seçili sekme başka bir profile aitse bu profilde görünür sekme yok sayılır.
     val current = selected?.takeIf { it.contextId == profile.contextId }
         ?.let { if (it.url in failedUrls) it.copy(offerTranslate = false, readerable = false) else it }
@@ -202,6 +212,23 @@ fun BrowserApp(
         profile.locked && !components.appLock.isUnlocked(AppLock.profileKey(profile.id)) -> AppLock.profileKey(profile.id)
         lockPrivate && private && current != null && !components.appLock.isUnlocked(AppLock.PRIVATE) -> AppLock.PRIVATE
         else -> null
+    }
+
+    // Bağlamsal ipuçları: özellik ilk kez anlamlı olduğunda bir kez (kilit ekranı açıkken hiç).
+    val hints = components.hints
+    val videoPageLoaded = pageUrl != null && current?.loading == false && YouTubeDownloader.isVideoPage(pageUrl)
+    LaunchedEffect(videoPageLoaded, lockKey) {
+        if (videoPageLoaded && lockKey == null) {
+            delay(HINT_DELAY_MS)
+            hints.offer(Hint.YouTubeVideo)
+        }
+    }
+    val manyTabs = HintRules.manyTabs(profileTabs.size, toolbarSwipe)
+    LaunchedEffect(manyTabs, lockKey) {
+        if (manyTabs && lockKey == null) {
+            delay(HINT_DELAY_MS)
+            hints.offer(Hint.ManyTabs)
+        }
     }
 
     val view = LocalView.current
@@ -285,7 +312,7 @@ fun BrowserApp(
                 }
             }
             // Tanıtım veya tam ekran bir pencere açıkken arkadaki tarayıcı arayüzü ekran okuyucuya görünmesin.
-            val covered = controller.onboarding || controller.overlay != Overlay.NONE
+            val covered = controller.onboarding || controller.overlay != Overlay.NONE || lockKey != null
             Column(
                 Modifier.fillMaxSize().then(chrome).imePadding()
                     .semantics { if (covered) hideFromAccessibility() },
@@ -321,15 +348,18 @@ fun BrowserApp(
                 if (!fullscreen && !floatingBars) bars()
             }
 
-            val overlayModifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-                .systemBarsPadding()
-                .imePadding()
-            when (controller.overlay) {
-                Overlay.NONE -> Unit
-                Overlay.SEARCH -> Box(overlayModifier) {
-                    SearchScreen(
+            // Tam ekran sayfalar: tek, animasyonlu ve öngörülü geri hareketiyle uyumlu katman.
+            OverlayHost(
+                current = controller.overlay,
+                none = Overlay.NONE,
+                onBack = { controller.closeOverlay() },
+                fullBleed = { it == Overlay.QR },
+                // Kilit ekranı açıkken alttaki sayfa ekran okuyucuya görünmesin.
+                modifier = Modifier.semantics { if (lockKey != null) hideFromAccessibility() },
+            ) { page ->
+                when (page) {
+                    Overlay.NONE -> Unit
+                    Overlay.SEARCH -> SearchScreen(
                         initialUrl = pageUrl.orEmpty(),
                         private = private,
                         engine = searchEngine,
@@ -338,16 +368,12 @@ fun BrowserApp(
                         onDismiss = { controller.closeOverlay() },
                         onScanQr = { controller.openQrScanner() },
                     )
-                }
-                Overlay.QR -> Box(Modifier.fillMaxSize()) {
-                    QrScannerScreen(
+                    Overlay.QR -> QrScannerScreen(
                         onOpen = { controller.loadUrl(it) },
                         onSearch = { controller.submit(it) },
                         onBack = { controller.closeOverlay() },
                     )
-                }
-                Overlay.TABS -> Box(overlayModifier) {
-                    TabsScreen(
+                    Overlay.TABS -> TabsScreen(
                         tabs = profileTabs,
                         selectedTabId = selectedTabId,
                         initialPrivate = private,
@@ -358,35 +384,55 @@ fun BrowserApp(
                         onNewTabInGroup = { controller.newTabInGroup(it) },
                         onBack = { controller.closeOverlay() },
                     )
-                }
-                Overlay.HISTORY -> Box(overlayModifier) {
-                    HistoryScreen(onOpen = { controller.loadUrl(it) }, onBack = { controller.closeOverlay() })
-                }
-                Overlay.BOOKMARKS -> Box(overlayModifier) {
-                    BookmarksScreen(onOpen = { controller.loadUrl(it) }, onBack = { controller.closeOverlay() })
-                }
-                Overlay.DOWNLOADS -> Box(overlayModifier) {
-                    DownloadsScreen(onBack = { controller.closeOverlay() })
-                }
-                Overlay.SETTINGS -> Box(overlayModifier) {
-                    SettingsScreen(
+                    Overlay.HISTORY -> HistoryScreen(onOpen = { controller.loadUrl(it) }, onBack = { controller.closeOverlay() })
+                    Overlay.BOOKMARKS -> BookmarksScreen(onOpen = { controller.loadUrl(it) }, onBack = { controller.closeOverlay() })
+                    Overlay.DOWNLOADS -> DownloadsScreen(onBack = { controller.closeOverlay() })
+                    Overlay.SETTINGS -> SettingsScreen(
                         onClearData = { controller.clearBrowsingData() },
+                        onReport = { controller.openReport() },
                         onBack = { controller.closeOverlay() },
                     )
-                }
-                Overlay.PROFILES -> Box(overlayModifier) {
-                    ProfilesScreen(controller, onBack = { controller.closeOverlay() })
-                }
-                Overlay.EXTENSIONS -> Box(overlayModifier) {
-                    ExtensionsScreen(controller, onBack = { controller.closeOverlay() })
-                }
-                Overlay.VPN -> Box(overlayModifier) {
-                    VpnScreen(onBack = { controller.closeOverlay() })
+                    Overlay.PROFILES -> ProfilesScreen(controller, onBack = { controller.closeOverlay() })
+                    Overlay.EXTENSIONS -> ExtensionsScreen(controller, onBack = { controller.closeOverlay() })
+                    Overlay.VPN -> VpnScreen(onBack = { controller.closeOverlay() })
+                    Overlay.REPORT -> controller.reportRequest?.let { request ->
+                        ReportScreen(
+                            request,
+                            onOpenUrl = { controller.loadUrl(it, inNewTab = true) },
+                            onBack = { controller.closeOverlay() },
+                        )
+                    }
                 }
             }
 
             if (controller.onboarding && !pictureInPicture) {
                 OnboardingScreen(onDone = { controller.finishOnboarding() })
+            }
+
+            // Önceki oturum çöktüyse bir kez sorulur (ayarlardan kapatılabilir; hiçbir şey kendiliğinden gönderilmez).
+            var crashChecked by rememberSaveable { mutableStateOf(false) }
+            val crashPromptOn by components.settings.crashPrompt.collectAsState()
+            if (!crashChecked && crashPromptOn && lockKey == null && !controller.onboarding && !pictureInPicture &&
+                remember { components.crashReporter.pending() != null }
+            ) {
+                AlertDialog(
+                    onDismissRequest = { crashChecked = true },
+                    icon = { Icon(Icons.Rounded.BugReport, null) },
+                    title = { Text(stringResource(R.string.crash_prompt_title)) },
+                    text = { Text(stringResource(R.string.crash_prompt_text)) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            crashChecked = true
+                            controller.openReport()
+                        }) { Text(stringResource(R.string.crash_prompt_report)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            crashChecked = true
+                            components.crashReporter.dismiss()
+                        }) { Text(stringResource(R.string.crash_prompt_dismiss)) }
+                    },
+                )
             }
 
             if (lockKey != null && !pictureInPicture) {
@@ -397,7 +443,10 @@ fun BrowserApp(
                 }
                 // Kilit ekranı açılınca doğrulama istemi kendiliğinden gelir.
                 LaunchedEffect(lockKey) { controller.unlock(lockKey, title) }
-                Box(overlayModifier) { LockScreen(title, lockKey) { controller.unlock(lockKey, title) } }
+                // Surface: başlık ve metinler içerik rengini alır (önceden koyu zeminde siyah kalıyordu).
+                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+                    Box(Modifier.systemBarsPadding().imePadding()) { LockScreen(title, lockKey) { controller.unlock(lockKey, title) } }
+                }
             }
 
             if (controller.menuOpen) {
@@ -442,12 +491,11 @@ fun BrowserApp(
             ExtensionPrompts()
             ExtensionPopupSheet()
 
-            BackHandler(enabled = controller.overlay != Overlay.NONE) { controller.closeOverlay() }
 
             if (!pictureInPicture) {
-                SnackbarHost(
-                    snackbar,
-                    Modifier.align(Alignment.BottomCenter).systemBarsPadding().imePadding().padding(bottom = 64.dp),
+                MessageHost(
+                    messenger,
+                    Modifier.align(Alignment.BottomCenter).systemBarsPadding().imePadding().padding(bottom = 72.dp),
                 )
             }
 
@@ -458,3 +506,8 @@ fun BrowserApp(
         }
     }
 }
+
+private const val UNDO_TABS_KEY = "geri-al-sekmeler"
+
+/** Sayfa açıldıktan sonra ipucu gösterilmeden önceki bekleme (kullanıcı önce sayfayı görsün). */
+private const val HINT_DELAY_MS = 2_500L

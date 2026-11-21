@@ -1,10 +1,11 @@
 package com.gtarayici.browser.qr
 
+import com.gtarayici.browser.components
+import com.gtarayici.browser.ui.feedback.UiText
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.pm.PackageManager
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -153,7 +154,7 @@ fun QrScannerScreen(onOpen: (String) -> Unit, onSearch: (String) -> Unit, onBack
             dismissButton = {
                 TextButton(onClick = {
                     context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("QR", text))
-                    Toast.makeText(context, R.string.qr_copied, Toast.LENGTH_SHORT).show()
+                    context.components.messenger.success(UiText.res(R.string.qr_copied))
                     result = null
                 }) { Text(stringResource(R.string.qr_copy)) }
             },

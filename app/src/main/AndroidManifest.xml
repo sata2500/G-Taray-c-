@@ -139,5 +139,16 @@
             android:name=".downloads.DownloadService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- Sorun bildirimi dosya olarak paylaşılırken rapor ve ekran görüntüsü buradan verilir. -->
+        <provider
+            android:name=".diagnostics.ReportFileProvider"
+            android:authorities="${applicationId}.reports"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/report_paths" />
+        </provider>
     </application>
 </manifest>

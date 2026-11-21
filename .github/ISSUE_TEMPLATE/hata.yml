@@ -1,0 +1,55 @@
+name: Hata bildirimi
+description: Bir şey beklendiği gibi çalışmıyor
+title: "[Hata] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        En kolay yol uygulamanın içinden bildirmektir: **Menü › Sorun bildir**. Cihaz bilgisi ve (isteğe bağlı) tanılama
+        kaydı otomatik eklenir; kişisel bilgiler (adres yolları, e-posta, IP, kimlikler) gönderilmeden önce maskelenir.
+  - type: dropdown
+    id: alan
+    attributes:
+      label: Ne ile ilgili?
+      options:
+        - Çökme veya kapanma
+        - Sayfa açılmıyor veya bozuk
+        - Video ve resim içinde resim
+        - İndirme
+        - VPN
+        - Eklentiler
+        - Diğer
+    validations:
+      required: true
+  - type: textarea
+    id: ne-oldu
+    attributes:
+      label: Ne oldu?
+      description: Ne yaptınız, ne bekliyordunuz, ne oldu? Mümkünse adım adım yazın.
+      placeholder: "1. YouTube'da bir video açtım\n2. Tam ekrana geçtim\n3. Ses kesildi"
+    validations:
+      required: true
+  - type: input
+    id: surum
+    attributes:
+      label: Uygulama sürümü
+      description: Ayarlar › Hakkında › Sürüm
+      placeholder: "0.8.0"
+    validations:
+      required: true
+  - type: input
+    id: cihaz
+    attributes:
+      label: Cihaz ve Android sürümü
+      placeholder: "vivo V2244 · Android 15"
+  - type: input
+    id: site
+    attributes:
+      label: Site (varsa)
+      description: Yalnızca alan adı yeterli, ör. youtube.com
+  - type: textarea
+    id: kayit
+    attributes:
+      label: Tanılama kaydı (isteğe bağlı)
+      description: Ayarlar › Tanılama ve sorun bildirme › Kaydı görüntüle › Kopyala ile alıp buraya yapıştırın.
+      render: text

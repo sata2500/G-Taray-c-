@@ -1,6 +1,6 @@
 package com.gtarayici.browser.ui.screens
 
-import android.widget.Toast
+import com.gtarayici.browser.ui.feedback.UiText
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -97,6 +97,7 @@ fun ExtensionsScreen(controller: BrowserController, onBack: () -> Unit) {
 private fun ExtensionRow(extension: WebExtension, controller: BrowserController) {
     val components = LocalContext.current.components
     var menu by remember { mutableStateOf(false) }
+    var confirmRemove by remember { mutableStateOf(false) }
     val metadata = extension.getMetadata()
     // Menü satıra bağlı açılsın diye satır ve menü aynı kutuda; aksi halde menü listenin dibinde açılır.
     Box {
@@ -139,10 +140,24 @@ private fun ExtensionRow(extension: WebExtension, controller: BrowserController)
             text = { Text(stringResource(R.string.extension_remove), color = MaterialTheme.colorScheme.error) },
             onClick = {
                 menu = false
-                components.extensions.uninstall(extension)
+                confirmRemove = true
             },
         )
     }
+    }
+    // Kaldırma geri alınamaz (eklenti ve ayarları silinir): bu yüzden yalnızca burada onay istenir.
+    if (confirmRemove) {
+        AlertDialog(
+            onDismissRequest = { confirmRemove = false },
+            text = { Text(stringResource(R.string.extension_remove_confirm, extension.displayName())) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmRemove = false
+                    components.extensions.uninstall(extension)
+                }) { Text(stringResource(R.string.extension_remove), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.action_cancel)) } },
+        )
     }
 }
 
@@ -216,13 +231,13 @@ fun ExtensionPrompts() {
         }
         is WebExtensionPromptRequest.AfterInstallation.PostInstallation -> LaunchedEffect(current) {
             if (current.extension.id != ExtensionManager.UBLOCK_ID) {
-                Toast.makeText(context, resources.getString(R.string.extension_installed, current.extension.displayName()), Toast.LENGTH_SHORT).show()
+                context.components.messenger.success(UiText.res(R.string.extension_installed, current.extension.displayName()))
             }
             components.extensions.refresh()
             consume()
         }
         is WebExtensionPromptRequest.BeforeInstallation.InstallationFailed -> LaunchedEffect(current) {
-            Toast.makeText(context, R.string.extension_install_failed, Toast.LENGTH_LONG).show()
+            context.components.messenger.error(UiText.res(R.string.extension_install_failed))
             consume()
         }
         is WebExtensionPromptRequest.InstallationRequested -> LaunchedEffect(current) {

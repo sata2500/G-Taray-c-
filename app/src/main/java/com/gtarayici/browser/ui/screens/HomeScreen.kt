@@ -63,9 +63,15 @@ data class HomeSite(val url: String, val title: String)
  * Geçmişten en sık ziyaret edilen siteleri (alan adına göre) çıkarır.
  * Her site için ana sayfası açılır; gizlenen alan adları atlanır.
  */
-fun topSites(history: List<HistoryEntry>, hidden: Set<String>, limit: Int = 8): List<HomeSite> =
+fun topSites(
+    history: List<HistoryEntry>,
+    hidden: Set<String>,
+    limit: Int = 8,
+    failed: Set<String> = emptySet(),
+): List<HomeSite> =
     history
-        .filter { it.url.startsWith("http") }
+        // Hata sayfası gösterilen (açılamayan) adresler sık ziyaret edilen sayılmaz.
+        .filter { it.url.startsWith("http") && it.url !in failed }
         .groupBy { hostOf(it.url) }
         .filterKeys { it.isNotBlank() && it !in hidden }
         .map { (host, entries) ->
@@ -82,6 +88,22 @@ fun topSites(history: List<HistoryEntry>, hidden: Set<String>, limit: Int = 8): 
         .sortedWith(compareByDescending<Triple<HomeSite, Int, Long>> { it.second }.thenByDescending { it.third })
         .take(limit)
         .map { it.first }
+        .let(::disambiguate)
+
+/**
+ * Aynı kısa adı alan siteleri ayırt eder: tr.wikipedia.org ve en.wikipedia.org "Wikipedia (tr)" ve
+ * "Wikipedia (en)" olur.
+ */
+private fun disambiguate(sites: List<HomeSite>): List<HomeSite> {
+    val duplicates = sites.groupingBy { it.title }.eachCount().filterValues { it > 1 }.keys
+    if (duplicates.isEmpty()) return sites
+    return sites.map { site ->
+        if (site.title !in duplicates) return@map site
+        val host = hostOf(site.url).removePrefix("m.")
+        val label = host.split('.').takeIf { it.size > 2 }?.first() ?: host
+        site.copy(title = "${site.title} ($label)")
+    }
+}
 
 /** Alan adı ("www." olmadan); [UrlInput.host] ile aynı sonucu verir. */
 internal fun hostOf(url: String): String =

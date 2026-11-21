@@ -36,7 +36,7 @@ fun Modifier.keepSizeDuringPip(inPip: Boolean): Modifier {
         fillMaxSize().onSizeChanged { size ->
             // PiP'e geçişin ilk karesinde küçülmüş boyut gelebilir; yalnızca tam ekrana yakın boyutlar saklanır.
             if (!inPip && size.width.toLong() * size.height >= screenArea * 0.3) {
-                if (frozen != size) Diagnostics.log("motor görünümü boyutu: ${size.width}x${size.height}")
+                if (frozen != size) Diagnostics.pip("motor görünümü boyutu: ${size.width}x${size.height}")
                 frozen = size
             }
         }

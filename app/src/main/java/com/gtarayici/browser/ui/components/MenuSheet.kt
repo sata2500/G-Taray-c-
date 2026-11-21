@@ -26,6 +26,7 @@ import androidx.compose.material.icons.rounded.FindInPage
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.InstallMobile
 import androidx.compose.material.icons.rounded.ManageAccounts
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.OndemandVideo
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Refresh
@@ -146,6 +147,7 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
                 listOf(
                     { MenuRow(Icons.Rounded.QrCodeScanner, stringResource(R.string.menu_scan_qr)) { controller.openQrScanner() } },
                     { MenuRow(Icons.Rounded.ManageAccounts, stringResource(R.string.menu_profiles)) { controller.open(Overlay.PROFILES) } },
+                    { MenuRow(Icons.Rounded.BugReport, stringResource(R.string.menu_report)) { controller.openReport() } },
                 ),
             )
         }

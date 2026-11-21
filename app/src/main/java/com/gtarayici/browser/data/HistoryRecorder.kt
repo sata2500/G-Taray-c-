@@ -17,6 +17,8 @@ class HistoryRecorder(
     private val dao: HistoryDao,
     private val scope: CoroutineScope,
     private val profileIdFor: (contextId: String?) -> String?,
+    /** Hata sayfası gösterilen (açılamayan) adres mi? Böyle adresler geçmişe yazılmaz. */
+    private val isFailed: (url: String) -> Boolean = { false },
 ) {
     private data class Visit(val tabId: String, val profileId: String, val url: String, val title: String)
 
@@ -36,7 +38,7 @@ class HistoryRecorder(
                             val title = if (tab.translationsState.isTranslated) "" else tab.content.title
                             Visit(tab.id, profileId, tab.content.url, title)
                         }
-                        .filter { isRecordable(it.url) }
+                        .filter { isRecordable(it.url) && !isFailed(it.url) }
                 }
                 .distinctUntilChanged()
                 .collect { visits -> visits.forEach { record(it) } }

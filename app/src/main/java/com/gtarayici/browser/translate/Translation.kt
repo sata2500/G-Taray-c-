@@ -169,10 +169,12 @@ fun TranslateSheet(tabId: String, onDismiss: () -> Unit) {
                         )
                     }
                     tab?.translationError?.takeIf { it.displayError }?.let {
-                        Text(
-                            stringResource(R.string.translate_error, it.errorName),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
+                        com.gtarayici.browser.ui.designsystem.ErrorNotice(
+                            message = com.gtarayici.browser.ui.feedback.HumanErrors.message(
+                                com.gtarayici.browser.ui.feedback.ErrorArea.Translate,
+                                it.errorName,
+                            ),
+                            detail = it.errorName,
                             modifier = Modifier.padding(top = 12.dp),
                         )
                     }

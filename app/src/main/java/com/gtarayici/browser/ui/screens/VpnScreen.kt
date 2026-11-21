@@ -1,7 +1,10 @@
 package com.gtarayici.browser.ui.screens
 
+import com.gtarayici.browser.ui.feedback.UiText
+import com.gtarayici.browser.ui.feedback.ErrorArea
+import com.gtarayici.browser.ui.feedback.HumanErrors
+import com.gtarayici.browser.ui.designsystem.ErrorNotice
 import android.content.ClipboardManager
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.automirrored.filled.Help
@@ -41,6 +44,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +77,9 @@ fun VpnScreen(onBack: () -> Unit) {
     val vpn = context.components.vpn
     val servers by vpn.servers.collectAsState()
     val status by vpn.status.collectAsState()
+    LaunchedEffect(status is VpnStatus.Error) {
+        if (status is VpnStatus.Error) context.components.hints.offer(com.gtarayici.browser.ui.feedback.Hint.VpnError)
+    }
     val log by vpn.log.collectAsState()
     val scope = rememberCoroutineScope()
     var adding by remember { mutableStateOf(false) }
@@ -101,7 +108,7 @@ fun VpnScreen(onBack: () -> Unit) {
         }
         vpn.addServer(text)
             .onSuccess { selectedId = it.id; helpOpen = false }
-            .onFailure { Toast.makeText(context, resources.getString(R.string.vpn_invalid, it.message ?: ""), Toast.LENGTH_LONG).show() }
+            .onFailure { context.components.messenger.error(HumanErrors.message(ErrorArea.VpnLink, it)) }
     }
 
     OverlayScaffold(
@@ -135,9 +142,17 @@ fun VpnScreen(onBack: () -> Unit) {
                                     VpnStatus.Off -> stringResource(R.string.vpn_off)
                                     VpnStatus.Connecting -> stringResource(R.string.vpn_connecting)
                                     is VpnStatus.Connected -> stringResource(R.string.vpn_connected, s.server.name)
-                                    is VpnStatus.Error -> stringResource(R.string.vpn_error, s.message)
+                                    is VpnStatus.Error -> stringResource(R.string.err_lead_vpn_connect)
                                 },
                                 style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+                        (status as? VpnStatus.Error)?.let { failed ->
+                            Spacer(Modifier.height(12.dp))
+                            val area = ErrorArea.VpnConnect
+                            ErrorNotice(
+                                message = UiText.res(HumanErrors.advice(area, HumanErrors.classify(area, failed.message))),
+                                detail = failed.message,
                             )
                         }
                         if (status is VpnStatus.Error) {
@@ -163,7 +178,7 @@ fun VpnScreen(onBack: () -> Unit) {
                                     scope.launch {
                                         testResult = vpn.test().fold(
                                             { resources.getString(R.string.vpn_test_result, it.ip ?: "?", it.country ?: "?", it.latencyMs.toInt()) },
-                                            { resources.getString(R.string.vpn_test_failed, it.message ?: "") },
+                                            { HumanErrors.message(ErrorArea.VpnTest, it).resolve(context) },
                                         )
                                     }
                                 }) { Text(stringResource(R.string.vpn_test)) }
@@ -244,6 +259,8 @@ fun VpnScreen(onBack: () -> Unit) {
         var password by remember { mutableStateOf("") }
         var error by remember { mutableStateOf<String?>(null) }
         val isOpenVpn = OpenVpnConfig.looksLike(text)
+        // Yazarken denetim: tanınmayan veya bozuk bağlantı hemen alanın altında söylenir.
+        val linkProblem = remember(text) { com.gtarayici.browser.ui.feedback.InputValidation.vpnLink(text) }
         val close = { adding = false; pendingText = "" }
         AlertDialog(
             onDismissRequest = close,
@@ -256,8 +273,8 @@ fun VpnScreen(onBack: () -> Unit) {
                         placeholder = { Text(stringResource(R.string.vpn_add_hint)) },
                         minLines = 4,
                         maxLines = if (isOpenVpn) 4 else 10,
-                        isError = error != null,
-                        supportingText = error?.let { { Text(it) } },
+                        isError = error != null || linkProblem != null,
+                        supportingText = (error ?: linkProblem?.let { stringResource(it) })?.let { { Text(it) } },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     if (isOpenVpn) {
@@ -304,7 +321,7 @@ fun VpnScreen(onBack: () -> Unit) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(enabled = text.isNotBlank() && linkProblem == null, onClick = {
                     if (isOpenVpn && OpenVpnConfig.needsCredentials(text) && username.isBlank()) {
                         error = resources.getString(R.string.vpn_credentials_required)
                         return@TextButton
@@ -314,7 +331,7 @@ fun VpnScreen(onBack: () -> Unit) {
                             selectedId = added.id
                             close()
                         }
-                        .onFailure { error = resources.getString(R.string.vpn_invalid, it.message ?: "") }
+                        .onFailure { error = HumanErrors.message(ErrorArea.VpnLink, it).resolve(context) }
                 }) { Text(stringResource(R.string.profile_save)) }
             },
             dismissButton = { TextButton(onClick = close) { Text(stringResource(R.string.action_cancel)) } },
@@ -343,10 +360,9 @@ private fun VpnCoreCard(state: VpnCoreState, onInstall: () -> Unit) {
                 VpnCoreState.Installing -> Text(stringResource(R.string.vpn_core_installing), style = MaterialTheme.typography.bodySmall)
                 else -> {
                     if (state is VpnCoreState.Failed) {
-                        Text(
-                            stringResource(R.string.vpn_core_failed, state.message),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
+                        ErrorNotice(
+                            message = HumanErrors.message(ErrorArea.VpnCore, state.message),
+                            detail = state.message,
                         )
                         Spacer(Modifier.height(8.dp))
                     }

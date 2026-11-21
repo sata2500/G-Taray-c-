@@ -1,5 +1,7 @@
 package com.gtarayici.browser.webapk
 
+import com.gtarayici.browser.components
+import com.gtarayici.browser.ui.feedback.UiText
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
 import android.app.PendingIntent
@@ -16,7 +18,6 @@ import android.os.Build
 import android.provider.Settings
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.widget.Toast
 import com.gtarayici.browser.Components
 import com.gtarayici.browser.R
 import java.io.ByteArrayOutputStream
@@ -79,7 +80,7 @@ class WebApkInstaller(private val context: Context, private val components: Comp
             val apk = WebApkPackager.build(template, spec, key, certificate, workDir)
             commit(apk, spec)
             Result.Started
-        }.getOrElse { Result.Failed(it.message ?: it.javaClass.simpleName) }
+        }.getOrElse { Result.Failed(com.gtarayici.browser.ui.feedback.HumanErrors.detail(it)) }
     }
 
     /** Sitenin web uygulaması bildirimi; yoksa sayfadan bağımsız bir pencere için oluşturulur. */
@@ -197,18 +198,19 @@ class WebApkInstaller(private val context: Context, private val components: Comp
 class WebApkInstallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val label = intent.getStringExtra(EXTRA_LABEL).orEmpty()
-        when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
+        val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+        when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 @Suppress("DEPRECATION")
                 val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT) ?: return
                 context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
             PackageInstaller.STATUS_SUCCESS ->
-                Toast.makeText(context, context.getString(R.string.webapk_installed, label), Toast.LENGTH_LONG).show()
+                context.components.messenger.success(UiText.res(R.string.webapk_installed, label))
             PackageInstaller.STATUS_FAILURE_ABORTED -> Unit
             else -> {
-                val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()
-                Toast.makeText(context, context.getString(R.string.webapk_failed, message), Toast.LENGTH_LONG).show()
+                val detail = com.gtarayici.browser.ui.feedback.HumanErrors.installDetail(status, intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE))
+                context.components.messenger.error(com.gtarayici.browser.ui.feedback.HumanErrors.message(com.gtarayici.browser.ui.feedback.ErrorArea.WebApk, detail))
             }
         }
     }

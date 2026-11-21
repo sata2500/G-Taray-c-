@@ -90,12 +90,12 @@ class NativeVideoPip(
         pip.setKeepActive(true)
         session.setPictureInPictureDelegate(object : PictureInPictureController.SessionPictureInPicture.Delegate {
             override fun onEnterPictureInPicture(session: GeckoSession, placementToken: String) {
-                Diagnostics.log("Gecko PiP oynatıcısı istedi (anahtar ${if (placementToken.isEmpty()) "boş" else "var"})")
+                Diagnostics.pip("Gecko PiP oynatıcısı istedi (anahtar ${if (placementToken.isEmpty()) "boş" else "var"})")
                 if (placementToken.isEmpty()) fail("boş yerleştirme anahtarı") else attach(placementToken)
             }
 
             override fun onExitPictureInPicture(session: GeckoSession) {
-                Diagnostics.log("Gecko PiP penceresinin kapanmasını istedi")
+                Diagnostics.pip("Gecko PiP penceresinin kapanmasını istedi")
                 // Gecko pencerenin kapanmasını istedi (ör. video kaldırıldı).
                 releasePipSession()
             }
@@ -108,7 +108,7 @@ class NativeVideoPip(
         player.postDelayed({ if (active && source === session && pipSession == null) fail("video bulunamadı") }, ATTACH_TIMEOUT_MS)
         // Gecko oynayan videoyu odaklı çerçevede arar; uygulamadan çıkarken GeckoView odağı bırakır.
         session.setFocused(true)
-        Diagnostics.log("yerel PiP isteniyor")
+        Diagnostics.pip("yerel PiP isteniyor")
         pip.request().exceptionally<Void> { error ->
             player.post { fail(error.message ?: "istek reddedildi") }
             null
@@ -132,12 +132,12 @@ class NativeVideoPip(
         session.loadUri("about:blank")
         session.compositorController.onPipModeChanged(true)
         pipSession = session
-        Diagnostics.log("PiP oynatıcı oturumu açıldı")
+        Diagnostics.pip("PiP oynatıcı oturumu açıldı")
     }
 
     private fun fail(reason: String) {
         logger.warn("Video PiP kurulamadı: $reason")
-        Diagnostics.log("PiP oynatıcısı kurulamadı: $reason")
+        Diagnostics.pip("PiP oynatıcısı kurulamadı: $reason")
         exit(dismissed = false)
     }
 
@@ -180,13 +180,13 @@ class NativeVideoPip(
             if (!crop.intersect(0, 0, bitmap.width, bitmap.height)) return@accept
             placeholder.setImageBitmap(Bitmap.createBitmap(bitmap, crop.left, crop.top, crop.width(), crop.height()))
             placeholder.visibility = View.VISIBLE
-            Diagnostics.log("son kare gösteriliyor (${crop.width()}x${crop.height()})")
+            Diagnostics.pip("son kare gösteriliyor (${crop.width()}x${crop.height()})")
         }
     }
 
     private fun hidePlaceholder() {
         firstFrameShown = true
-        if (placeholder.isVisible) Diagnostics.log("PiP oynatıcısı ilk karesini çizdi")
+        if (placeholder.isVisible) Diagnostics.pip("PiP oynatıcısı ilk karesini çizdi")
         placeholder.visibility = View.GONE
         placeholder.setImageDrawable(null)
     }

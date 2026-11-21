@@ -1,6 +1,6 @@
 package com.gtarayici.browser.ui.components
 
-import android.widget.Toast
+import com.gtarayici.browser.ui.feedback.UiText
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -128,7 +128,7 @@ fun SiteInfoSheet(tabId: String, onDismiss: () -> Unit) {
                         Engine.BrowsingData.allSiteData(),
                         host = host,
                         onSuccess = {
-                            Toast.makeText(context, R.string.site_data_cleared, Toast.LENGTH_SHORT).show()
+                            context.components.messenger.success(UiText.res(R.string.site_data_cleared))
                             components.sessionUseCases.reload(tabId)
                         },
                     )
@@ -146,7 +146,7 @@ fun SiteInfoSheet(tabId: String, onDismiss: () -> Unit) {
                         val private = current.content.private
                         storage.findSitePermissionsBy(origin, includeTemporary = true, private = private)
                             ?.let { storage.remove(it, private) }
-                        Toast.makeText(context, R.string.site_permissions_reset, Toast.LENGTH_SHORT).show()
+                        context.components.messenger.success(UiText.res(R.string.site_permissions_reset))
                     }
                     onDismiss()
                 },

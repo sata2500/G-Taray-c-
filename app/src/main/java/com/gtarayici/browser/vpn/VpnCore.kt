@@ -1,11 +1,11 @@
 package com.gtarayici.browser.vpn
 
+import com.gtarayici.browser.ui.feedback.UiText
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
-import android.widget.Toast
 import com.gtarayici.browser.BuildConfig
 import com.gtarayici.browser.R
 import com.gtarayici.browser.components
@@ -62,7 +62,7 @@ class VpnCore(private val context: Context, private val scope: CoroutineScope) {
     fun install() {
         if (job?.isActive == true) return
         if (!canInstall()) {
-            Toast.makeText(context, R.string.vpn_core_permission, Toast.LENGTH_LONG).show()
+            context.components.messenger.info(UiText.res(R.string.vpn_core_permission))
             context.components.updater.requestInstallPermission()
             return
         }
@@ -85,7 +85,7 @@ class VpnCore(private val context: Context, private val scope: CoroutineScope) {
                     Apks.install(context, file, PACKAGE, VpnCoreInstallReceiver::class.java)
                 }
             }
-            result.onFailure { _state.value = VpnCoreState.Failed(it.message ?: it.javaClass.simpleName) }
+            result.onFailure { _state.value = VpnCoreState.Failed(com.gtarayici.browser.ui.feedback.HumanErrors.detail(it)) }
         }
     }
 
@@ -136,7 +136,8 @@ class VpnCore(private val context: Context, private val scope: CoroutineScope) {
 class VpnCoreInstallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val core = context.components.vpnCore
-        when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
+        val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+        when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 @Suppress("DEPRECATION")
                 val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT) ?: return
@@ -145,7 +146,7 @@ class VpnCoreInstallReceiver : BroadcastReceiver() {
             PackageInstaller.STATUS_SUCCESS -> core.onInstallFinished(null)
             PackageInstaller.STATUS_FAILURE_ABORTED -> core.onInstallFinished(null)
             else -> core.onInstallFinished(
-                context.getString(R.string.update_install_failed, intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()),
+                com.gtarayici.browser.ui.feedback.HumanErrors.message(com.gtarayici.browser.ui.feedback.ErrorArea.Install, com.gtarayici.browser.ui.feedback.HumanErrors.installDetail(status, intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE))).resolve(context),
             )
         }
     }

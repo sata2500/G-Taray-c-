@@ -1,5 +1,7 @@
 package com.gtarayici.browser.update
 
+import com.gtarayici.browser.components
+import com.gtarayici.browser.ui.feedback.UiText
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -7,7 +9,6 @@ import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
-import android.widget.Toast
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import com.gtarayici.browser.BuildConfig
@@ -113,7 +114,7 @@ class Updater(private val context: Context, private val settings: AppSettings, p
     /** İndirir, doğrular ve kurar. */
     fun install(release: Release) {
         if (!canInstall()) {
-            Toast.makeText(context, R.string.update_permission, Toast.LENGTH_LONG).show()
+            context.components.messenger.info(UiText.res(R.string.update_permission))
             requestInstallPermission()
             return
         }
@@ -182,7 +183,7 @@ class Updater(private val context: Context, private val settings: AppSettings, p
         is Apks.HttpException -> context.getString(R.string.update_server_error, error.code)
         is java.net.UnknownHostException, is java.net.SocketTimeoutException, is java.net.ConnectException ->
             context.getString(R.string.update_offline)
-        else -> error.message ?: error.javaClass.simpleName
+        else -> com.gtarayici.browser.ui.feedback.HumanErrors.message(com.gtarayici.browser.ui.feedback.ErrorArea.Update, error).resolve(context)
     }
 
     private class UpdateException(message: String) : Exception(message)
@@ -234,7 +235,8 @@ class Updater(private val context: Context, private val settings: AppSettings, p
 class UpdateInstallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val updater = (context.applicationContext as com.gtarayici.browser.GTarayiciApplication).components.updater
-        when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
+        val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+        when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 @Suppress("DEPRECATION")
                 val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT) ?: return
@@ -243,8 +245,8 @@ class UpdateInstallReceiver : BroadcastReceiver() {
             PackageInstaller.STATUS_SUCCESS -> updater.onInstallFinished(null)
             PackageInstaller.STATUS_FAILURE_ABORTED -> updater.onInstallFinished(null)
             else -> {
-                val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()
-                updater.onInstallFinished(context.getString(R.string.update_install_failed, message))
+                val detail = com.gtarayici.browser.ui.feedback.HumanErrors.installDetail(status, intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE))
+                updater.onInstallFinished(com.gtarayici.browser.ui.feedback.HumanErrors.message(com.gtarayici.browser.ui.feedback.ErrorArea.Install, detail).resolve(context))
             }
         }
     }
