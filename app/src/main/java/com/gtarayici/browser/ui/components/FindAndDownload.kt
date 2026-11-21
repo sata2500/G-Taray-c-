@@ -23,11 +23,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import com.gtarayici.browser.ui.designsystem.ListRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -106,7 +104,7 @@ fun YouTubeDownloadSheet(pageUrl: String, onDismiss: () -> Unit) {
     }
 
     // Tek "Geri" basışı pencereyi kapatsın (yarı açık ara durum yok).
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = com.gtarayici.browser.ui.designsystem.rememberFullSheetState()) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp).verticalScroll(rememberScrollState())) {
             Text(
                 video?.title ?: stringResource(R.string.yt_title),
@@ -128,11 +126,10 @@ fun YouTubeDownloadSheet(pageUrl: String, onDismiss: () -> Unit) {
                 }
                 else -> {
                     current.options.forEach { option ->
-                        ListItem(
-                            leadingContent = { Icon(if (option.videoUrl != null) Icons.Filled.Movie else Icons.Filled.AudioFile, null) },
-                            headlineContent = { Text(option.label) },
-                            supportingContent = { Text(option.detail) },
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        ListRow(
+                            leading = { Icon(if (option.videoUrl != null) Icons.Filled.Movie else Icons.Filled.AudioFile, null) },
+                            headline = { Text(option.label) },
+                            supporting = { Text(option.detail) },
                             modifier = Modifier.clickable {
                                 downloader.start(current, option)
                                 Toast.makeText(context, R.string.yt_started, Toast.LENGTH_SHORT).show()

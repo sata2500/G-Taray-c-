@@ -74,7 +74,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
+import com.gtarayici.browser.ui.designsystem.ListRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
@@ -149,7 +149,7 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
         if (query.isNotEmpty()) query = "" else page = null
     }
 
-    com.gtarayici.browser.ui.components.OverlayScaffold(
+    com.gtarayici.browser.ui.designsystem.OverlayScaffold(
         title = page?.let { stringResource(it.title) } ?: stringResource(R.string.menu_settings),
         onBack = { if (page != null) page = null else onBack() },
     ) { modifier ->
@@ -626,10 +626,10 @@ private fun themeLabel(mode: ThemeMode) = stringResource(
 @Composable
 private fun ClickRow(icon: ImageVector, title: String, summary: String, onClick: () -> Unit) {
     if (!matchesQuery(title, summary)) return
-    ListItem(
-        leadingContent = { Icon(icon, null) },
-        headlineContent = { Text(title) },
-        supportingContent = { Text(summary) },
+    ListRow(
+        leading = { Icon(icon, null) },
+        headline = { Text(title) },
+        supporting = { Text(summary) },
         modifier = Modifier.clickable(onClick = onClick),
     )
 }
@@ -637,20 +637,20 @@ private fun ClickRow(icon: ImageVector, title: String, summary: String, onClick:
 @Composable
 private fun InfoRow(icon: ImageVector, title: String, value: String) {
     if (!matchesQuery(title, value)) return
-    ListItem(
-        leadingContent = { Icon(icon, null) },
-        headlineContent = { Text(title) },
-        supportingContent = { Text(value) },
+    ListRow(
+        leading = { Icon(icon, null) },
+        headline = { Text(title) },
+        supporting = { Text(value) },
     )
 }
 
 @Composable
 private fun SwitchRow(title: String, summary: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     if (!matchesQuery(title, summary)) return
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(summary) },
-        trailingContent = { Switch(checked = checked, onCheckedChange = onChange) },
+    ListRow(
+        headline = { Text(title) },
+        supporting = { Text(summary) },
+        trailing = { Switch(checked = checked, onCheckedChange = onChange) },
         modifier = Modifier.clickable { onChange(!checked) },
     )
 }

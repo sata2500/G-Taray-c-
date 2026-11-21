@@ -18,13 +18,11 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import com.gtarayici.browser.ui.designsystem.ListRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -65,7 +63,7 @@ fun SiteInfoSheet(tabId: String, onDismiss: () -> Unit) {
     val blocked = protection.blockedTrackers.size
     val exception = protection.ignoredOnTrackingProtection
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = com.gtarayici.browser.ui.designsystem.rememberFullSheetState()) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Favicon(url, size = 32.dp, private = current.content.private)
@@ -83,27 +81,26 @@ fun SiteInfoSheet(tabId: String, onDismiss: () -> Unit) {
             }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-            ListItem(
-                leadingContent = {
+            ListRow(
+                leading = {
                     Icon(
                         if (secure) Icons.Filled.Lock else Icons.Filled.Warning,
                         null,
                         tint = if (secure) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                     )
                 },
-                headlineContent = { Text(stringResource(if (secure) R.string.site_secure else R.string.site_insecure)) },
-                supportingContent = {
+                headline = { Text(stringResource(if (secure) R.string.site_secure else R.string.site_insecure)) },
+                supporting = {
                     Text(stringResource(if (secure) R.string.site_secure_summary else R.string.site_insecure_summary))
                 },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
 
-            ListItem(
-                leadingContent = {
+            ListRow(
+                leading = {
                     Icon(Icons.Filled.Shield, null, tint = if (exception) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary)
                 },
-                headlineContent = { Text(stringResource(R.string.site_tracking_protection)) },
-                supportingContent = {
+                headline = { Text(stringResource(R.string.site_tracking_protection)) },
+                supporting = {
                     Text(
                         when {
                             exception -> stringResource(R.string.site_tracking_off)
@@ -112,22 +109,20 @@ fun SiteInfoSheet(tabId: String, onDismiss: () -> Unit) {
                         },
                     )
                 },
-                trailingContent = {
+                trailing = {
                     Switch(
                         checked = !exception,
                         onCheckedChange = { on -> setProtection(components, tabId, on) },
                     )
                 },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.clickable { setProtection(components, tabId, exception) },
             )
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            ListItem(
-                leadingContent = { Icon(Icons.Filled.Cookie, null) },
-                headlineContent = { Text(stringResource(R.string.site_clear_data)) },
-                supportingContent = { Text(stringResource(R.string.site_clear_data_summary)) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            ListRow(
+                leading = { Icon(Icons.Filled.Cookie, null) },
+                headline = { Text(stringResource(R.string.site_clear_data)) },
+                supporting = { Text(stringResource(R.string.site_clear_data_summary)) },
                 modifier = Modifier.clickable {
                     components.engine.clearData(
                         Engine.BrowsingData.allSiteData(),
@@ -140,11 +135,10 @@ fun SiteInfoSheet(tabId: String, onDismiss: () -> Unit) {
                     onDismiss()
                 },
             )
-            ListItem(
-                leadingContent = { Icon(Icons.Filled.RestartAlt, null) },
-                headlineContent = { Text(stringResource(R.string.site_reset_permissions)) },
-                supportingContent = { Text(stringResource(R.string.site_reset_permissions_summary)) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            ListRow(
+                leading = { Icon(Icons.Filled.RestartAlt, null) },
+                headline = { Text(stringResource(R.string.site_reset_permissions)) },
+                supporting = { Text(stringResource(R.string.site_reset_permissions_summary)) },
                 modifier = Modifier.clickable {
                     scope.launch {
                         val origin = url.getOrigin() ?: return@launch

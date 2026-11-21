@@ -1,4 +1,4 @@
-package com.gtarayici.browser.ui.components
+package com.gtarayici.browser.ui.designsystem
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope

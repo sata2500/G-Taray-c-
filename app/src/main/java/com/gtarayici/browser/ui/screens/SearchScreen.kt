@@ -24,8 +24,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import com.gtarayici.browser.ui.designsystem.ListRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -117,11 +116,10 @@ fun SearchScreen(
         Column(Modifier.fillMaxSize()) {
             LazyColumn(Modifier.weight(1f).fillMaxWidth(), reverseLayout = true) {
                 items(suggestions) { s ->
-                    ListItem(
-                        leadingContent = { Icon(s.icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                        headlineContent = { Text(s.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        supportingContent = s.subtitle?.let { { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    ListRow(
+                        leading = { Icon(s.icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        headline = { Text(s.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        supporting = s.subtitle?.let { { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
                         modifier = Modifier.clickable { onOpenUrl(s.target) },
                     )
                 }

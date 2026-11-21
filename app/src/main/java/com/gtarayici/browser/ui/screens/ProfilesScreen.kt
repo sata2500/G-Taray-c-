@@ -28,11 +28,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import com.gtarayici.browser.ui.designsystem.ListRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -69,9 +67,9 @@ import com.gtarayici.browser.data.DEFAULT_PROFILE_ID
 import com.gtarayici.browser.data.Profile
 import com.gtarayici.browser.profiles.PROFILE_COLORS
 import com.gtarayici.browser.ui.BrowserController
-import com.gtarayici.browser.ui.components.AddFab
+import com.gtarayici.browser.ui.designsystem.AddFab
 import com.gtarayici.browser.ui.components.colorOption
-import com.gtarayici.browser.ui.components.OverlayScaffold
+import com.gtarayici.browser.ui.designsystem.OverlayScaffold
 
 fun profileColor(profile: Profile) = Color(PROFILE_COLORS[profile.colorIndex.mod(PROFILE_COLORS.size)])
 
@@ -119,17 +117,17 @@ fun ProfilesScreen(controller: BrowserController, onBack: () -> Unit) {
                 )
             }
             items(profiles, key = { it.id }) { profile ->
-                ListItem(
-                    leadingContent = { ProfileAvatar(profile, 40.dp, selected = profile.id == active.id) },
-                    headlineContent = { Text(profile.name) },
-                    supportingContent = {
+                ListRow(
+                    leading = { ProfileAvatar(profile, 40.dp, selected = profile.id == active.id) },
+                    headline = { Text(profile.name) },
+                    supporting = {
                         val parts = listOfNotNull(
                             stringResource(R.string.profile_active).takeIf { profile.id == active.id },
                             stringResource(R.string.profile_locked).takeIf { profile.locked },
                         )
                         if (parts.isNotEmpty()) Text(parts.joinToString(" · "))
                     },
-                    trailingContent = {
+                    trailing = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (profile.locked) Icon(Icons.Filled.Lock, null, modifier = Modifier.size(18.dp))
                             IconButton(onClick = { editing = profile }) {
@@ -216,12 +214,11 @@ private fun ProfileEditor(
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                ListItem(
-                    leadingContent = { Icon(Icons.Filled.Fingerprint, null) },
-                    headlineContent = { Text(stringResource(R.string.profile_lock)) },
-                    supportingContent = { Text(stringResource(R.string.profile_lock_summary)) },
-                    trailingContent = { Switch(checked = locked, onCheckedChange = { locked = it }) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                ListRow(
+                    leading = { Icon(Icons.Filled.Fingerprint, null) },
+                    headline = { Text(stringResource(R.string.profile_lock)) },
+                    supporting = { Text(stringResource(R.string.profile_lock_summary)) },
+                    trailing = { Switch(checked = locked, onCheckedChange = { locked = it }) },
                     modifier = Modifier.clickable { locked = !locked },
                 )
                 if (onDelete != null) {
@@ -258,7 +255,7 @@ fun ProfileSwitcherSheet(controller: BrowserController) {
     val active by components.profiles.active.collectAsState()
     ModalBottomSheet(
         onDismissRequest = { controller.profileSwitcherOpen = false },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = com.gtarayici.browser.ui.designsystem.rememberFullSheetState(),
     ) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
             Text(
@@ -267,23 +264,21 @@ fun ProfileSwitcherSheet(controller: BrowserController) {
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             )
             profiles.forEach { profile ->
-                ListItem(
-                    leadingContent = { ProfileAvatar(profile, 36.dp, selected = profile.id == active.id) },
-                    headlineContent = { Text(profile.name) },
-                    trailingContent = {
+                ListRow(
+                    leading = { ProfileAvatar(profile, 36.dp, selected = profile.id == active.id) },
+                    headline = { Text(profile.name) },
+                    trailing = {
                         when {
                             profile.id == active.id -> Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary)
                             profile.locked -> Icon(Icons.Filled.Lock, null)
                         }
                     },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier.clickable { controller.switchProfile(profile) },
                 )
             }
-            ListItem(
-                leadingContent = { Icon(Icons.Filled.Edit, null) },
-                headlineContent = { Text(stringResource(R.string.menu_profiles)) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            ListRow(
+                leading = { Icon(Icons.Filled.Edit, null) },
+                headline = { Text(stringResource(R.string.menu_profiles)) },
                 modifier = Modifier.clickable {
                     controller.profileSwitcherOpen = false
                     controller.open(com.gtarayici.browser.ui.Overlay.PROFILES)

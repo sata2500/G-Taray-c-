@@ -24,13 +24,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
+import com.gtarayici.browser.ui.designsystem.ListRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -55,7 +54,7 @@ import com.gtarayici.browser.extensions.ExtensionPermissions
 import com.gtarayici.browser.extensions.displayName
 import com.gtarayici.browser.ui.BrowserController
 import com.gtarayici.browser.ui.components.observe
-import com.gtarayici.browser.ui.components.OverlayScaffold
+import com.gtarayici.browser.ui.designsystem.OverlayScaffold
 import mozilla.components.browser.state.action.WebExtensionAction
 import mozilla.components.browser.state.state.extension.WebExtensionPromptRequest
 import mozilla.components.concept.engine.EngineSession
@@ -72,10 +71,10 @@ fun ExtensionsScreen(controller: BrowserController, onBack: () -> Unit) {
     OverlayScaffold(title = stringResource(R.string.extensions_title), onBack = onBack) { modifier ->
         LazyColumn(modifier) {
             item {
-                ListItem(
-                    leadingContent = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.primary) },
-                    headlineContent = { Text(stringResource(R.string.extensions_get_more)) },
-                    supportingContent = { Text(stringResource(R.string.extensions_get_more_summary)) },
+                ListRow(
+                    leading = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.primary) },
+                    headline = { Text(stringResource(R.string.extensions_get_more)) },
+                    supporting = { Text(stringResource(R.string.extensions_get_more_summary)) },
                     modifier = Modifier.clickable { controller.loadUrl(ExtensionManager.AMO_ANDROID_URL, inNewTab = true) },
                 )
                 HorizontalDivider()
@@ -101,10 +100,10 @@ private fun ExtensionRow(extension: WebExtension, controller: BrowserController)
     val metadata = extension.getMetadata()
     // Menü satıra bağlı açılsın diye satır ve menü aynı kutuda; aksi halde menü listenin dibinde açılır.
     Box {
-    ListItem(
-        leadingContent = { Icon(Icons.Filled.Extension, null) },
-        headlineContent = { Text(extension.displayName()) },
-        supportingContent = {
+    ListRow(
+        leading = { Icon(Icons.Filled.Extension, null) },
+        headline = { Text(extension.displayName()) },
+        supporting = {
             Text(
                 listOfNotNull(
                     metadata?.version?.let { "v$it" },
@@ -113,7 +112,7 @@ private fun ExtensionRow(extension: WebExtension, controller: BrowserController)
                 maxLines = 3,
             )
         },
-        trailingContent = {
+        trailing = {
             Switch(checked = extension.isEnabled(), onCheckedChange = { components.extensions.setEnabled(extension, it) })
         },
         modifier = Modifier.clickable { menu = true },
@@ -247,7 +246,7 @@ fun ExtensionPopupSheet() {
     val close = { components.store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = null)) }
     ModalBottomSheet(
         onDismissRequest = { close() },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = com.gtarayici.browser.ui.designsystem.rememberFullSheetState(),
     ) {
         PopupEngineView(session, Modifier.fillMaxWidth().height(520.dp).navigationBarsPadding())
     }

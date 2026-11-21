@@ -48,7 +48,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,7 +90,7 @@ data class MenuState(
 fun MenuSheet(state: MenuState, controller: BrowserController) {
     ModalBottomSheet(
         onDismissRequest = { controller.menuOpen = false },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = com.gtarayici.browser.ui.designsystem.rememberFullSheetState(),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Column(

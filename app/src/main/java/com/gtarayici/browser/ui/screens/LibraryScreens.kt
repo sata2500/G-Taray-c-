@@ -25,13 +25,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
+import com.gtarayici.browser.ui.designsystem.ListRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -53,9 +53,9 @@ import com.gtarayici.browser.components
 import com.gtarayici.browser.downloads.DownloadedFiles
 import com.gtarayici.browser.search.TextMatch
 import com.gtarayici.browser.search.UrlInput
-import com.gtarayici.browser.ui.components.EmptyState
+import com.gtarayici.browser.ui.designsystem.EmptyState
 import com.gtarayici.browser.ui.components.Favicon
-import com.gtarayici.browser.ui.components.OverlayScaffold
+import com.gtarayici.browser.ui.designsystem.OverlayScaffold
 import com.gtarayici.browser.ui.components.observe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -94,12 +94,12 @@ fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
                     historyGroups(visible).forEach { (label, group) ->
                         item(key = "day-$label") { DayHeader(stringResource(label)) }
                         items(group, key = { it.url }) { entry ->
-                        ListItem(
-                            leadingContent = { Favicon(entry.url) },
-                            headlineContent = {
+                        ListRow(
+                            leading = { Favicon(entry.url) },
+                            headline = {
                                 Text(entry.title.ifBlank { entry.url }, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             },
-                            supportingContent = {
+                            supporting = {
                                 Text(
                                     "${UrlInput.host(entry.url)} · " +
                                         DateUtils.formatDateTime(context, entry.lastVisited, DateUtils.FORMAT_SHOW_TIME),
@@ -107,7 +107,7 @@ fun HistoryScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
                                     overflow = TextOverflow.Ellipsis,
                                 )
                             },
-                            trailingContent = {
+                            trailing = {
                                 IconButton(onClick = { scope.launch(Dispatchers.IO) { dao.delete(profileId, entry.url) } }) {
                                     Icon(Icons.Filled.Close, stringResource(R.string.action_delete))
                                 }
@@ -170,10 +170,10 @@ fun BookmarksScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
             LazyColumn {
                 if (!searching && folder.isEmpty()) {
                     items(folders, key = { "folder-$it" }) { name ->
-                        ListItem(
-                            leadingContent = { Icon(Icons.Filled.Folder, null, tint = MaterialTheme.colorScheme.primary) },
-                            headlineContent = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                            supportingContent = {
+                        ListRow(
+                            leading = { Icon(Icons.Filled.Folder, null, tint = MaterialTheme.colorScheme.primary) },
+                            headline = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            supporting = {
                                 val count = bookmarks.count { it.folder == name }
                                 Text(pluralStringResource(R.plurals.bookmark_count, count, count))
                             },
@@ -239,11 +239,11 @@ fun BookmarksScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
 @Composable
 private fun BookmarkRow(bookmark: Bookmark, onOpen: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    ListItem(
-        leadingContent = { Favicon(bookmark.url) },
-        headlineContent = { Text(bookmark.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        supportingContent = { Text(UrlInput.displayUrl(bookmark.url), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        trailingContent = {
+    ListRow(
+        leading = { Favicon(bookmark.url) },
+        headline = { Text(bookmark.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        supporting = { Text(UrlInput.displayUrl(bookmark.url), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        trailing = {
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.action_menu)) }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -390,12 +390,12 @@ fun DownloadsScreen(onBack: () -> Unit) {
             LazyColumn(modifier) {
                 items(downloads, key = { it.id }) { download ->
                     val done = download.status == DownloadState.Status.COMPLETED
-                    ListItem(
-                        leadingContent = { Icon(Icons.Filled.InsertDriveFile, null) },
-                        headlineContent = {
+                    ListRow(
+                        leading = { Icon(Icons.AutoMirrored.Filled.InsertDriveFile, null) },
+                        headline = {
                             Text(download.fileName ?: download.url, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         },
-                        supportingContent = {
+                        supporting = {
                             Column {
                                 Text(downloadStatusText(download), maxLines = 1)
                                 if (download.status == DownloadState.Status.DOWNLOADING) {
@@ -411,7 +411,7 @@ fun DownloadsScreen(onBack: () -> Unit) {
                                 }
                             }
                         },
-                        trailingContent = {
+                        trailing = {
                             IconButton(onClick = {
                                 // Tamamlanan indirmede dosyanın da silinip silinmeyeceği sorulur; diğerleri yalnızca listeden çıkar.
                                 if (done) removing = download else components.downloadsUseCases.removeDownload(download.id)

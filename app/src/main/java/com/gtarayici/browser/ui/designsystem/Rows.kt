@@ -13,16 +13,20 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,12 +78,17 @@ fun SectionCard(
 
 /** Satırın başındaki, ton dairesi içindeki simge. */
 @Composable
-fun RowIcon(icon: ImageVector, tint: Color = MaterialTheme.colorScheme.onSecondaryContainer, container: Color = MaterialTheme.colorScheme.secondaryContainer) {
+fun RowIcon(
+    icon: ImageVector,
+    tint: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+    container: Color = MaterialTheme.colorScheme.secondaryContainer,
+    size: androidx.compose.ui.unit.Dp = Size.iconContainer,
+) {
     Box(
-        Modifier.size(Size.iconContainer).clip(CircleShape).background(container),
+        Modifier.size(size).clip(CircleShape).background(container),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(22.dp))
+        Icon(icon, null, tint = tint, modifier = Modifier.size(size * 0.55f))
     }
 }
 
@@ -175,6 +184,49 @@ fun SwitchRow(
     }
 }
 
+/**
+ * Uzun listelerin satırı (geçmiş, indirilenler, sekmeler, sunucular…): saydam zemin, başta simge/görsel, ortada
+ * başlık ve açıklama, sonda eylem. Yuvaları eski ListItem ile aynıdır; tıklama [modifier] ile verilir.
+ */
+@Composable
+fun ListRow(
+    headline: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    supporting: (@Composable () -> Unit)? = null,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = if (supporting == null) 56.dp else 72.dp)
+            .padding(start = Spacing.lg, end = if (trailing == null) Spacing.lg else Spacing.xs, top = Spacing.sm, bottom = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (leading != null) {
+            Box(Modifier.widthIn(min = Size.icon), contentAlignment = Alignment.Center) {
+                CompositionLocalProvider(LocalContentColor provides colors.onSurfaceVariant) { leading() }
+            }
+            Spacer(Modifier.width(Spacing.lg))
+        }
+        Column(Modifier.weight(1f)) {
+            CompositionLocalProvider(LocalContentColor provides colors.onSurface) {
+                ProvideTextStyle(MaterialTheme.typography.bodyLarge) { headline() }
+            }
+            if (supporting != null) {
+                CompositionLocalProvider(LocalContentColor provides colors.onSurfaceVariant) {
+                    ProvideTextStyle(MaterialTheme.typography.bodyMedium) { supporting() }
+                }
+            }
+        }
+        if (trailing != null) {
+            Spacer(Modifier.width(Spacing.sm))
+            CompositionLocalProvider(LocalContentColor provides colors.onSurfaceVariant) { trailing() }
+        }
+    }
+}
+
 /** Kartın içinde serbest içerik için kenar boşluklu sarmalayıcı. */
 @Composable
 fun SectionContent(content: @Composable ColumnScope.() -> Unit) {
@@ -194,6 +246,12 @@ private fun SectionCardPreview() {
                     { SwitchRow("Yalnızca HTTPS", "Tüm bağlantıları şifreli HTTPS'ye yükseltir", true, Icons.AutoMirrored.Rounded.KeyboardArrowRight) {} },
                     { NavRow("Güvenli DNS", "Cloudflare", Icons.AutoMirrored.Rounded.KeyboardArrowRight) {} },
                 ),
+            )
+            ListRow(
+                headline = { Text("Vikipedi") },
+                supporting = { Text("tr.wikipedia.org · 14:05") },
+                leading = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                trailing = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
             )
         }
     }

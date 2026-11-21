@@ -26,8 +26,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import com.gtarayici.browser.ui.designsystem.ListRow
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.Color
@@ -83,11 +82,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.R
 import com.gtarayici.browser.search.UrlInput
-import com.gtarayici.browser.ui.components.AddFab
+import com.gtarayici.browser.ui.designsystem.AddFab
 import com.gtarayici.browser.ui.components.colorOption
-import com.gtarayici.browser.ui.components.EmptyState
+import com.gtarayici.browser.ui.designsystem.EmptyState
 import com.gtarayici.browser.ui.components.Favicon
-import com.gtarayici.browser.ui.components.OverlayScaffold
+import com.gtarayici.browser.ui.designsystem.OverlayScaffold
 import mozilla.components.browser.state.state.TabSessionState
 
 @Composable
@@ -305,18 +304,16 @@ private fun AddToGroupDialog(
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 groups.forEach { group ->
-                    ListItem(
-                        leadingContent = { Box(Modifier.size(14.dp).clip(CircleShape).background(Color(group.color))) },
-                        headlineContent = { Text(group.name.ifBlank { stringResource(R.string.tab_groups_unnamed) }) },
-                        supportingContent = { Text(pluralStringResource(R.plurals.tab_count, group.tabIds.size, group.tabIds.size)) },
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    ListRow(
+                        leading = { Box(Modifier.size(14.dp).clip(CircleShape).background(Color(group.color))) },
+                        headline = { Text(group.name.ifBlank { stringResource(R.string.tab_groups_unnamed) }) },
+                        supporting = { Text(pluralStringResource(R.plurals.tab_count, group.tabIds.size, group.tabIds.size)) },
                         modifier = Modifier.clickable { onPick(group) },
                     )
                 }
-                ListItem(
-                    leadingContent = { Icon(Icons.Filled.Add, null) },
-                    headlineContent = { Text(stringResource(R.string.tab_groups_new)) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                ListRow(
+                    leading = { Icon(Icons.Filled.Add, null) },
+                    headline = { Text(stringResource(R.string.tab_groups_new)) },
                     modifier = Modifier.clickable { creating = true },
                 )
             }

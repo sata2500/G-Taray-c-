@@ -33,7 +33,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
+import com.gtarayici.browser.ui.designsystem.ListRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -59,8 +59,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.R
 import com.gtarayici.browser.components
-import com.gtarayici.browser.ui.components.AddFab
-import com.gtarayici.browser.ui.components.OverlayScaffold
+import com.gtarayici.browser.ui.designsystem.AddFab
+import com.gtarayici.browser.ui.designsystem.OverlayScaffold
 import com.gtarayici.browser.vpn.OpenVpnConfig
 import com.gtarayici.browser.vpn.VpnStatus
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -221,11 +221,11 @@ fun VpnScreen(onBack: () -> Unit) {
             }
             items(servers, key = { it.id }) { server ->
                 val isSelected = server.id == (selectedId ?: servers.firstOrNull()?.id)
-                ListItem(
-                    leadingContent = { RadioButton(selected = isSelected, onClick = null) },
-                    headlineContent = { Text(server.name) },
-                    supportingContent = { Text(server.protocol) },
-                    trailingContent = {
+                ListRow(
+                    leading = { RadioButton(selected = isSelected, onClick = null) },
+                    headline = { Text(server.name) },
+                    supporting = { Text(server.protocol) },
+                    trailing = {
                         IconButton(onClick = { vpn.removeServer(server) }) { Icon(Icons.Filled.Delete, stringResource(R.string.action_delete)) }
                     },
                     modifier = Modifier.clickable {

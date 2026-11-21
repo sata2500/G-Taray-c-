@@ -19,7 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -110,7 +109,7 @@ fun ReaderControlsSheet(controls: ReaderControls) {
     if (!controls.open) return
     ModalBottomSheet(
         onDismissRequest = { controls.hideControls() },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = com.gtarayici.browser.ui.designsystem.rememberFullSheetState(),
     ) {
         Column(Modifier.navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 20.dp)) {
             Text(stringResource(R.string.reader_settings), style = MaterialTheme.typography.titleMedium)
