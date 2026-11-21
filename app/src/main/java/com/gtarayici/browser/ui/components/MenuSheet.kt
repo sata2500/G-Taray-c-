@@ -123,6 +123,12 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
                         if (state.isYouTubeVideo) {
                             { MenuRow(Icons.Rounded.OndemandVideo, stringResource(R.string.menu_download_video)) { controller.openYouTubeDownload() } }
                         } else null,
+                        {
+                            MenuRow(Icons.Rounded.Download, stringResource(R.string.menu_page_downloads)) {
+                                controller.menuOpen = false
+                                controller.pageDownloadsOpen = true
+                            }
+                        },
                         if (state.canTranslate) {
                             { MenuRow(Icons.Rounded.Translate, stringResource(R.string.menu_translate)) { controller.openTranslate() } }
                         } else null,

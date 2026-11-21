@@ -26,6 +26,7 @@ class BrowserUiState {
     var installDialogOpen by mutableStateOf(false)
     var translateOpen by mutableStateOf(false)
     var siteInfoOpen by mutableStateOf(false)
+    var pageDownloadsOpen by mutableStateOf(false)
 
     /** İlk açılış tanıtımı gösteriliyor mu (yalnızca yeni kurulumda, bir kez). */
     var onboarding by mutableStateOf(false)

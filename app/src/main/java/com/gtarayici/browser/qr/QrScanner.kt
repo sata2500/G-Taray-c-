@@ -97,7 +97,13 @@ internal class QrAnalyzer(private val onResult: (String) -> Unit) : ImageAnalysi
  * arama veya kopyalama seçeneği sunulur. Görüntü cihazda işlenir.
  */
 @Composable
-fun QrScannerScreen(onOpen: (String) -> Unit, onSearch: (String) -> Unit, onBack: () -> Unit) {
+fun QrScannerScreen(
+    onOpen: (String) -> Unit,
+    onSearch: (String) -> Unit,
+    onBack: () -> Unit,
+    /** Verilirse kodun ham içeriği olduğu gibi buna verilir (ör. VPN bağlantısı tarama). */
+    onRawResult: ((String) -> Unit)? = null,
+) {
     val context = LocalContext.current
     var granted by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
@@ -113,7 +119,9 @@ fun QrScannerScreen(onOpen: (String) -> Unit, onSearch: (String) -> Unit, onBack
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         if (granted && result == null) {
             CameraPreview { text ->
-                if (URLStringUtils.isURLLike(text.trim()) && !text.trim().contains(' ')) {
+                if (onRawResult != null) {
+                    onRawResult(text)
+                } else if (URLStringUtils.isURLLike(text.trim()) && !text.trim().contains(' ')) {
                     onOpen(URLStringUtils.toNormalizedURL(text.trim()))
                 } else {
                     result = text

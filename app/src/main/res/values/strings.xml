@@ -217,16 +217,11 @@
     <string name="vpn_info">VPN yalnızca G-Tarayıcı\'nın trafiğini şifreler; telefonun VPN izni gerekmez, diğer uygulamalar ve telefonunuzdaki başka VPN\'ler etkilenmez. OpenVPN, WireGuard, VLESS, VMess, Trojan, Shadowsocks, Hysteria2, TUIC, SOCKS5 ve HTTP vekil desteklenir.</string>
     <string name="vpn_add">Sunucu ekle</string>
     <string name="vpn_add_hint">vless://… , vmess://… , ss://… , trojan://… , hy2://… , WireGuard yapılandırması veya abonelik içeriği</string>
-    <string name="vpn_paste">Panodan yapıştır</string>
-    <string name="vpn_empty">Henüz sunucu eklenmedi</string>
-    <string name="vpn_off">Kapalı</string>
     <string name="vpn_connecting">Bağlanıyor…</string>
-    <string name="vpn_connected">Bağlı: %1$s</string>
     <string name="vpn_error_blocked">Güvenliğiniz için VPN kapatılana veya yeniden bağlanana kadar internet trafiği engellendi.</string>
     <string name="vpn_connect">Bağlan</string>
     <string name="vpn_disconnect">Bağlantıyı kes</string>
     <string name="vpn_test">Bağlantıyı test et</string>
-    <string name="vpn_test_result">Çıkış IP: %1$s (%2$s) · %3$d ms</string>
     <string name="vpn_logs">Günlük</string>
 
     <!-- Uygulama parolası -->
@@ -252,14 +247,7 @@
     <string name="pip_pause">Duraklat</string>
     <string name="pip_next">Sonraki</string>
     <string name="pip_previous">Önceki</string>
-    <string name="vpn_import_file">Dosyadan</string>
     <string name="vpn_help_title">Sunucu nasıl eklenir?</string>
-    <string name="vpn_help_body">1. VPN sağlayıcınızın sitesinde veya hesap panelinde "elle kurulum" (manual setup) bölümünü açın.
-2. Bir <b>OpenVPN</b> (.ovpn) veya <b>WireGuard</b> (.conf) yapılandırma dosyası indirin ya da bir paylaşım bağlantısı (vless://, vmess://, ss://, trojan://, hy2://, tuic://) kopyalayın.
-3. Burada "Sunucu ekle"ye dokunun; bağlantıyı yapıştırın veya "Dosyadan" ile dosyayı seçin. OpenVPN sunucuları için VPN hesabınızın kullanıcı adı ve parolası istenir (bunlar çoğu sağlayıcıda web sitesine giriş bilgilerinden farklıdır; hesap panelinde "service credentials" / "manual setup" bölümünde yazar).
-4. Sunucuyu seçip "Bağlan"a dokunun, ardından "Bağlantıyı test et" ile çıkış IP\'nizi kontrol edin.
-
-Şu an desteklenmeyenler: IKEv2/IPsec (strongSwan), L2TP, PPTP ve OpenVPN TAP bağlantıları.</string>
     <string name="webapk_option_app">Uygulama olarak yükle</string>
     <string name="webapk_option_app_summary">Uygulama çekmecesinde kendi simgesiyle görünür, kendi penceresinde açılır ve ayarlardan normal bir uygulama gibi kaldırılabilir</string>
     <string name="webapk_option_app_summary_site">Bu site bir web uygulaması bildirimi sunmuyor; yine de kendi penceresinde açılan bir uygulama olarak yüklenebilir</string>
@@ -267,7 +255,6 @@
     <string name="webapk_preparing">Uygulama hazırlanıyor…</string>
     <string name="webapk_permission">Uygulama yükleyebilmek için açılan ekranda G-Tarayıcı\'ya "Bu kaynaktan izin ver" iznini verin, sonra tekrar deneyin</string>
     <string name="webapk_installed">%1$s yüklendi</string>
-    <string name="vpn_openvpn_detected">OpenVPN yapılandırması algılandı</string>
     <string name="vpn_username">VPN kullanıcı adı</string>
     <string name="vpn_password">VPN parolası</string>
     <string name="vpn_credentials_required">Bu OpenVPN sunucusu kullanıcı adı ve parola istiyor</string>
@@ -551,6 +538,94 @@
     <string name="crash_prompt_report">Bildir</string>
     <string name="crash_prompt_dismiss">Şimdi değil</string>
     <string name="menu_report">Sorun bildir</string>
+    <string name="tabs_private_locked">Gizli sekmeler kilitli</string>
+    <string name="tabs_private_locked_body">Gizli sekmelerinizi görmek için parmak izinizi kullanın veya uygulama parolanızı girin.</string>
+    <string name="tabs_private_unlock">Kilidi aç</string>
+    <string name="vpn_my_servers">Sunucularım</string>
+    <string name="vpn_state_off">VPN kapalı</string>
+    <string name="vpn_state_on">Bağlı</string>
+    <string name="vpn_no_servers_hint">Bağlanmak için önce VPN sağlayıcınızdan aldığınız bir sunucuyu ekleyin.</string>
+    <string name="vpn_latency">%1$d ms</string>
+    <string name="vpn_rename">Yeniden adlandır</string>
+    <string name="vpn_server_name">Sunucu adı</string>
+    <string name="vpn_server_deleted">"%1$s" silindi</string>
+    <string name="vpn_clipboard_empty">Panoda bir VPN bağlantısı yok. Sağlayıcınızın verdiği bağlantıyı önce kopyalayın.</string>
+    <string name="vpn_add_intro">VPN sağlayıcınız size bir bağlantı, QR kod, dosya veya abonelik adresi verir. Elinizde hangisi varsa onu seçin.</string>
+    <string name="vpn_add_paste">Kopyaladığım bağlantıyı ekle</string>
+    <string name="vpn_add_paste_summary">vless://, trojan://, ss://… ile başlayan bağlantı veya sunucu listesi</string>
+    <string name="vpn_add_qr">QR kodu tara</string>
+    <string name="vpn_add_qr_summary">Sağlayıcınızın sitesindeki veya uygulamasındaki QR kodu</string>
+    <string name="vpn_add_file">Dosyadan içe aktar</string>
+    <string name="vpn_add_file_summary">OpenVPN (.ovpn), WireGuard (.conf) veya sing-box (.json) dosyası</string>
+    <string name="vpn_add_subscription">Abonelik adresi</string>
+    <string name="vpn_add_subscription_summary">Tüm sunucularınızı bir kerede getiren https://… adresi</string>
+    <string name="vpn_add_manual">Elle yaz</string>
+    <string name="vpn_add_manual_summary">Bağlantıyı veya yapılandırmayı kendiniz girin</string>
+    <string name="vpn_subscription_explain">Sağlayıcınızın panelinde "abonelik" (subscription) adresi olarak geçer. Sunucular bir kez indirilir.</string>
+    <string name="vpn_continue">Devam</string>
+    <string name="vpn_found_one">1 sunucu bulundu</string>
+    <plurals name="vpn_found_many">
+        <item quantity="one">%d sunucu bulundu</item>
+        <item quantity="other">%d sunucu bulundu</item>
+    </plurals>
+    <string name="vpn_found_explain">İsterseniz adlarını değiştirin; ör. "Almanya – iş". Adlar daha sonra da değiştirilebilir.</string>
+    <string name="vpn_add_and_connect">Ekle ve bağlan</string>
+    <string name="vpn_add_only">Yalnızca ekle</string>
+    <string name="vpn_added_one">"%1$s" eklendi</string>
+    <plurals name="vpn_added_many">
+        <item quantity="one">%d sunucu eklendi</item>
+        <item quantity="other">%d sunucu eklendi</item>
+    </plurals>
+    <string name="vpn_help_simple">1. VPN sağlayıcınızın sitesinde veya hesap panelinde "elle kurulum" bölümünü açın.\n2. Orada verilen bağlantıyı kopyalayın, QR kodu gösterin veya dosyayı indirin.\n3. Burada "Sunucu ekle"ye dokunup elinizdekini seçin.\n4. Listeden bir sunucuya dokunun, bağlanılır. Bağlanınca hangi ülkeden çıktığınız kendiliğinden gösterilir.</string>
+    <string name="err_lead_file_download">Dosya indirilemedi</string>
+    <string name="err_stream_live">Bu bir canlı yayın; canlı yayınlar bitmediği için dosya olarak indirilemez.</string>
+    <string name="err_stream_protected">Bu video kopyalanmaya karşı korunuyor (DRM); indirilemez.</string>
+    <string name="dm_channel">İndirmeler</string>
+    <string name="dm_preparing">İndirme hazırlanıyor…</string>
+    <plurals name="dm_active">
+        <item quantity="one">%d dosya indiriliyor</item>
+        <item quantity="other">%d dosya indiriliyor</item>
+    </plurals>
+    <string name="dm_speed">%1$s/sn</string>
+    <string name="dm_done">İndirildi · %1$s</string>
+    <string name="menu_page_downloads">Sayfadaki indirilebilirler</string>
+    <string name="pd_title">Sayfadaki indirilebilirler</string>
+    <string name="pd_scanning">Sayfa taranıyor…</string>
+    <string name="pd_empty">İndirilebilir bir şey bulunamadı</string>
+    <string name="pd_empty_body">Sayfada video, ses, belge, arşiv, uygulama dosyası veya büyük görsel yok. Video henüz başlamadıysa oynatıp yeniden deneyin.</string>
+    <string name="pd_streaming">Bu sayfadaki video parça parça akıtılıyor; bu tür videolar çoğu zaman kopyalanmaya karşı korunur ve doğrudan indirilemez. Videoyu oynatıp yeniden tarayın; site bir akış adresi kullanıyorsa "Akışlar" altında görünür.</string>
+    <string name="pd_youtube_title">YouTube videosu</string>
+    <string name="pd_youtube_body">Kalite seçerek video veya yalnızca ses indirin</string>
+    <string name="pd_youtube_action">Seç</string>
+    <string name="pd_select_all">Tümünü seç</string>
+    <string name="pd_select_none">Seçimi kaldır</string>
+    <string name="pd_show_all">Tümünü göster (%1$d)</string>
+    <string name="pd_choose">İndirmek istediklerinizi seçin</string>
+    <plurals name="pd_selected">
+        <item quantity="one">%d öğe seçildi</item>
+        <item quantity="other">%d öğe seçildi</item>
+    </plurals>
+    <string name="pd_download">İndir</string>
+    <plurals name="pd_started">
+        <item quantity="one">%d indirme başladı</item>
+        <item quantity="other">%d indirme başladı</item>
+    </plurals>
+    <string name="pd_kind_video">Videolar</string>
+    <string name="pd_kind_stream">Video akışları</string>
+    <string name="pd_kind_audio">Ses</string>
+    <string name="pd_kind_document">Belgeler</string>
+    <string name="pd_kind_archive">Arşivler</string>
+    <string name="pd_kind_app">Uygulamalar</string>
+    <string name="pd_kind_image">Görseller</string>
+    <string name="pd_kind_other">Diğer dosyalar</string>
+    <string name="dm_pause">Duraklat</string>
+    <string name="dm_resume">Sürdür</string>
+    <string name="dm_retry">Yeniden dene</string>
+    <string name="dm_cancel">İptal et</string>
+    <plurals name="dm_connections">
+        <item quantity="one">%d bağlantı</item>
+        <item quantity="other">%d bağlantı</item>
+    </plurals>
 </resources>
 
 

@@ -137,6 +137,11 @@
             android:foregroundServiceType="dataSync" />
 
         <service
+            android:name=".downloads.manager.ManagedDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <service
             android:name=".downloads.DownloadService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

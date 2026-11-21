@@ -15,6 +15,7 @@ enum class ErrorArea(@StringRes val lead: Int) {
     Translate(R.string.err_lead_translate),
     Install(R.string.err_lead_install),
     Update(R.string.err_lead_update),
+    FileDownload(R.string.err_lead_file_download),
 }
 
 /** Kullanıcının anlayabileceği hata türü. Her biri için "ne yapılmalı" cümlesi vardır. */
@@ -38,6 +39,8 @@ enum class Problem {
     VideoUnavailable,
     VideoExtraction,
     LanguageUnsupported,
+    StreamLive,
+    StreamProtected,
     Unknown,
 }
 
@@ -113,6 +116,8 @@ object HumanErrors {
             Problem.VideoUnavailable -> R.string.err_video_unavailable
             Problem.VideoExtraction -> R.string.err_video_extraction
             Problem.LanguageUnsupported -> R.string.err_language_unsupported
+            Problem.StreamLive -> R.string.err_stream_live
+            Problem.StreamProtected -> R.string.err_stream_protected
             Problem.Unknown -> R.string.err_unknown
         }
     }
@@ -122,6 +127,12 @@ object HumanErrors {
         ErrorArea.Translate -> when {
             "notsupported" in text || "not supported" in text || "unsupported" in text -> Problem.LanguageUnsupported
             "model" in text || "couldnotload" in text || "couldnotretrieve" in text || "download" in text -> Problem.NoConnection
+            else -> null
+        }
+        ErrorArea.FileDownload -> when {
+            "unsupportedstreamexception: live" in text -> Problem.StreamLive
+            "unsupportedstreamexception: encrypted" in text -> Problem.StreamProtected
+            "rangenothonored" in text -> Problem.ServerError
             else -> null
         }
         else -> null

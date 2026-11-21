@@ -1,5 +1,6 @@
 package com.gtarayici.browser.ui
 
+import com.gtarayici.browser.ui.components.PageDownloadsSheet
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
@@ -73,6 +74,9 @@ internal fun OverlayPage(
     profileTabs: List<TabSessionState>,
     selectedTabId: String?,
 ) {
+    val components = LocalContext.current.components
+    val lockPrivate by components.settings.lockPrivateTabs.collectAsState()
+    val privateLockTitle = stringResource(R.string.lock_title_private)
     when (page) {
         Overlay.NONE -> Unit
         Overlay.SEARCH -> SearchScreen(
@@ -99,6 +103,8 @@ internal fun OverlayPage(
             onNewTab = { controller.newTab(it) },
             onNewTabInGroup = { controller.newTabInGroup(it) },
             onBack = { controller.closeOverlay() },
+            privateLocked = lockPrivate && !components.appLock.isUnlocked(AppLock.PRIVATE),
+            onUnlockPrivate = { controller.unlock(AppLock.PRIVATE, privateLockTitle) },
         )
         Overlay.HISTORY -> HistoryScreen(onOpen = { controller.loadUrl(it) }, onBack = { controller.closeOverlay() })
         Overlay.BOOKMARKS -> BookmarksScreen(onOpen = { controller.loadUrl(it) }, onBack = { controller.closeOverlay() })
@@ -227,6 +233,19 @@ internal fun BrowserSheets(controller: BrowserController, menuState: () -> MenuS
     controller.youtubeUrl?.let { url -> YouTubeDownloadSheet(url) { controller.youtubeUrl = null } }
     if (controller.translateOpen) {
         selectedTabId?.let { id -> TranslateSheet(id) { controller.translateOpen = false } }
+    }
+    if (controller.pageDownloadsOpen) {
+        selectedTabId?.let { id ->
+            PageDownloadsSheet(
+                tabId = id,
+                onDismiss = { controller.pageDownloadsOpen = false },
+                onYouTube = {
+                    controller.pageDownloadsOpen = false
+                    controller.openYouTubeDownload()
+                },
+                onOpenDownloads = { controller.open(Overlay.DOWNLOADS) },
+            )
+        }
     }
     if (controller.siteInfoOpen) {
         selectedTabId?.let { id -> SiteInfoSheet(id) { controller.siteInfoOpen = false } }

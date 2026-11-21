@@ -1,5 +1,19 @@
 package com.gtarayici.browser.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.ui.graphics.Color
 import com.gtarayici.browser.tabs.TabGroup
@@ -43,11 +57,17 @@ fun TabsScreen(
     onNewTab: (private: Boolean) -> Unit,
     onNewTabInGroup: (groupId: String) -> Unit,
     onBack: () -> Unit,
+    /** Gizli sekmeler kilitliyse bölümün içeriği (sayı, önizleme, adlar) gösterilmez. */
+    privateLocked: Boolean = false,
+    onUnlockPrivate: () -> Unit = {},
 ) {
     val tabGroups = LocalContext.current.components.tabGroups
     val allGroups by tabGroups.groups.collectAsState()
     var showPrivate by remember { mutableStateOf(initialPrivate) }
-    val visible = tabs.filter { it.content.private == showPrivate }
+    val locked = showPrivate && privateLocked
+    // Gizli bölüme geçince kilit kendiliğinden sorulur.
+    LaunchedEffect(locked) { if (locked) onUnlockPrivate() }
+    val visible = if (locked) emptyList() else tabs.filter { it.content.private == showPrivate }
     val visibleIds = visible.map { it.id }.toSet()
     // Bu profilde ve bu sekmede (normal/gizli) görünen sekmeleri olan gruplar
     val groups = allGroups.filter { group -> group.tabIds.any { it in visibleIds } }
@@ -65,8 +85,10 @@ fun TabsScreen(
             }
         },
         floatingActionButton = {
-            AddFab(stringResource(if (showPrivate) R.string.menu_new_private_tab else R.string.menu_new_tab)) {
-                onNewTab(showPrivate)
+            if (!locked) {
+                AddFab(stringResource(if (showPrivate) R.string.menu_new_private_tab else R.string.menu_new_tab)) {
+                    onNewTab(showPrivate)
+                }
             }
         },
     ) { modifier ->
@@ -80,10 +102,22 @@ fun TabsScreen(
                 Tab(
                     selected = showPrivate,
                     onClick = { showPrivate = true },
-                    text = { Text("${stringResource(R.string.tabs_private)} (${tabs.count { it.content.private }})") },
+                    text = {
+                        if (privateLocked) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.Lock, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(R.string.tabs_private))
+                            }
+                        } else {
+                            Text("${stringResource(R.string.tabs_private)} (${tabs.count { it.content.private }})")
+                        }
+                    },
                 )
             }
-            if (visible.isEmpty()) {
+            if (locked) {
+                LockedPrivateTabs(onUnlockPrivate)
+            } else if (visible.isEmpty()) {
                 EmptyState(stringResource(R.string.tabs_empty))
             } else {
                 val byId = visible.associateBy { it.id }
@@ -168,3 +202,25 @@ fun TabsScreen(
     }
 }
 
+/** Kilitli gizli sekmeler: içerik yerine yalnızca kilit ve "Kilidi aç" düğmesi. */
+@Composable
+private fun LockedPrivateTabs(onUnlock: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(Icons.Filled.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp))
+        Spacer(Modifier.height(16.dp))
+        Text(stringResource(R.string.tabs_private_locked), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.tabs_private_locked_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(24.dp))
+        FilledTonalButton(onClick = onUnlock) { Text(stringResource(R.string.tabs_private_unlock)) }
+    }
+}

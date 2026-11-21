@@ -5,7 +5,7 @@
 G-Tarayıcı, Mozilla'nın **GeckoView** motoru üzerine kuruludur. Amacı, kurduğunuz anda hiçbir ayar yapmadan
 sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
 
-> Durum: **v0.8.0** — yol haritasındaki özelliklerin neredeyse tamamı hazır; sürümler kalıcı anahtarla imzalanır ve
+> Durum: **v0.9.0** — yol haritasındaki özelliklerin neredeyse tamamı hazır; sürümler kalıcı anahtarla imzalanır ve
 > uygulama içinden güncellenir.
 
 ## Özellikler
@@ -46,6 +46,12 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
   kaldırılabilir, tarayıcı arayüzü olmadan kendi penceresinde açılır. Hiçbir sunucuya veri gönderilmez.
 - İstenirse yalnızca ana ekran kısayolu
 
+### İndirme yöneticisi
+- Çok bağlantılı (8 parça) hızlı indirme; kopan bağlantı kaldığı yerden sürer; duraklat / sürdür / iptal / yeniden dene
+- **Sayfadaki indirilebilirler:** video, video akışı (HLS, AES-128 dahil), ses, belge, arşiv, uygulama dosyası ve
+  büyük görseller bulunur, türüne göre gruplanır, boyutlarıyla gösterilir; gömülü oynatıcılar da taranır
+- Sayfadaki indirme bağlantıları da hızlı indiriciyi kullanır; site çerezleri ve tarayıcı VPN'i geçerlidir
+
 ### Tarayıcı VPN'i
 - Yalnızca G-Tarayıcı'nın trafiği şifrelenir; cihaz VPN izni gerekmez, diğer uygulamalar ve VPN'ler etkilenmez
 - Çekirdekler ayrı bir **VPN bileşeni** paketinde gelir (~20 MB); VPN'i kullanmayanlar indirmez. Bileşen ilk
@@ -54,7 +60,8 @@ sizi koruyan, reklamsız ve hızlı bir tarama deneyimi sunmaktır.
   telefonun VPN izni yerine kullanıcı alanı ağ yığınına (gVisor) bağlanır
 - Dahili sing-box çekirdeği: **VLESS (Reality dahil), VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard,
   SOCKS5 ve HTTP(S) vekil**
-- Paylaşım bağlantısı veya abonelik içeriği yapıştırarak ya da `.ovpn` / `.conf` dosyasını içe aktararak sunucu ekleme
+- Sunucu ekleme: kopyalanan bağlantı, QR kod, `.ovpn` / `.conf` / `.json` dosyası veya abonelik adresi; eklemeden
+  önce ön izleme ve ad verme; sunucuları yeniden adlandırma, dokunduğun sunucuya bağlanma, bağlanınca çıkış ülkesi ve gecikme
 - Desteklenmeyenler: IKEv2/IPsec, L2TP, PPTP, OpenVPN TAP
 - Bağlantı testi (çıkış IP'si, ülke, gecikme), günlük görüntüleme
 - Bağlantı koparsa trafik doğrudan internete düşmez (sızıntı koruması)

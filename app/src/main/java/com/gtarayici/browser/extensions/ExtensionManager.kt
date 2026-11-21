@@ -54,6 +54,9 @@ class ExtensionManager(
     /** Oynayan videonun sayfadaki son konumu (CSS pikseli); PiP geçiş animasyonu ve son kare için. */
     val videoRect: StateFlow<VideoRect?> = _videoRect.asStateFlow()
 
+    /** Yardımcı eklenti kurulunca çağrılır (ör. sayfa taraması için sekme bağlantıları). */
+    var onHelperReady: (WebExtension) -> Unit = {}
+
     fun start() {
         // Uygulamayla gelen eklentilerin izin istemi kullanıcıya gösterilmeden onaylanır.
         scope.launch {
@@ -115,6 +118,7 @@ class ExtensionManager(
             url = "resource://android/assets/extensions/helper/",
             onSuccess = { extension ->
                 registerHelperMessages(extension)
+                onHelperReady(extension)
                 // Arka planda oynatma ve resim içinde resim gizli sekmelerde de çalışsın.
                 if (!extension.isAllowedInPrivateBrowsing()) setAllowedInPrivate(extension, true)
             },

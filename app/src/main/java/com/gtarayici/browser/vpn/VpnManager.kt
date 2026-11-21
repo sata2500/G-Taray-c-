@@ -91,36 +91,103 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         }
     }
 
-    fun addServer(input: String, username: String = "", password: String = ""): Result<VpnServer> = runCatching {
+    /**
+     * Metni sunuculara çevirir ama kaydetmez (ekleme penceresindeki ön izleme için). OpenVPN yapılandırması
+     * tek sunucudur; paylaşım bağlantıları ve abonelik içerikleri birden çok sunucu verebilir.
+     */
+    fun parse(input: String, username: String = "", password: String = ""): Result<List<VpnServer>> = runCatching {
         if (OpenVpnConfig.looksLike(input)) {
             OpenVpnConfig.sanitize(input) // Desteklenmeyen yapılandırmayı (ör. TAP) eklerken bildir.
-            val server = VpnServer(
-                UUID.randomUUID().toString(),
-                OpenVpnConfig.displayName(input),
-                OPENVPN,
-                input.trim(),
-                username.trim(),
-                password,
+            return@runCatching listOf(
+                VpnServer(UUID.randomUUID().toString(), OpenVpnConfig.displayName(input), OPENVPN, input.trim(), username.trim(), password),
             )
-            _servers.value = _servers.value + server
-            saveServers()
-            return@runCatching server
         }
         val entries = splitInput(input)
         require(entries.isNotEmpty()) { "Bağlantı bulunamadı" }
-        val added = entries.map { raw ->
+        entries.map { raw ->
             val parsed = ShareLinkParser.parse(raw)
             VpnServer(UUID.randomUUID().toString(), parsed.name, parsed.protocol, raw)
         }
-        _servers.value = _servers.value + added
-        saveServers()
-        added.first()
     }
+
+    fun add(servers: List<VpnServer>) {
+        if (servers.isEmpty()) return
+        _servers.value = _servers.value + servers
+        saveServers()
+    }
+
+    fun addServer(input: String, username: String = "", password: String = ""): Result<VpnServer> =
+        parse(input, username, password).map { list -> add(list); list.first() }
+
+    /** Sunucuya kullanıcının verdiği adı verir. */
+    fun rename(server: VpnServer, name: String) {
+        val clean = name.trim().ifBlank { return }
+        _servers.value = _servers.value.map { if (it.id == server.id) it.copy(name = clean) else it }
+        saveServers()
+        (status.value as? VpnStatus.Connected)?.takeIf { it.server.id == server.id }?.let {
+            _status.value = it.copy(server = it.server.copy(name = clean))
+        }
+    }
+
+    /** "Geri al" ile silinen sunucuyu eski yerine koyar. */
+    fun restore(server: VpnServer, index: Int) {
+        if (_servers.value.any { it.id == server.id }) return
+        _servers.value = _servers.value.toMutableList().apply { add(index.coerceIn(0, size), server) }
+        saveServers()
+    }
+
+    /**
+     * Abonelik adresindeki sunucu listesini indirir (sağlayıcıların verdiği https://… adresi). VPN açıksa
+     * indirme VPN üzerinden yapılır.
+     */
+    suspend fun fetchSubscription(url: String): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(url.startsWith("https://") || url.startsWith("http://")) { "Geçerli bir abonelik adresi değil" }
+            val connection = URL(url).openConnection(javaProxy()) as HttpURLConnection
+            connection.connectTimeout = 15_000
+            connection.readTimeout = 20_000
+            connection.setRequestProperty("User-Agent", "G-Tarayici")
+            try {
+                check(connection.responseCode == HttpURLConnection.HTTP_OK) { "HTTP ${connection.responseCode}" }
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } finally {
+                connection.disconnect()
+            }
+        }
+    }
+
+    /** Bağlı sunucuyu test eder ve sonucu o sunucu için hatırlar. */
+    suspend fun testActive(): Result<VpnTestResult> {
+        val server = (status.value as? VpnStatus.Connected)?.server
+        return test().onSuccess { result -> server?.let { rememberTest(it.id, result) } }
+    }
+
+    /** Her sunucu için son bağlantı testinin sonucu (ülke, gecikme). */
+    private val _lastTests = MutableStateFlow(loadTests())
+    val lastTests: StateFlow<Map<String, VpnTestResult>> = _lastTests.asStateFlow()
+
+    private fun rememberTest(serverId: String, result: VpnTestResult) {
+        _lastTests.value = _lastTests.value + (serverId to result)
+        val json = JSONObject()
+        _lastTests.value.forEach { (id, r) ->
+            json.put(id, JSONObject().put("ip", r.ip).put("country", r.country).put("latency", r.latencyMs))
+        }
+        prefs.edit { putString(KEY_TESTS, json.toString()) }
+    }
+
+    private fun loadTests(): Map<String, VpnTestResult> = runCatching {
+        val json = JSONObject(prefs.getString(KEY_TESTS, "{}") ?: "{}")
+        json.keys().asSequence().associateWith { id ->
+            val o = json.getJSONObject(id)
+            VpnTestResult(o.optString("ip").ifBlank { null }, o.optString("country").ifBlank { null }, o.optLong("latency"))
+        }
+    }.getOrDefault(emptyMap())
 
     fun removeServer(server: VpnServer) {
         if (activeServerId == server.id) disconnect()
         _servers.value = _servers.value.filterNot { it.id == server.id }
         saveServers()
+        if (server.id in _lastTests.value) _lastTests.value = _lastTests.value - server.id
     }
 
     fun connect(server: VpnServer) {
@@ -134,6 +201,8 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
             result.onSuccess { port ->
                 applyProxy(port)
                 _status.value = VpnStatus.Connected(server, port)
+                // Bağlanınca çıkış ülkesi ve gecikme kendiliğinden ölçülür; kullanıcı ayrıca test etmek zorunda kalmaz.
+                test().onSuccess { rememberTest(server.id, it) }
             }.onFailure { error ->
                 logger.warn("VPN başlatılamadı", error)
                 // Kapalı başarısızlık: vekil ayarı ölü bir porta yönlendirilir, trafik sızmaz.
@@ -326,6 +395,7 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
     companion object {
         private const val KEY_SERVERS = "servers"
         private const val KEY_ACTIVE = "active"
+        private const val KEY_TESTS = "last_tests"
         private const val KEY_ENABLED = "enabled"
         private const val MAX_LOG_LINES = 200
         private const val PROXY_NONE = 0

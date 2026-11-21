@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.update
 sealed interface UiText {
     data class Res(val id: Int, val args: List<Any> = emptyList()) : UiText
     data class Plain(val text: String) : UiText
+    /** Sayıya göre tekil/çoğul biçimli kaynak (plurals). */
+    data class Plural(val id: Int, val count: Int, val args: List<Any> = emptyList()) : UiText
 
     fun resolve(context: Context): String = when (this) {
         is Res -> if (args.isEmpty()) {
@@ -19,10 +21,12 @@ sealed interface UiText {
             context.getString(id, *args.map { if (it is UiText) it.resolve(context) else it }.toTypedArray())
         }
         is Plain -> text
+        is Plural -> context.resources.getQuantityString(id, count, *args.map { if (it is UiText) it.resolve(context) else it }.toTypedArray())
     }
 
     companion object {
         fun res(id: Int, vararg args: Any): UiText = Res(id, args.toList())
+        fun plural(id: Int, count: Int, vararg args: Any): UiText = Plural(id, count, args.toList())
     }
 }
 

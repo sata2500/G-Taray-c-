@@ -20,7 +20,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.gtarayici.browser.downloads.DownloadService
 import com.gtarayici.browser.ui.BrowserApp
 import com.gtarayici.browser.ui.BrowserController
 import com.gtarayici.browser.ui.Overlay
@@ -32,7 +31,6 @@ import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.contextmenu.ContextMenuCandidate
 import mozilla.components.feature.contextmenu.ContextMenuFeature
 import mozilla.components.feature.downloads.DownloadsFeature
-import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.feature.privatemode.feature.SecureWindowFeature
 import mozilla.components.feature.readerview.ReaderViewFeature
@@ -246,12 +244,8 @@ class MainActivity : AppCompatActivity() {
                 useCases = components.downloadsUseCases,
                 fragmentManager = supportFragmentManager,
                 downloadFileUtils = components.downloadFileUtils,
-                downloadManager = FetchDownloadManager(
-                    applicationContext,
-                    store,
-                    DownloadService::class,
-                    notificationsDelegate = components.notificationsDelegate,
-                ),
+                // Sayfadaki indirme bağlantıları çok bağlantılı kuyrukla indirilir.
+                downloadManager = com.gtarayici.browser.downloads.manager.FastDownloadManager(components.downloadQueue, store),
                 onNeedToRequestPermissions = { requestPermissionsFor(downloadsFeature, it) },
             ),
             owner = this,

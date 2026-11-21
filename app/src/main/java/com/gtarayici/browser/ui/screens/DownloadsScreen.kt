@@ -1,5 +1,11 @@
 package com.gtarayici.browser.ui.screens
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.res.pluralStringResource
 import com.gtarayici.browser.ui.feedback.UiText
 import android.text.format.Formatter
 import androidx.compose.foundation.clickable
@@ -47,6 +53,8 @@ fun DownloadsScreen(onBack: () -> Unit) {
         state.downloads.values.filter { !it.private }.sortedByDescending { it.createdTime }
     }
     var removing by remember { mutableStateOf<DownloadState?>(null) }
+    val queue = components.downloadQueue
+    val tasks by queue.tasks.collectAsState()
     removing?.let { download ->
         AlertDialog(
             onDismissRequest = { removing = null },
@@ -93,7 +101,18 @@ fun DownloadsScreen(onBack: () -> Unit) {
                         },
                         supporting = {
                             Column {
-                                Text(downloadStatusText(download, remaining), maxLines = 2)
+                                val task = tasks.firstOrNull { it.id == download.id }
+                                val live = task?.takeIf { it.status == com.gtarayici.browser.downloads.manager.TaskStatus.RUNNING }
+                                Text(
+                                    listOfNotNull(
+                                        downloadStatusText(download, live?.remainingMs ?: remaining),
+                                        live?.speed?.takeIf { it > 0 }?.let {
+                                            stringResource(R.string.dm_speed, android.text.format.Formatter.formatShortFileSize(context, it))
+                                        },
+                                        live?.connections?.takeIf { it > 1 }?.let { pluralStringResource(R.plurals.dm_connections, it, it) },
+                                    ).joinToString(" · "),
+                                    maxLines = 2,
+                                )
                                 if (download.status == DownloadState.Status.DOWNLOADING) {
                                     val progress = download.progress
                                     if (progress != null) {
@@ -108,11 +127,31 @@ fun DownloadsScreen(onBack: () -> Unit) {
                             }
                         },
                         trailing = {
-                            IconButton(onClick = {
-                                // Tamamlanan indirmede dosyanın da silinip silinmeyeceği sorulur; diğerleri yalnızca listeden çıkar.
-                                if (done) removing = download else components.downloadsUseCases.removeDownload(download.id)
-                            }) {
-                                Icon(Icons.Filled.Close, stringResource(R.string.action_delete))
+                            Row {
+                                val owned = queue.owns(download.id)
+                                when {
+                                    owned && download.status == DownloadState.Status.DOWNLOADING -> IconButton(onClick = { queue.pause(download.id) }) {
+                                        Icon(Icons.Rounded.Pause, stringResource(R.string.dm_pause))
+                                    }
+                                    owned && download.status == DownloadState.Status.PAUSED -> IconButton(onClick = { queue.resume(download.id) }) {
+                                        Icon(Icons.Rounded.PlayArrow, stringResource(R.string.dm_resume))
+                                    }
+                                    download.status == DownloadState.Status.FAILED || download.status == DownloadState.Status.CANCELLED ->
+                                        IconButton(onClick = { queue.retryFromState(download) }) {
+                                            Icon(Icons.Rounded.Refresh, stringResource(R.string.dm_retry))
+                                        }
+                                }
+                                IconButton(onClick = {
+                                    when {
+                                        // Tamamlanan indirmede dosyanın da silinip silinmeyeceği sorulur.
+                                        done -> removing = download
+                                        // Süren indirme iptal edilir, yarım dosya silinir.
+                                        owned -> queue.cancel(download.id)
+                                        else -> components.downloadsUseCases.removeDownload(download.id)
+                                    }
+                                }) {
+                                    Icon(Icons.Filled.Close, stringResource(if (done) R.string.action_delete else R.string.dm_cancel))
+                                }
                             }
                         },
                         modifier = Modifier.clickable(enabled = done) {

@@ -198,6 +198,10 @@ class Components(private val context: Context) {
     val vpn by lazy { VpnManager(context, applicationScope, vpnCore) }
     val webApkInstaller by lazy { com.gtarayici.browser.webapk.WebApkInstaller(context, this) }
     val youtube by lazy { YouTubeDownloader(context, this) }
+    /** Çok bağlantılı indirme yöneticisi (sayfa taraması, indirme bağlantıları). */
+    val resourceScanner by lazy { com.gtarayici.browser.downloads.manager.ResourceScanner(store, applicationScope) }
+    val downloadQueue by lazy { com.gtarayici.browser.downloads.manager.DownloadQueue(context, client, store, applicationScope) }
+
     val updater by lazy { com.gtarayici.browser.update.Updater(context, settings, applicationScope) }
 
     /** Ayar ekranındaki değişiklikleri çalışan motora anında uygular. */

@@ -67,6 +67,11 @@ class GTarayiciApplication : Application() {
         // Açılışı geciktirmemek için acil olmayan işler ilk ekran çizildikten sonra (ana iş parçacığı boşken) yapılır.
         Looper.myQueue().addIdleHandler {
             components.downloadsUseCases.restoreDownloads()
+            // Önceki oturumda yarım kalan indirmeler "başarısız" olarak gösterilir; "Yeniden dene" ile sürdürülür.
+            components.applicationScope.launch {
+                kotlinx.coroutines.delay(1_500)
+                components.downloadQueue.markInterrupted()
+            }
             components.applicationScope.launch(Dispatchers.IO) {
                 components.manifestStorage.warmUpScopes(System.currentTimeMillis())
             }
@@ -121,6 +126,7 @@ class GTarayiciApplication : Application() {
                 onSelectTabOverride = { _, sessionId -> components.tabsUseCases.selectTab(sessionId) },
                 onExtensionsLoaded = { components.extensions.refresh() },
             )
+            components.extensions.onHelperReady = { components.resourceScanner.attach(it) }
             components.extensions.start()
         } catch (e: UnsupportedOperationException) {
             Logger.error("Eklenti desteği başlatılamadı", e)

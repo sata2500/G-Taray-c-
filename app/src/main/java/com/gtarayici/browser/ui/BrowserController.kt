@@ -67,6 +67,9 @@ class BrowserController private constructor(
     var siteInfoOpen: Boolean
         get() = ctx.ui.siteInfoOpen
         set(value) { ctx.ui.siteInfoOpen = value }
+    var pageDownloadsOpen: Boolean
+        get() = ctx.ui.pageDownloadsOpen
+        set(value) { ctx.ui.pageDownloadsOpen = value }
     var onboarding: Boolean
         get() = ctx.ui.onboarding
         set(value) { ctx.ui.onboarding = value }
@@ -147,6 +150,7 @@ class BrowserController private constructor(
             onboarding -> finishOnboarding()
             menuOpen -> menuOpen = false
             siteInfoOpen -> siteInfoOpen = false
+            pageDownloadsOpen -> pageDownloadsOpen = false
             readerControls.open -> readerControls.hideControls()
             translateOpen -> translateOpen = false
             profileSwitcherOpen -> profileSwitcherOpen = false

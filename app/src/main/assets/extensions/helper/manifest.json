@@ -1,28 +1,54 @@
 {
   "manifest_version": 2,
   "name": "G-Tarayıcı Yardımcısı",
-  "version": "2.0.1",
-  "description": "Arka planda oynatma, medya kontrolleri, video konumu (resim içinde resim) ve SponsorBlock.",
+  "version": "2.1.0",
+  "description": "Arka planda oynatma, medya kontrolleri, video konumu (resim içinde resim), SponsorBlock ve sayfadaki indirilebilir öğelerin taranması.",
   "browser_specific_settings": {
-    "gecko": { "id": "helper@gtarayici.app" }
+    "gecko": {
+      "id": "helper@gtarayici.app"
+    }
   },
   "permissions": [
     "nativeMessaging",
+    "nativeMessagingFromContent",
     "geckoViewAddons",
     "<all_urls>",
     "https://sponsor.ajay.app/*"
   ],
-  "background": { "scripts": ["background.js"] },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/*", "*://*.youtube-nocookie.com/*"],
-      "js": ["youtube.js"],
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.youtube-nocookie.com/*"
+      ],
+      "js": [
+        "youtube.js"
+      ],
       "run_at": "document_start",
       "all_frames": true
     },
     {
-      "matches": ["<all_urls>"],
-      "js": ["media.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "media.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "resources.js"
+      ],
       "run_at": "document_idle",
       "all_frames": true
     }
