@@ -4,7 +4,7 @@ kotlin = "2.4.21"
 ksp = "2.3.14"
 # Mozilla Android Components ve GeckoView aynı ana sürümde tutulmalıdır.
 mozilla-components = "160.0.1"
-compose-bom = "2026.09.00"
+compose-bom = "2026.11.01"
 activity = "1.13.0"
 appcompat = "1.8.0"
 core = "1.19.1"

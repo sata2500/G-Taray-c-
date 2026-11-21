@@ -1,9 +1,6 @@
 package com.gtarayici.browser.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,21 +13,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,18 +36,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.R
 import com.gtarayici.browser.data.HistoryEntry
 import com.gtarayici.browser.search.UrlInput
+import com.gtarayici.browser.settings.ThemeMode
 import com.gtarayici.browser.ui.components.Favicon
+import com.gtarayici.browser.ui.designsystem.AppShape
+import com.gtarayici.browser.ui.designsystem.Spacing
+import com.gtarayici.browser.ui.designsystem.StatusChip
+import com.gtarayici.browser.ui.designsystem.Tile
+import com.gtarayici.browser.ui.designsystem.TileGrid
+import com.gtarayici.browser.ui.theme.GTarayiciTheme
 
 /** Ana sayfada gösterilen site kısayolu (sık ziyaret edilen veya yer imi). */
 data class HomeSite(val url: String, val title: String)
@@ -102,108 +106,132 @@ fun HomeScreen(
     onOpenInNewTab: (String) -> Unit,
     onHideFrequent: (HomeSite) -> Unit,
     onRemoveBookmark: (HomeSite) -> Unit,
+    onProtectionClick: () -> Unit = {},
 ) {
-    Box(
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        Column(
-            Modifier
-                .widthIn(max = 560.dp)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(Modifier.height(if (frequent.isEmpty() && bookmarks.isEmpty()) 96.dp else 56.dp))
-            if (private) {
-                Icon(
-                    Icons.Filled.VisibilityOff,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(48.dp),
-                )
-                Spacer(Modifier.height(12.dp))
-            }
-            Text(
-                stringResource(R.string.app_name),
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                stringResource(R.string.app_tagline),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(28.dp))
-            Row(
+    // Surface içerik rengini (onSurface) de sağlar: renk belirtilmeyen metinler koyu temada siyah kalmaz.
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+        Box(contentAlignment = Alignment.TopCenter) {
+            Column(
                 Modifier
+                    .widthIn(max = 560.dp)
                     .fillMaxWidth()
-                    .height(52.dp)
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .clickable(onClick = onSearchClick)
-                    .padding(start = 18.dp, end = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = Spacing.screen),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.height(if (frequent.isEmpty() && bookmarks.isEmpty()) 96.dp else Spacing.huge))
+                Emblem(private)
+                Spacer(Modifier.height(Spacing.md))
                 Text(
-                    stringResource(if (private) R.string.private_search_hint else R.string.search_hint),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                    stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.SemiBold,
                 )
-                IconButton(onClick = onScanQr) {
-                    Icon(
-                        Icons.Filled.QrCodeScanner,
-                        stringResource(R.string.menu_scan_qr),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Spacer(Modifier.height(28.dp))
+                Text(
+                    stringResource(R.string.app_tagline),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(Spacing.xl))
+                SearchPill(private, onSearchClick, onScanQr)
+                Spacer(Modifier.height(Spacing.md))
 
-            if (private) {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                    Column(Modifier.padding(20.dp)) {
-                        Text(stringResource(R.string.home_private_title), style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(8.dp))
+                if (private) {
+                    Surface(
+                        shape = AppShape.lg,
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
+                    ) {
+                        Column(Modifier.padding(Spacing.xl)) {
+                            Text(stringResource(R.string.home_private_title), style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(Spacing.sm))
+                            Text(
+                                stringResource(R.string.home_private_body),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                } else {
+                    StatusChip(stringResource(R.string.home_protection_on), Icons.Rounded.Shield, onClick = onProtectionClick)
+                    Spacer(Modifier.height(Spacing.xl))
+                    if (frequent.isEmpty() && bookmarks.isEmpty()) {
                         Text(
-                            stringResource(R.string.home_private_body),
+                            stringResource(R.string.home_empty_hint),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = Spacing.xl),
                         )
                     }
+                    SiteSection(
+                        title = stringResource(R.string.home_frequent),
+                        sites = frequent,
+                        removeLabel = stringResource(R.string.home_hide_site),
+                        onOpen = onOpen,
+                        onOpenInNewTab = onOpenInNewTab,
+                        onRemove = onHideFrequent,
+                    )
+                    SiteSection(
+                        title = stringResource(R.string.home_shortcuts),
+                        sites = bookmarks,
+                        removeLabel = stringResource(R.string.menu_remove_bookmark),
+                        onOpen = onOpen,
+                        onOpenInNewTab = onOpenInNewTab,
+                        onRemove = onRemoveBookmark,
+                    )
                 }
-            } else {
-                SiteGrid(
-                    title = stringResource(R.string.home_frequent),
-                    sites = frequent,
-                    removeLabel = stringResource(R.string.home_hide_site),
-                    onOpen = onOpen,
-                    onOpenInNewTab = onOpenInNewTab,
-                    onRemove = onHideFrequent,
-                )
-                SiteGrid(
-                    title = stringResource(R.string.home_shortcuts),
-                    sites = bookmarks,
-                    removeLabel = stringResource(R.string.menu_remove_bookmark),
-                    onOpen = onOpen,
-                    onOpenInNewTab = onOpenInNewTab,
-                    onRemove = onRemoveBookmark,
-                )
+                Spacer(Modifier.height(Spacing.xl))
             }
-            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/** Uygulama amblemi: ton dairesinde kalkan (gizli modda kapalı göz). */
+@Composable
+private fun Emblem(private: Boolean) {
+    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(64.dp)) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                if (private) Icons.Rounded.VisibilityOff else Icons.Rounded.Shield,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(32.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun SiteGrid(
+private fun SearchPill(private: Boolean, onSearchClick: () -> Unit, onScanQr: () -> Unit) {
+    Surface(
+        shape = AppShape.full,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+    ) {
+        Row(
+            Modifier.clickable(onClick = onSearchClick).padding(start = Spacing.xl, end = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Rounded.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(Spacing.md))
+            Text(
+                stringResource(if (private) R.string.private_search_hint else R.string.search_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onScanQr) {
+                Icon(Icons.Rounded.QrCodeScanner, stringResource(R.string.menu_scan_qr), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SiteSection(
     title: String,
     sites: List<HomeSite>,
     removeLabel: String,
@@ -214,20 +242,15 @@ private fun SiteGrid(
     if (sites.isEmpty()) return
     Text(
         title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 8.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.fillMaxWidth().padding(start = Spacing.xs, bottom = Spacing.sm),
     )
-    sites.take(8).chunked(4).forEach { row ->
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-            row.forEach { site ->
-                SiteTile(site, removeLabel, onOpen, onOpenInNewTab, onRemove, Modifier.weight(1f))
-            }
-            repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
-        }
-        Spacer(Modifier.height(8.dp))
+    val shown = sites.take(8)
+    TileGrid(columns = 4, count = shown.size) { index, modifier ->
+        SiteTile(shown[index], removeLabel, onOpen, onOpenInNewTab, onRemove, modifier)
     }
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(Spacing.lg))
 }
 
 @Composable
@@ -242,50 +265,50 @@ private fun SiteTile(
     val haptics = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
     Box(modifier) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .combinedClickable(
-                    onClick = { onOpen(site.url) },
-                    onLongClick = {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        menu = true
-                    },
-                )
-                .padding(vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(
-                Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center,
-            ) {
-                Favicon(site.url, size = 28.dp)
-            }
-            Spacer(Modifier.height(6.dp))
-            Text(
-                site.title,
-                style = MaterialTheme.typography.labelMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 4.dp),
-            )
-        }
+        Tile(
+            label = site.title,
+            leading = { Favicon(site.url, size = 28.dp) },
+            onLongClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                menu = true
+            },
+            onClick = { onOpen(site.url) },
+        )
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.home_open_new_tab)) },
-                leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, null) },
+                leadingIcon = { Icon(Icons.AutoMirrored.Rounded.OpenInNew, null) },
                 onClick = { menu = false; onOpenInNewTab(site.url) },
             )
             DropdownMenuItem(
                 text = { Text(removeLabel) },
-                leadingIcon = { Icon(Icons.Filled.Delete, null) },
+                leadingIcon = { Icon(Icons.Rounded.Delete, null) },
                 onClick = { menu = false; onRemove(site) },
             )
         }
+    }
+}
+
+private val previewSites = listOf(
+    HomeSite("https://tr.wikipedia.org/", "Vikipedi"),
+    HomeSite("https://www.youtube.com/", "YouTube"),
+    HomeSite("https://example.com/", "Example"),
+)
+
+@Preview(name = "Ana sayfa – koyu", showBackground = true, heightDp = 720, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Ana sayfa – açık", showBackground = true, heightDp = 720)
+@Preview(name = "Ana sayfa – büyük yazı", showBackground = true, heightDp = 720, fontScale = 2f)
+@Composable
+private fun HomePreview() {
+    GTarayiciTheme(mode = ThemeMode.SYSTEM) {
+        HomeScreen(false, previewSites, previewSites.take(2), {}, {}, {}, {}, {}, {})
+    }
+}
+
+@Preview(name = "Ana sayfa – gizli", showBackground = true, heightDp = 720)
+@Composable
+private fun HomePrivatePreview() {
+    GTarayiciTheme(mode = ThemeMode.SYSTEM, private = true) {
+        HomeScreen(true, emptyList(), emptyList(), {}, {}, {}, {}, {}, {})
     }
 }

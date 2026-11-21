@@ -40,6 +40,12 @@
     <!-- Ana sayfa -->
     <string name="home_shortcuts">Yer imleri</string>
     <string name="home_private_title">Gizli sekmedesiniz</string>
+    <string name="settings_section_protection">Koruma</string>
+    <string name="settings_section_connection">Bağlantı</string>
+    <string name="settings_section_locks">Kilitler</string>
+    <string name="settings_section_data">Veriler</string>
+    <string name="home_protection_on">Koruma açık · izleyiciler ve reklamlar engelleniyor</string>
+    <string name="home_empty_hint">Sık ziyaret ettiğiniz siteler ve yer imleriniz burada görünecek.</string>
     <string name="home_private_body">Bu sekmeyi kapattığınızda geçmiş, çerezler ve site verileri silinir. İndirdiğiniz dosyalar ve eklediğiniz yer imleri korunur.</string>
 
     <!-- Sekmeler -->

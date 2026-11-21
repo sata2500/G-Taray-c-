@@ -4,11 +4,7 @@ import com.gtarayici.browser.ui.components.isDefaultBrowser
 import com.gtarayici.browser.ui.components.rememberDefaultBrowserRequest
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.CompositionLocalProvider
@@ -30,6 +26,32 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.OpenInBrowser
+import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.FrontHand
+import androidx.compose.material.icons.rounded.Cookie
+import androidx.compose.material.icons.rounded.Dns
+import androidx.compose.material.icons.rounded.GppGood
+import androidx.compose.material.icons.rounded.Password
+import androidx.compose.material.icons.rounded.LockPerson
+import androidx.compose.material.icons.rounded.ScreenLockPortrait
+import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material.icons.rounded.Info
+import com.gtarayici.browser.ui.designsystem.NavRow
+import com.gtarayici.browser.ui.designsystem.SectionCard
+import com.gtarayici.browser.ui.designsystem.SectionHeader
+import com.gtarayici.browser.ui.designsystem.Spacing
+import com.gtarayici.browser.ui.designsystem.SwitchRow as DsSwitchRow
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Dns
@@ -136,18 +158,39 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
             if (page == null) {
                 SettingsSearchField(query) { query = it }
                 if (!searching) {
-                    SettingsPage.entries.forEach { entry ->
-                        ListItem(
-                            leadingContent = { Icon(entry.icon, null, tint = MaterialTheme.colorScheme.primary) },
-                            headlineContent = { Text(stringResource(entry.title)) },
-                            supportingContent = { Text(stringResource(entry.summary)) },
-                            modifier = Modifier.clickable { page = entry },
-                        )
-                    }
+                    Spacer(Modifier.height(Spacing.sm))
+                    SectionCard(
+                        SettingsPage.entries.map { entry ->
+                            { NavRow(stringResource(entry.title), stringResource(entry.summary), entry.icon) { page = entry } }
+                        },
+                    )
+                    Spacer(Modifier.height(Spacing.xl))
                 }
             }
             CompositionLocalProvider(LocalSettingsQuery provides if (searching) query.trim() else "") {
-                if (searching || page == SettingsPage.GENERAL) {
+                if (!searching && page == SettingsPage.GENERAL) {
+                    Spacer(Modifier.height(Spacing.sm))
+                    SectionCard(
+                        listOf(
+                            { NavRow(stringResource(R.string.settings_search_engine), engine.title, Icons.Rounded.Search) { engineDialog = true } },
+                            {
+                                NavRow(
+                                    stringResource(R.string.settings_default_browser),
+                                    stringResource(if (isDefault) R.string.settings_default_browser_active else R.string.settings_default_browser_summary),
+                                    Icons.Rounded.OpenInBrowser,
+                                ) { requestDefaultBrowser() }
+                            },
+                            {
+                                DsSwitchRow(
+                                    stringResource(R.string.settings_unload_tabs),
+                                    stringResource(R.string.settings_unload_tabs_summary),
+                                    unloadTabs,
+                                    Icons.Rounded.Bedtime,
+                                ) { settings.setUnloadInactiveTabs(it) }
+                            },
+                        ),
+                    )
+                } else if (searching) {
                 ClickRow(Icons.Filled.Search, stringResource(R.string.settings_search_engine), engine.title) {
                     engineDialog = true
                 }
@@ -184,7 +227,88 @@ fun SettingsScreen(onClearData: () -> Unit, onBack: () -> Unit) {
                     hideToolbar,
                 ) { settings.setHideToolbarOnScroll(it) }
                 }
-                if (searching || page == SettingsPage.PRIVACY) {
+                if (!searching && page == SettingsPage.PRIVACY) {
+                    SectionHeader(stringResource(R.string.settings_section_protection))
+                    SectionCard(
+                        listOf(
+                            {
+                                DsSwitchRow(stringResource(R.string.settings_strict_tracking), stringResource(R.string.settings_strict_tracking_summary), strict, Icons.Rounded.Shield) {
+                                    settings.setStrictTracking(it); components.applyPrivacySettings()
+                                }
+                            },
+                            {
+                                DsSwitchRow(stringResource(R.string.settings_https_only), stringResource(R.string.settings_https_only_summary), httpsOnly, Icons.Rounded.Lock) {
+                                    settings.setHttpsOnly(it); components.applyPrivacySettings()
+                                }
+                            },
+                            {
+                                DsSwitchRow(stringResource(R.string.settings_gpc), stringResource(R.string.settings_gpc_summary), gpc, Icons.Rounded.FrontHand) {
+                                    settings.setGlobalPrivacyControl(it); components.applyPrivacySettings()
+                                }
+                            },
+                            {
+                                DsSwitchRow(stringResource(R.string.settings_cookie_banner), stringResource(R.string.settings_cookie_banner_summary), cookieBanner, Icons.Rounded.Cookie) {
+                                    settings.setCookieBannerReject(it); components.applyPrivacySettings()
+                                }
+                            },
+                        ),
+                    )
+                    SectionHeader(stringResource(R.string.settings_section_connection))
+                    SectionCard(
+                        listOf(
+                            {
+                                NavRow(
+                                    stringResource(R.string.settings_dns),
+                                    if (dnsProvider == DnsProvider.CUSTOM) dnsCustom.ifBlank { dnsProvider.title } else dnsProvider.title,
+                                    Icons.Rounded.Dns,
+                                ) { dnsDialog = true }
+                            },
+                            if (dnsProvider != DnsProvider.OFF) {
+                                {
+                                    DsSwitchRow(stringResource(R.string.settings_dns_strict), stringResource(R.string.settings_dns_strict_summary), dnsStrict, Icons.Rounded.GppGood) {
+                                        settings.setDnsStrict(it); components.applyPrivacySettings()
+                                    }
+                                }
+                            } else null,
+                        ),
+                    )
+                    SectionHeader(stringResource(R.string.settings_section_locks))
+                    SectionCard(
+                        listOf(
+                            {
+                                NavRow(
+                                    stringResource(R.string.settings_app_password),
+                                    stringResource(if (components.appLock.hasPassword) R.string.settings_app_password_on else R.string.settings_app_password_off),
+                                    Icons.Rounded.Password,
+                                ) { passwordDialog = true }
+                            },
+                            {
+                                DsSwitchRow(stringResource(R.string.settings_lock_private), stringResource(R.string.settings_lock_private_summary), lockPrivate, Icons.Rounded.LockPerson) {
+                                    settings.setLockPrivateTabs(it)
+                                }
+                            },
+                            {
+                                DsSwitchRow(stringResource(R.string.settings_secure_private), stringResource(R.string.settings_secure_private_summary), securePrivate, Icons.Rounded.ScreenLockPortrait) {
+                                    settings.setSecurePrivateTabs(it)
+                                }
+                            },
+                        ),
+                    )
+                    SectionHeader(stringResource(R.string.settings_section_data))
+                    SectionCard(
+                        listOf(
+                            {
+                                NavRow(
+                                    stringResource(R.string.settings_clear_data),
+                                    stringResource(R.string.settings_clear_data_summary),
+                                    Icons.Rounded.CleaningServices,
+                                    showChevron = false,
+                                ) { clearDialog = true }
+                            },
+                        ),
+                    )
+                    Spacer(Modifier.height(Spacing.xl))
+                } else if (searching) {
                 SwitchRow(
                     stringResource(R.string.settings_strict_tracking),
                     stringResource(R.string.settings_strict_tracking_summary),
@@ -566,13 +690,13 @@ private fun <T> ChoiceDialog(
 
 /** Ayarlar ana sayfasındaki kategoriler. */
 private enum class SettingsPage(val icon: ImageVector, val title: Int, val summary: Int) {
-    GENERAL(Icons.Filled.Tune, R.string.settings_general, R.string.settings_page_general_summary),
-    APPEARANCE(Icons.Filled.Palette, R.string.settings_appearance, R.string.settings_page_appearance_summary),
-    PRIVACY(Icons.Filled.Shield, R.string.settings_privacy, R.string.settings_page_privacy_summary),
-    MEDIA(Icons.Filled.PlayCircle, R.string.settings_media, R.string.settings_page_media_summary),
-    UPDATES(Icons.Filled.SystemUpdate, R.string.settings_updates, R.string.settings_page_updates_summary),
-    ADVANCED(Icons.Filled.Build, R.string.settings_advanced, R.string.settings_page_advanced_summary),
-    ABOUT(Icons.Filled.Info, R.string.settings_about, R.string.settings_page_about_summary),
+    GENERAL(Icons.Rounded.Tune, R.string.settings_general, R.string.settings_page_general_summary),
+    APPEARANCE(Icons.Rounded.Palette, R.string.settings_appearance, R.string.settings_page_appearance_summary),
+    PRIVACY(Icons.Rounded.Shield, R.string.settings_privacy, R.string.settings_page_privacy_summary),
+    MEDIA(Icons.Rounded.PlayCircle, R.string.settings_media, R.string.settings_page_media_summary),
+    UPDATES(Icons.Rounded.SystemUpdate, R.string.settings_updates, R.string.settings_page_updates_summary),
+    ADVANCED(Icons.Rounded.Build, R.string.settings_advanced, R.string.settings_page_advanced_summary),
+    ABOUT(Icons.Rounded.Info, R.string.settings_about, R.string.settings_page_about_summary),
 }
 
 /** Ayarlarda arama: boş değilse yalnızca eşleşen satırlar gösterilir. */

@@ -4,6 +4,8 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
+import com.gtarayici.browser.ui.designsystem.AppShape
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -70,5 +72,11 @@ fun GTarayiciTheme(
         dark -> DarkColors
         else -> LightColors
     }
-    MaterialTheme(colorScheme = scheme, content = content)
+    MaterialTheme(
+        colorScheme = scheme,
+        // Material 3 Expressive hareket şeması: konum için yaylı, renk/opaklık için sönümlü geçişler.
+        motionScheme = MotionScheme.expressive(),
+        shapes = AppShape.material,
+        content = content,
+    )
 }

@@ -306,6 +306,7 @@ fun BrowserApp(
                                 onOpenInNewTab = { controller.loadUrl(it, inNewTab = true) },
                                 onHideFrequent = { controller.hideFrequentSite(it.url) },
                                 onRemoveBookmark = { controller.removeBookmark(it.url) },
+                                onProtectionClick = { controller.open(Overlay.SETTINGS) },
                             )
                         }
                     }
