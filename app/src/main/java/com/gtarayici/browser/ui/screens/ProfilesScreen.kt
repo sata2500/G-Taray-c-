@@ -1,5 +1,7 @@
 package com.gtarayici.browser.ui.screens
 
+import androidx.compose.foundation.selection.toggleable
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -205,13 +207,29 @@ private fun ProfileEditor(
                     onSelect = { color = it },
                 )
                 Spacer(Modifier.height(8.dp))
-                ListRow(
-                    leading = { Icon(Icons.Filled.Fingerprint, null) },
-                    headline = { Text(stringResource(R.string.profile_lock)) },
-                    supporting = { Text(stringResource(R.string.profile_lock_summary)) },
-                    trailing = { Switch(checked = locked, onCheckedChange = { locked = it }) },
-                    modifier = Modifier.clickable { locked = !locked },
-                )
+                // Pencere dar olduğu için açıklama anahtarın altında tam genişlikte (büyük yazıda dar sütuna sıkışıyordu).
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .toggleable(value = locked, role = androidx.compose.ui.semantics.Role.Switch) { locked = it }
+                        .padding(vertical = 8.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Fingerprint, null)
+                        Text(
+                            stringResource(R.string.profile_lock),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                        )
+                        Switch(checked = locked, onCheckedChange = null)
+                    }
+                    Text(
+                        stringResource(R.string.profile_lock_summary),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
                 if (onDelete != null) {
                     TextButton(onClick = { confirmDelete = true }) {
                         Text(stringResource(R.string.profile_delete), color = MaterialTheme.colorScheme.error)

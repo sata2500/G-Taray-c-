@@ -122,12 +122,11 @@ private fun RowLayout(
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
             if (!summary.isNullOrBlank()) {
+                // Açıklama satır sayısıyla sınırlanmaz: büyük yazıda 4 satırda kesilip anlamı kayboluyordu.
                 Text(
                     summary,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 4,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

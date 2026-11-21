@@ -298,9 +298,13 @@ private fun TabCounter(count: Int, hasPage: Boolean, onClick: () -> Unit, action
                 .border(1.75.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(6.dp)),
             contentAlignment = Alignment.Center,
         ) {
+            // Sayaç bir simgenin parçasıdır ve kutusu sabit boyutludur: rakam sistem yazı boyutuyla büyümez
+            // (büyük yazıda iki basamak kutudan taşıyordu). Ekran okuyucu sayıyı yine okur.
+            val digits = with(LocalDensity.current) { 11.dp.toSp() }
             Text(
                 text = if (count > 99) ":D" else count.toString(),
-                fontSize = 11.sp,
+                fontSize = digits,
+                lineHeight = digits,
                 fontWeight = FontWeight.Bold,
             )
         }

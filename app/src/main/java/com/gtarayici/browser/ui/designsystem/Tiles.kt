@@ -1,5 +1,8 @@
 package com.gtarayici.browser.ui.designsystem
 
+import androidx.compose.runtime.remember
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -70,9 +73,29 @@ fun Tile(
             }
         }
         Spacer(Modifier.height(Spacing.sm))
+        TileLabel(label)
+    }
+}
+
+/**
+ * Kutucuk etiketi: en fazla iki satır. Büyük yazıda tek bir kelime ("İndirilenler", "Wikipedia") kutu genişliğine
+ * sığmıyorsa kelimenin ortadan bölünmesi yerine yazı en çok %30 küçültülür.
+ */
+@Composable
+private fun TileLabel(label: String) {
+    val style = MaterialTheme.typography.labelMedium
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+        val available = constraints.maxWidth
+        val widest = remember(label, style, available) {
+            label.split(' ').filter { it.isNotEmpty() }.maxOfOrNull {
+                measurer.measure(it, style, softWrap = false, maxLines = 1).size.width
+            } ?: 0
+        }
+        val scale = if (widest > available && widest > 0) (available.toFloat() / widest).coerceAtLeast(MIN_LABEL_SCALE) else 1f
         Text(
             label,
-            style = MaterialTheme.typography.labelMedium,
+            style = if (scale < 1f) style.copy(fontSize = style.fontSize * scale, lineHeight = style.lineHeight * scale) else style,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
             minLines = 1,
@@ -81,6 +104,8 @@ fun Tile(
         )
     }
 }
+
+private const val MIN_LABEL_SCALE = 0.7f
 
 /** Kutucukları eşit genişlikte satırlara dizer; son satır boşluklarla tamamlanır. */
 @Composable

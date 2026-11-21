@@ -55,4 +55,7 @@ object Size {
     val icon = 24.dp
     val iconContainer = 40.dp
     val tile = 56.dp
+
+    /** Tam ekran sayfalarda içeriğin en fazla genişliği (yatay ekran ve tablette okunurluk için). */
+    val maxContentWidth = 720.dp
 }

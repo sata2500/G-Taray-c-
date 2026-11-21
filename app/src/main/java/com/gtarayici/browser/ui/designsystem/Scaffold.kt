@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
@@ -68,7 +69,11 @@ fun OverlayScaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
-        content(Modifier.padding(padding).fillMaxSize())
+        // Yatay ekranda ve tablette satırlar ekran boyunca uzamasın: içerik en fazla [Size.maxContentWidth] genişlikte,
+        // ortada durur (başlık ile açıklama arası çok uzayıp okunması zorlaşıyordu).
+        Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            content(Modifier.widthIn(max = Size.maxContentWidth).fillMaxSize())
+        }
     }
 }
 

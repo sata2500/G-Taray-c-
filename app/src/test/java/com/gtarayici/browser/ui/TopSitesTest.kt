@@ -52,4 +52,15 @@ class TopSitesTest {
         )
         assertEquals(listOf("Wikipedia (tr)", "Wikipedia (en)", "Youtube"), sites.map { it.title })
     }
+
+    @Test
+    fun siteTitleHandlesSecondLevelCountryDomains() {
+        assertEquals("Hurriyet", com.gtarayici.browser.ui.screens.siteTitle("hurriyet.com.tr"))
+        assertEquals("Bbc", com.gtarayici.browser.ui.screens.siteTitle("bbc.co.uk"))
+        assertEquals("Turkiye", com.gtarayici.browser.ui.screens.siteTitle("turkiye.gov.tr"))
+        assertEquals("Wikipedia", com.gtarayici.browser.ui.screens.siteTitle("tr.wikipedia.org"))
+        assertEquals("Youtube", com.gtarayici.browser.ui.screens.siteTitle("m.youtube.com"))
+        // İki harfli ama genel olmayan ikinci düzey: normal kural.
+        assertEquals("Example", com.gtarayici.browser.ui.screens.siteTitle("sub.example.de"))
+    }
 }

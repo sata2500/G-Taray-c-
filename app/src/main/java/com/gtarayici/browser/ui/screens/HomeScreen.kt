@@ -110,11 +110,22 @@ internal fun hostOf(url: String): String =
     runCatching { java.net.URI(url).host.orEmpty().removePrefix("www.") }.getOrDefault("")
 
 /** "m.youtube.com" → "Youtube" gibi kısa, okunur bir ad. */
-private fun siteTitle(host: String): String {
+internal fun siteTitle(host: String): String {
     val parts = host.removePrefix("m.").split('.')
-    val name = if (parts.size >= 2) parts[parts.size - 2] else parts.first()
+    // "hurriyet.com.tr", "bbc.co.uk" gibi iki parçalı ülke uzantılarında ad bir önceki parçadadır (önceden "Com" çıkıyordu).
+    val secondLevel = parts.size >= 3 && parts.last().length == 2 && parts[parts.size - 2] in SECOND_LEVEL_LABELS
+    val name = when {
+        secondLevel -> parts[parts.size - 3]
+        parts.size >= 2 -> parts[parts.size - 2]
+        else -> parts.first()
+    }
     return name.replaceFirstChar { it.titlecase() }
 }
+
+/** Ülke uzantılarının altındaki genel ikinci düzey adlar (com.tr, org.tr, gov.tr, co.uk, com.br…). */
+private val SECOND_LEVEL_LABELS = setOf(
+    "com", "org", "net", "gov", "edu", "co", "ac", "k12", "bel", "gen", "av", "web", "biz", "info", "tv", "pol", "tsk", "nom",
+)
 
 /** Boş sekmede görünen başlangıç sayfası. */
 @Composable
