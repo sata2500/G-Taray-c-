@@ -261,6 +261,15 @@ class MainActivity : AppCompatActivity() {
                 fileUploadsDirCleaner = components.fileUploadsDirCleaner,
                 isSuggestEmailMaskEnabled = { false },
                 isEmailMaskFeatureEnabled = { false },
+                // Parola kaydetme ve doldurma (bkz. passwords/).
+                loginValidationDelegate = components.geckoLogins.validation,
+                isLoginAutofillEnabled = { components.settings.autofillPasswords.value },
+                isSaveLoginEnabled = { components.settings.savePasswords.value },
+                loginExceptionStorage = components.geckoLogins.exceptions,
+                loginDelegate = object : mozilla.components.feature.prompts.login.LoginDelegate {
+                    override val loginPickerView = controller.loginPicker
+                    override val onManageLogins: () -> Unit = { controller.open(com.gtarayici.browser.ui.Overlay.PASSWORDS) }
+                },
                 onNeedToRequestPermissions = { requestPermissionsFor(promptFeature, it) },
             ),
             owner = this,

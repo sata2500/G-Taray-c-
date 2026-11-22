@@ -94,8 +94,22 @@ class Components(private val context: Context) {
             // addons.mozilla.org sitesinden doğrudan eklenti kurulabilsin.
             .extensionsWebAPIEnabled(true)
             .build()
-        GeckoRuntime.create(context, runtimeSettings)
+        GeckoRuntime.create(context, runtimeSettings).also {
+            // Parola kaydetme ve otomatik doldurma (kendi şifreli depomuz; bkz. passwords/).
+            it.autocompleteStorageDelegate = geckoLogins
+        }
     }
+
+    val passwords by lazy {
+        com.gtarayici.browser.passwords.PasswordStore(
+            context,
+            database.logins(),
+            com.gtarayici.browser.passwords.KeystoreLoginCipher(),
+            activeProfileId = { profiles.active.value.id },
+        )
+    }
+
+    val geckoLogins by lazy { com.gtarayici.browser.passwords.GeckoLoginStorage(passwords, settings, applicationScope) }
 
     /** Yükleme hatalarında hata sayfası gösterir ve hangi adreslerde gösterildiğini izler. */
     val errorPages by lazy { com.gtarayici.browser.engine.ErrorPageInterceptor(context) }

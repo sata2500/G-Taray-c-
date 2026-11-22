@@ -127,9 +127,55 @@ interface BookmarkDao {
     suspend fun clear(profileId: String)
 }
 
+/**
+ * Kayıtlı parola. Kullanıcı adı ve parola Android anahtar deposundaki anahtarla şifrelenmiş olarak tutulur
+ * (bkz. passwords/LoginCrypto); site adresi aramak için açık tutulur.
+ */
+@Entity(tableName = "logins", indices = [Index(value = ["profileId", "host"])])
+data class LoginRow(
+    @PrimaryKey val guid: String,
+    val profileId: String,
+    val origin: String,
+    val host: String,
+    val formActionOrigin: String?,
+    val httpRealm: String?,
+    val usernameField: String,
+    val passwordField: String,
+    val username: String,
+    val password: String,
+    val timesUsed: Long,
+    val timeCreated: Long,
+    val timeLastUsed: Long,
+    val timePasswordChanged: Long,
+)
+
+@Dao
+interface LoginDao {
+    @Query("SELECT * FROM logins WHERE profileId = :profileId ORDER BY host")
+    fun all(profileId: String): Flow<List<LoginRow>>
+
+    @Query("SELECT * FROM logins WHERE profileId = :profileId")
+    suspend fun allOnce(profileId: String): List<LoginRow>
+
+    @Query("SELECT * FROM logins")
+    suspend fun everything(): List<LoginRow>
+
+    @Query("SELECT * FROM logins WHERE guid = :guid")
+    suspend fun get(guid: String): LoginRow?
+
+    @Upsert
+    suspend fun upsert(row: LoginRow)
+
+    @Query("DELETE FROM logins WHERE guid = :guid")
+    suspend fun delete(guid: String)
+
+    @Query("DELETE FROM logins WHERE profileId = :profileId")
+    suspend fun clear(profileId: String)
+}
+
 @Database(
-    entities = [Profile::class, HistoryEntry::class, Bookmark::class],
-    version = 3,
+    entities = [Profile::class, HistoryEntry::class, Bookmark::class, LoginRow::class],
+    version = 4,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -139,11 +185,27 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun bookmarks(): BookmarkDao
 
+    abstract fun logins(): LoginDao
+
     companion object {
         fun create(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "gtarayici.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
+
+        /** v0.11: parola yöneticisi. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `logins` (`guid` TEXT NOT NULL, `profileId` TEXT NOT NULL, `origin` TEXT NOT NULL, " +
+                        "`host` TEXT NOT NULL, `formActionOrigin` TEXT, `httpRealm` TEXT, `usernameField` TEXT NOT NULL, " +
+                        "`passwordField` TEXT NOT NULL, `username` TEXT NOT NULL, `password` TEXT NOT NULL, " +
+                        "`timesUsed` INTEGER NOT NULL, `timeCreated` INTEGER NOT NULL, `timeLastUsed` INTEGER NOT NULL, " +
+                        "`timePasswordChanged` INTEGER NOT NULL, PRIMARY KEY(`guid`))",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_logins_profileId_host` ON `logins` (`profileId`, `host`)")
+            }
+        }
 
         /** v0.7: yer imi klasörleri. */
         val MIGRATION_2_3 = object : Migration(2, 3) {

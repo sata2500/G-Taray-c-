@@ -87,6 +87,8 @@ class AppSettings(context: Context) {
     private val dataSaverPref = enum("data_saver", DataSaverMode.AUTO)
     private val dataSaverImagesPref = bool("data_saver_block_images", false)
     private val cacheSizePref = enum("cache_size", CacheSize.MB_512)
+    private val savePasswordsPref = bool("save_passwords", true)
+    private val autofillPasswordsPref = bool("autofill_passwords", true)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -114,6 +116,8 @@ class AppSettings(context: Context) {
     val dataSaver get() = dataSaverPref.flow
     val dataSaverBlockImages get() = dataSaverImagesPref.flow
     val cacheSize get() = cacheSizePref.flow
+    val savePasswords get() = savePasswordsPref.flow
+    val autofillPasswords get() = autofillPasswordsPref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -141,6 +145,8 @@ class AppSettings(context: Context) {
     fun setDataSaver(value: DataSaverMode) = dataSaverPref.set(value)
     fun setDataSaverBlockImages(value: Boolean) = dataSaverImagesPref.set(value)
     fun setCacheSize(value: CacheSize) = cacheSizePref.set(value)
+    fun setSavePasswords(value: Boolean) = savePasswordsPref.set(value)
+    fun setAutofillPasswords(value: Boolean) = autofillPasswordsPref.set(value)
 
     /** Bağlamsal ipuçlarının kalıcı durumu (bkz. ui/feedback/Hints). */
     val hintStore = object : com.gtarayici.browser.ui.feedback.HintStore {

@@ -218,6 +218,7 @@ fun BrowserApp(
             // Sayfa değişince veya yüklenmeye başlayınca çubuk yeniden görünür.
             LaunchedEffect(pageUrl, current?.loading, barsVisibleOnly) { dynamic.show() }
             val bars: @Composable () -> Unit = {
+                com.gtarayici.browser.ui.components.LoginPickerBar(controller.loginPicker)
                 if (controller.findInPageOpen && pageUrl != null) {
                     FindInPageBar(onClose = { controller.closeFindInPage() })
                 }

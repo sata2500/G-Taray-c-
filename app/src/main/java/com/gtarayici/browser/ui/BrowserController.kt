@@ -19,7 +19,7 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.feature.readerview.ReaderViewFeature
 
 /** Tam ekran kaplayan ikincil ekranlar. */
-enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR, REPORT }
+enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR, REPORT, PASSWORDS }
 
 /**
  * Arayüzün tarayıcı üzerinde yaptığı işlemlerin tek giriş noktası. İşin kendisi parçalara ayrılmıştır
@@ -89,6 +89,9 @@ class BrowserController private constructor(
         get() = ctx.readerFeature
         set(value) { ctx.readerFeature = value }
     val readerControls get() = ctx.readerControls
+
+    /** Giriş formunda kayıtlı hesapları gösteren çubuk (motorun parola seçme isteği). */
+    val loginPicker = com.gtarayici.browser.ui.components.LoginPickerState()
 
     /** Sayfanın o anki tam çözünürlüklü görüntüsünü alır (etkinlik bağlar; gizli sekmede kullanılmaz). */
     var captureScreenshot: ((Bitmap?) -> Unit) -> Unit = { it(null) }

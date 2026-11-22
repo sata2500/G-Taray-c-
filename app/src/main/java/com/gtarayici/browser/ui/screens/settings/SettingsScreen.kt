@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.DataSaverOn
 import androidx.compose.material.icons.rounded.HideImage
 import androidx.compose.material.icons.rounded.NetworkCheck
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Key
 import androidx.compose.runtime.produceState
 import android.text.format.Formatter
 import com.gtarayici.browser.settings.CacheSize
@@ -94,14 +95,14 @@ enum class SettingsPage(val icon: ImageVector, val title: Int, val summary: Int)
 private enum class SettingsDialog { ENGINE, THEME, DNS, DNS_CUSTOM, PASSWORD, CLEAR_DATA, LOG, DATA_SAVER, CACHE_SIZE }
 
 @Composable
-fun SettingsScreen(onClearData: () -> Unit, onReport: () -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(onClearData: () -> Unit, onReport: () -> Unit, onBack: () -> Unit, onPasswords: () -> Unit = {}) {
     var page by rememberSaveable { mutableStateOf<SettingsPage?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
     BackHandler(enabled = page != null || query.isNotEmpty()) {
         if (query.isNotEmpty()) query = "" else page = null
     }
-    val pages = settingsPages(open = { dialog = it }, onReport = onReport)
+    val pages = settingsPages(open = { dialog = it }, onReport = onReport, onPasswords = onPasswords)
 
     OverlayScaffold(
         title = page?.let { stringResource(it.title) } ?: stringResource(R.string.menu_settings),
@@ -134,7 +135,7 @@ fun SettingsScreen(onClearData: () -> Unit, onReport: () -> Unit, onBack: () -> 
 
 /** Tüm sayfaların satırları; değerler ayarlardan canlı okunur. */
 @Composable
-private fun settingsPages(open: (SettingsDialog) -> Unit, onReport: () -> Unit): Map<SettingsPage, List<SettingSection>> {
+private fun settingsPages(open: (SettingsDialog) -> Unit, onReport: () -> Unit, onPasswords: () -> Unit): Map<SettingsPage, List<SettingSection>> {
     val context = LocalContext.current
     val components = context.components
     val settings = components.settings
@@ -251,6 +252,7 @@ private fun settingsPages(open: (SettingsDialog) -> Unit, onReport: () -> Unit):
             SettingSection(
                 s(R.string.settings_section_locks),
                 listOf(
+                    SettingItem.Action(s(R.string.passwords_title), s(R.string.passwords_summary), Icons.Rounded.Key, opensPage = true, onClick = onPasswords),
                     SettingItem.Action(
                         s(R.string.settings_app_password),
                         s(if (components.appLock.hasPassword) R.string.settings_app_password_on else R.string.settings_app_password_off),

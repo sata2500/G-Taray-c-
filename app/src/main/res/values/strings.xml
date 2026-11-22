@@ -654,6 +654,36 @@
     <string name="settings_cache_clear">Önbelleği temizle</string>
     <string name="settings_cache_clear_summary">Şu an %1$s. Çerezler, oturumlar ve geçmiş silinmez.</string>
     <string name="settings_cache_cleared">Önbellek temizlendi</string>
+    <string name="action_edit">Düzenle</string>
+    <string name="action_copy">Kopyala</string>
+    <string name="passwords_title">Parolalar</string>
+    <string name="passwords_summary">Kaydedilen parolalar, otomatik doldurma</string>
+    <string name="passwords_locked">Parolaları görmek için kimliğinizi doğrulayın</string>
+    <string name="passwords_unlock_biometric">Parmak izi, yüz veya ekran kilidiyle aç</string>
+    <string name="passwords_save">Parolaları kaydetmeyi öner</string>
+    <string name="passwords_save_summary">Bir sitede oturum açınca parolayı kaydetmek isteyip istemediğiniz sorulur</string>
+    <string name="passwords_autofill">Otomatik doldur</string>
+    <string name="passwords_autofill_summary">Giriş formunda kayıtlı hesap seçilebilir; tek hesap varsa kendiliğinden doldurulur</string>
+    <string name="passwords_empty">Henüz kayıtlı parola yok. Bir sitede oturum açtığınızda kaydetmeniz önerilir.</string>
+    <string name="passwords_add">Parola ekle</string>
+    <string name="passwords_edit">Parolayı düzenle</string>
+    <string name="passwords_site">Site</string>
+    <string name="passwords_username">Kullanıcı adı</string>
+    <string name="passwords_password">Parola</string>
+    <string name="passwords_no_username">(kullanıcı adı yok)</string>
+    <string name="passwords_show">Parolayı göster</string>
+    <string name="passwords_hide">Parolayı gizle</string>
+    <string name="passwords_open_site">Siteye git</string>
+    <string name="passwords_deleted">Parola silindi</string>
+    <string name="passwords_copied">Kopyalandı</string>
+    <string name="passwords_never_title">Parola kaydedilmeyen siteler</string>
+    <string name="passwords_never_remove">Listeden çıkar</string>
+    <string name="passwords_pick_title">Kayıtlı hesapla doldur</string>
+    <string name="passwords_manage">Parolalar</string>
+    <plurals name="passwords_count">
+        <item quantity="one">%d kayıtlı parola</item>
+        <item quantity="other">%d kayıtlı parola</item>
+    </plurals>
 </resources>
 
 

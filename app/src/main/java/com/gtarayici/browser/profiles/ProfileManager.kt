@@ -90,6 +90,7 @@ class ProfileManager(
         withContext(Dispatchers.IO) {
             database.history().clear(profile.id)
             database.bookmarks().clear(profile.id)
+            database.logins().clear(profile.id)
             database.profiles().delete(profile.id)
         }
     }
