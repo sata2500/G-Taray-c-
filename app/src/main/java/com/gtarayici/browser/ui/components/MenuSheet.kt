@@ -50,6 +50,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -106,27 +112,24 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
             if (state.hasPage) PageActions(state, controller)
             if (state.extensionActions.isNotEmpty()) ExtensionActions(state.extensionActions, controller)
 
-            // Sık kullanılan sayfalar: tek dokunuşla, kaydırmadan
-            val tiles = listOf(
-                MenuTileSpec(Icons.Rounded.Add, R.string.menu_tile_new_tab) { controller.newTab(private = false) },
-                MenuTileSpec(Icons.Rounded.VisibilityOff, R.string.menu_tile_private_tab) { controller.newTab(private = true) },
-                MenuTileSpec(Icons.Rounded.Bookmarks, R.string.menu_bookmarks) { controller.open(Overlay.BOOKMARKS) },
-                MenuTileSpec(Icons.Rounded.History, R.string.menu_history) { controller.open(Overlay.HISTORY) },
-                MenuTileSpec(Icons.Rounded.Download, R.string.menu_downloads) { controller.open(Overlay.DOWNLOADS) },
-                MenuTileSpec(Icons.Rounded.Extension, R.string.menu_extensions) { controller.open(Overlay.EXTENSIONS) },
-                MenuTileSpec(Icons.Rounded.VpnKey, R.string.menu_vpn) { controller.open(Overlay.VPN) },
-                MenuTileSpec(Icons.Rounded.Settings, R.string.menu_settings) { controller.open(Overlay.SETTINGS) },
-            )
-            TileGrid(columns = 4, count = tiles.size, modifier = Modifier.padding(horizontal = Spacing.sm)) { index, modifier ->
-                val tile = tiles[index]
-                Tile(stringResource(tile.label), modifier, icon = tile.icon, onClick = tile.onClick)
-            }
-
+            // Bu sayfa için: yalnızca o an işe yarayanlar (video, çeviri, okuma ayarları) ve en sık kullanılanlar.
+            // Seyrek kullanılan sayfa işlemleri "Diğer sayfa işlemleri" altında katlı durur.
             if (state.hasPage) {
+                var more by rememberSaveable { mutableStateOf(false) }
                 SectionCard(
                     listOf(
                         if (state.isYouTubeVideo) {
                             { MenuRow(Icons.Rounded.OndemandVideo, stringResource(R.string.menu_download_video)) { controller.openYouTubeDownload() } }
+                        } else null,
+                        if (state.canTranslate) {
+                            { MenuRow(Icons.Rounded.Translate, stringResource(R.string.menu_translate)) { controller.openTranslate() } }
+                        } else null,
+                        if (state.readerActive) {
+                            { MenuRow(Icons.Rounded.TextFields, stringResource(R.string.reader_settings)) { controller.openReaderSettings() } }
+                        } else null,
+                        { MenuRow(Icons.Rounded.FindInPage, stringResource(R.string.menu_find_in_page)) { controller.openFindInPage() } },
+                        if (!state.readerActive) {
+                            { MenuRow(Icons.Rounded.BookmarkAdd, stringResource(R.string.menu_save_for_later)) { controller.reading.saveForLater() } }
                         } else null,
                         {
                             MenuRow(Icons.Rounded.Download, stringResource(R.string.menu_page_downloads)) {
@@ -134,23 +137,6 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
                                 controller.pageDownloadsOpen = true
                             }
                         },
-                        if (state.canTranslate) {
-                            { MenuRow(Icons.Rounded.Translate, stringResource(R.string.menu_translate)) { controller.openTranslate() } }
-                        } else null,
-                        if (state.readerActive) {
-                            { MenuRow(Icons.Rounded.TextFields, stringResource(R.string.reader_settings)) { controller.openReaderSettings() } }
-                        } else null,
-                        if (!state.readerActive) {
-                            { MenuRow(Icons.Rounded.BookmarkAdd, stringResource(R.string.menu_save_for_later)) { controller.reading.saveForLater() } }
-                        } else null,
-                        if (!state.readerActive) {
-                            { MenuRow(Icons.Rounded.RecordVoiceOver, stringResource(R.string.menu_read_aloud)) { controller.reading.readAloud() } }
-                        } else null,
-                        { MenuRow(Icons.Rounded.FindInPage, stringResource(R.string.menu_find_in_page)) { controller.openFindInPage() } },
-                        { MenuRow(Icons.Rounded.Screenshot, stringResource(R.string.menu_screenshot)) { controller.reading.captureFullPage() } },
-                        { MenuRow(Icons.Rounded.PictureAsPdf, stringResource(R.string.menu_save_pdf)) { controller.reading.saveAsPdf() } },
-                        { MenuRow(Icons.Rounded.InstallMobile, stringResource(R.string.menu_install_app)) { controller.openInstallDialog() } },
-                        { MenuRow(Icons.Rounded.ContentCopy, stringResource(R.string.menu_copy_link)) { controller.copyLink() } },
                         {
                             SwitchRow(
                                 title = stringResource(R.string.menu_desktop_site),
@@ -159,17 +145,53 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
                                 iconStyle = RowIconStyle.Plain,
                             ) { controller.toggleDesktopMode() }
                         },
+                        {
+                            NavRow(
+                                title = stringResource(R.string.menu_more_page_actions),
+                                summary = if (more) null else stringResource(R.string.menu_more_page_actions_summary),
+                                icon = if (more) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                showChevron = false,
+                                iconStyle = RowIconStyle.Plain,
+                            ) { more = !more }
+                        },
+                        if (more && !state.readerActive) {
+                            { MenuRow(Icons.Rounded.RecordVoiceOver, stringResource(R.string.menu_read_aloud)) { controller.reading.readAloud() } }
+                        } else null,
+                        if (more) {
+                            { MenuRow(Icons.Rounded.Screenshot, stringResource(R.string.menu_screenshot)) { controller.reading.captureFullPage() } }
+                        } else null,
+                        if (more) {
+                            { MenuRow(Icons.Rounded.PictureAsPdf, stringResource(R.string.menu_save_pdf)) { controller.reading.saveAsPdf() } }
+                        } else null,
+                        if (more) {
+                            { MenuRow(Icons.Rounded.ContentCopy, stringResource(R.string.menu_copy_link)) { controller.copyLink() } }
+                        } else null,
+                        if (more) {
+                            { MenuRow(Icons.Rounded.InstallMobile, stringResource(R.string.menu_install_app)) { controller.openInstallDialog() } }
+                        } else null,
                     ),
                 )
             }
-            SectionCard(
-                listOf(
-                    { MenuRow(Icons.Rounded.AutoStories, stringResource(R.string.reading_list)) { controller.open(Overlay.READING) } },
-                    { MenuRow(Icons.Rounded.QrCodeScanner, stringResource(R.string.menu_scan_qr)) { controller.openQrScanner() } },
-                    { MenuRow(Icons.Rounded.ManageAccounts, stringResource(R.string.menu_profiles)) { controller.open(Overlay.PROFILES) } },
-                    { MenuRow(Icons.Rounded.BugReport, stringResource(R.string.menu_report)) { controller.openReport() } },
-                ),
+
+            // Uygulamanın bölümleri: tek dokunuşla, kaydırmadan
+            val tiles = listOf(
+                MenuTileSpec(Icons.Rounded.Add, R.string.menu_tile_new_tab) { controller.newTab(private = false) },
+                MenuTileSpec(Icons.Rounded.VisibilityOff, R.string.menu_tile_private_tab) { controller.newTab(private = true) },
+                MenuTileSpec(Icons.Rounded.Bookmarks, R.string.menu_bookmarks) { controller.open(Overlay.BOOKMARKS) },
+                MenuTileSpec(Icons.Rounded.History, R.string.menu_history) { controller.open(Overlay.HISTORY) },
+                MenuTileSpec(Icons.Rounded.Download, R.string.menu_downloads) { controller.open(Overlay.DOWNLOADS) },
+                MenuTileSpec(Icons.Rounded.AutoStories, R.string.menu_tile_reading) { controller.open(Overlay.READING) },
+                MenuTileSpec(Icons.Rounded.VpnKey, R.string.menu_vpn) { controller.open(Overlay.VPN) },
+                MenuTileSpec(Icons.Rounded.Settings, R.string.menu_settings) { controller.open(Overlay.SETTINGS) },
+                MenuTileSpec(Icons.Rounded.Extension, R.string.menu_extensions) { controller.open(Overlay.EXTENSIONS) },
+                MenuTileSpec(Icons.Rounded.ManageAccounts, R.string.menu_profiles) { controller.open(Overlay.PROFILES) },
+                MenuTileSpec(Icons.Rounded.QrCodeScanner, R.string.menu_tile_qr) { controller.openQrScanner() },
+                MenuTileSpec(Icons.Rounded.BugReport, R.string.menu_tile_report) { controller.openReport() },
             )
+            TileGrid(columns = 4, count = tiles.size, modifier = Modifier.padding(horizontal = Spacing.sm)) { index, modifier ->
+                val tile = tiles[index]
+                Tile(stringResource(tile.label), modifier, icon = tile.icon, onClick = tile.onClick)
+            }
         }
     }
 }

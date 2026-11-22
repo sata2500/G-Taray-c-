@@ -783,6 +783,11 @@
     <string name="screenshot_saved">Ekran görüntüsü Resimler/G-Tarayıcı klasörüne kaydedildi</string>
     <string name="screenshot_failed">Ekran görüntüsü alınamadı</string>
     <string name="pdf_saving">PDF hazırlanıyor; İndirilenler\'e kaydedilecek</string>
+    <string name="menu_more_page_actions">Diğer sayfa işlemleri</string>
+    <string name="menu_more_page_actions_summary">Sesli oku, ekran görüntüsü, PDF, bağlantıyı kopyala, uygulama olarak yükle</string>
+    <string name="menu_tile_reading">Okuma listesi</string>
+    <string name="menu_tile_qr">QR kod</string>
+    <string name="menu_tile_report">Sorun bildir</string>
 </resources>
 
 
