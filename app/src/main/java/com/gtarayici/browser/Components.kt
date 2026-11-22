@@ -184,6 +184,14 @@ class Components(private val context: Context) {
                 PromptMiddleware(),
                 // Sayfa çevirisi (Firefox'un cihaz üzerinde çalışan çeviri sistemi).
                 TranslationsMiddleware(engine, applicationScope, isTranslationsEnabled = { true }),
+                // PDF sonuç eylemleri tüketilmezse depo hata fırlatır; bkz. PdfResultMiddleware.
+                com.gtarayici.browser.engine.PdfResultMiddleware { success ->
+                    if (success) {
+                        messenger.success(com.gtarayici.browser.ui.feedback.UiText.res(R.string.pdf_saved))
+                    } else {
+                        messenger.error(com.gtarayici.browser.ui.feedback.UiText.res(R.string.pdf_failed))
+                    }
+                },
             ) + EngineMiddleware.create(engine),
         )
     }

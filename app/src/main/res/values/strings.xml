@@ -788,6 +788,8 @@
     <string name="menu_tile_reading">Okuma listesi</string>
     <string name="menu_tile_qr">QR kod</string>
     <string name="menu_tile_report">Sorun bildir</string>
+    <string name="pdf_saved">PDF hazır; İndirilenler\'e kaydediliyor</string>
+    <string name="pdf_failed">PDF oluşturulamadı. Sayfa tam yüklendikten sonra tekrar deneyin.</string>
 </resources>
 
 

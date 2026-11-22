@@ -60,8 +60,11 @@ class ReadingController(
     fun saveAsPdf() {
         ctx.ui.menuOpen = false
         val session = ctx.selectedTab?.engineState?.engineSession ?: return
-        session.requestPdfToDownload()
         ctx.messenger.info(UiText.res(R.string.pdf_saving))
+        runCatching { session.requestPdfToDownload() }.onFailure {
+            Diagnostics.error("pdf", it)
+            ctx.messenger.error(UiText.res(R.string.pdf_failed))
+        }
     }
 
     /** Sayfanın tamamının görüntüsü (çok uzun sayfalarda motor sınırlar); olmazsa görünen kısım. */
