@@ -18,6 +18,9 @@ let nativePort = null;
 function connectNative() {
   try {
     nativePort = browser.runtime.connectNative("gtarayici");
+    nativePort.onMessage.addListener((message) => {
+      if (message && message.type === "save-data") setSaveData(message.on === true);
+    });
     nativePort.onDisconnect.addListener(() => {
       nativePort = null;
       setTimeout(connectNative, 2000);
@@ -38,3 +41,22 @@ browser.runtime.onConnect.addListener((port) => {
     }
   });
 });
+
+// Veri tasarrufu: sitelere "Save-Data: on" başlığı (Firefox bunu kendisi göndermez). Dinleyici yalnızca
+// tasarruf açıkken kayıtlıdır; kapalıyken isteklere hiç dokunulmaz.
+function addSaveData(details) {
+  const headers = details.requestHeaders.filter((h) => h.name.toLowerCase() !== "save-data");
+  headers.push({ name: "Save-Data", value: "on" });
+  return { requestHeaders: headers };
+}
+function setSaveData(on) {
+  const listening = browser.webRequest.onBeforeSendHeaders.hasListener(addSaveData);
+  if (on && !listening) {
+    browser.webRequest.onBeforeSendHeaders.addListener(addSaveData, { urls: ["<all_urls>"] }, [
+      "blocking",
+      "requestHeaders",
+    ]);
+  } else if (!on && listening) {
+    browser.webRequest.onBeforeSendHeaders.removeListener(addSaveData);
+  }
+}

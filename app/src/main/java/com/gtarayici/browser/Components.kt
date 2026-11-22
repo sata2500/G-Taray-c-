@@ -182,7 +182,9 @@ class Components(private val context: Context) {
         )
     }
 
-    val extensions by lazy { ExtensionManager(context, engine, store, settings, applicationScope) }
+    val dataSaver by lazy { com.gtarayici.browser.network.DataSaver(context, settings, applicationScope) }
+
+    val extensions by lazy { ExtensionManager(context, engine, store, settings, applicationScope, dataSaver.active) }
 
     val mediaSessionFeature by lazy { MediaSessionFeature(context, MediaSessionService::class.java, store) }
 

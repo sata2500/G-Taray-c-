@@ -631,6 +631,28 @@
     <string name="report_sent">Bildiriminiz alındı (#%1$d). Teşekkürler!</string>
     <string name="report_send_failed">Bildirim gönderilemedi. İnternet bağlantınızı denetleyip yeniden deneyin ya da dosya olarak paylaşın.</string>
     <string name="report_rate_limited">Kısa sürede çok fazla bildirim gönderildi. Biraz sonra yeniden deneyin.</string>
+    <string name="settings_data_saver_page">Veri ve önbellek</string>
+    <string name="settings_page_data_summary">Veri tasarrufu, sayfa önbelleği</string>
+    <string name="settings_data_saver">Veri tasarrufu</string>
+    <string name="data_saver_off">Kapalı</string>
+    <string name="data_saver_auto">Mobil veride ve yavaş bağlantıda</string>
+    <string name="data_saver_on">Her zaman</string>
+    <string name="data_saver_now_on">şu an açık</string>
+    <string name="data_saver_now_off">şu an kapalı</string>
+    <string name="settings_data_saver_images">Resimleri yükleme</string>
+    <string name="settings_data_saver_images_summary">Veri tasarrufu açıkken sayfalardaki resimler indirilmez. En çok tasarruf sağlar ama bazı siteler bozuk görünebilir.</string>
+    <string name="data_saver_connection">Bağlantı</string>
+    <string name="data_saver_link_none">Bağlantı yok</string>
+    <string name="data_saver_link_metered">Kotalı (mobil veri)</string>
+    <string name="data_saver_link_unmetered">Kotasız (Wi-Fi)</string>
+    <string name="data_saver_link_slow">yavaş</string>
+    <string name="data_saver_link_system">Android veri tasarrufu açık</string>
+    <string name="settings_section_cache">Sayfa önbelleği</string>
+    <string name="settings_cache_size">Önbellek boyutu</string>
+    <string name="cache_size_auto">Otomatik (motorun seçimi)</string>
+    <string name="settings_cache_clear">Önbelleği temizle</string>
+    <string name="settings_cache_clear_summary">Şu an %1$s. Çerezler, oturumlar ve geçmiş silinmez.</string>
+    <string name="settings_cache_cleared">Önbellek temizlendi</string>
 </resources>
 
 

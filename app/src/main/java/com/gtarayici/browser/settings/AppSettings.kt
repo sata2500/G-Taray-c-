@@ -10,6 +10,12 @@ import kotlinx.coroutines.flow.asStateFlow
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** Veri tasarrufu: kapalı, ölçülü/yavaş bağlantıda kendiliğinden ya da her zaman açık. */
+enum class DataSaverMode { OFF, AUTO, ON }
+
+/** Sayfa önbelleğinin (HTTP disk önbelleği) en büyük boyutu; [AUTO] Gecko'nun kendi hesabıdır. */
+enum class CacheSize(val megabytes: Int) { AUTO(0), MB_256(256), MB_512(512), GB_1(1024), GB_2(2048) }
+
 /** DNS-over-HTTPS sağlayıcıları. [OFF] cihazın kendi DNS ayarını kullanır. */
 enum class DnsProvider(val title: String, val url: String) {
     OFF("Sistem varsayılanı", ""),
@@ -78,6 +84,9 @@ class AppSettings(context: Context) {
     private val hintsPref = bool("contextual_hints", true)
     private val diagnosticsPref = bool("diagnostics_log", true)
     private val crashPromptPref = bool("crash_prompt", true)
+    private val dataSaverPref = enum("data_saver", DataSaverMode.AUTO)
+    private val dataSaverImagesPref = bool("data_saver_block_images", false)
+    private val cacheSizePref = enum("cache_size", CacheSize.MB_512)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -102,6 +111,9 @@ class AppSettings(context: Context) {
     val contextualHints get() = hintsPref.flow
     val diagnosticsLog get() = diagnosticsPref.flow
     val crashPrompt get() = crashPromptPref.flow
+    val dataSaver get() = dataSaverPref.flow
+    val dataSaverBlockImages get() = dataSaverImagesPref.flow
+    val cacheSize get() = cacheSizePref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -126,6 +138,9 @@ class AppSettings(context: Context) {
     fun setContextualHints(value: Boolean) = hintsPref.set(value)
     fun setDiagnosticsLog(value: Boolean) = diagnosticsPref.set(value)
     fun setCrashPrompt(value: Boolean) = crashPromptPref.set(value)
+    fun setDataSaver(value: DataSaverMode) = dataSaverPref.set(value)
+    fun setDataSaverBlockImages(value: Boolean) = dataSaverImagesPref.set(value)
+    fun setCacheSize(value: CacheSize) = cacheSizePref.set(value)
 
     /** Bağlamsal ipuçlarının kalıcı durumu (bkz. ui/feedback/Hints). */
     val hintStore = object : com.gtarayici.browser.ui.feedback.HintStore {

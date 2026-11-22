@@ -25,4 +25,12 @@ object GeckoPrefs {
             null
         }
     }
+
+    /** Kullanıcı dalındaki değeri siler; tercih Gecko'nun varsayılanına döner. */
+    fun clear(name: String) {
+        GeckoPreferenceController.clearGeckoUserPref(name).exceptionally<Void> { error ->
+            logger.warn("Tercih sıfırlanamadı: $name", error)
+            null
+        }
+    }
 }

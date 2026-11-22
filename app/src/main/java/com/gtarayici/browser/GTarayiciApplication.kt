@@ -51,6 +51,7 @@ class GTarayiciApplication : Application() {
 
         components.engine.warmUp()
         components.applyGeckoPrefs()
+        components.dataSaver.start()
         initExtensions()
         components.vpn.restore()
         components.mediaSessionFeature.start()

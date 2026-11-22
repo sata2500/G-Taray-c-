@@ -34,6 +34,11 @@ import com.gtarayici.browser.ui.components.ToolbarState
 import com.gtarayici.browser.ui.components.VpnIndicator
 import com.gtarayici.browser.ui.components.ReaderIndicator
 import com.gtarayici.browser.ui.components.ToolbarActions
+import com.gtarayici.browser.ui.components.SwipeTab
+import com.gtarayici.browser.ui.components.TabSwipeLayer
+import com.gtarayici.browser.ui.components.TabSwipeState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
@@ -168,6 +173,25 @@ fun BrowserApp(
         locked = lockKey != null,
     )
 
+    // Araç çubuğunu kaydırınca sayfa parmakla birlikte kayar, komşu sekme yandan gelir.
+    val swipeScope = rememberCoroutineScope()
+    val latestTabs by rememberUpdatedState(profileTabs.filter { it.content.private == private })
+    val latestSelected by rememberUpdatedState(selectedTabId)
+    val tabSwipe = remember(controller) {
+        TabSwipeState(
+            scope = swipeScope,
+            thumbnails = components.tabThumbnails,
+            neighbors = {
+                val tabs = latestTabs
+                val index = tabs.indexOfFirst { it.id == latestSelected }
+                fun at(i: Int) = tabs.getOrNull(i)?.let { SwipeTab(it.id, it.content.title, it.content.url, it.content.private) }
+                if (index < 0) Triple(null, null, null) else Triple(at(index - 1), at(index), at(index + 1))
+            },
+            engineView = { controller.dynamicToolbar.engineView },
+            select = { components.tabsUseCases.selectTab(it) },
+        )
+    }
+
     val view = LocalView.current
     val darkChrome = private || isDarkTheme(themeMode)
     SideEffect {
@@ -232,7 +256,7 @@ fun BrowserApp(
                     ),
                     onReaderClick = { controller.toggleReader(current?.readerActive == true) },
                     actions = ToolbarActions(
-                        onSwipeTab = if (toolbarSwipe && pageUrl != null) { delta -> controller.switchAdjacentTab(delta) } else null,
+                        tabSwipe = tabSwipe.takeIf { toolbarSwipe && pageUrl != null && !pictureInPicture },
                         onNewTab = { controller.newTab(it) },
                         onCloseTab = { controller.closeCurrentTab() },
                         onCopyUrl = { controller.copyLink() },
@@ -254,7 +278,7 @@ fun BrowserApp(
                 Modifier.fillMaxSize().then(chrome).imePadding()
                     .semantics { if (covered) hideFromAccessibility() },
             ) {
-                Box(Modifier.weight(1f).clipToBounds()) {
+                Box(Modifier.weight(1f).clipToBounds().onSizeChanged { tabSwipe.width = it.width.toFloat() }) {
                     // Motor görünümü her zaman yerinde kalır; aksi halde bağlı özellikler serbest bırakılır.
                     // PiP sırasında da gizlenmez: sayfa çizilmeye devam etmeli (YouTube oynatıcısı buna bağlı).
                     AndroidView(factory = { engineView }, modifier = Modifier.keepSizeDuringPip(pictureInPicture))
@@ -274,6 +298,7 @@ fun BrowserApp(
                             )
                         }
                     }
+                    if (!pictureInPicture) TabSwipeLayer(tabSwipe)
                     if (floatingBars && !pictureInPicture) {
                         Column(
                             Modifier

@@ -311,19 +311,7 @@ class MainActivity : AppCompatActivity() {
                 context = this,
                 storage = components.permissionStorage,
                 fragmentManager = supportFragmentManager,
-                sitePermissionsRules = SitePermissionsRules(
-                    autoplayAudible = AutoplayAction.BLOCKED,
-                    autoplayInaudible = AutoplayAction.ALLOWED,
-                    camera = Action.ASK_TO_ALLOW,
-                    location = Action.ASK_TO_ALLOW,
-                    notification = Action.ASK_TO_ALLOW,
-                    microphone = Action.ASK_TO_ALLOW,
-                    persistentStorage = Action.ASK_TO_ALLOW,
-                    mediaKeySystemAccess = Action.ASK_TO_ALLOW,
-                    crossOriginStorageAccess = Action.ASK_TO_ALLOW,
-                    localDeviceAccess = Action.ASK_TO_ALLOW,
-                    localNetworkAccess = Action.ASK_TO_ALLOW,
-                ),
+                sitePermissionsRules = sitePermissionRules(components.dataSaver.active.value),
                 onNeedToRequestPermissions = { requestPermissionsFor(sitePermissionsFeature, it) },
                 onShouldShowRequestPermissionRationale = { shouldShowRequestPermissionRationale(it) },
                 store = store,
@@ -332,7 +320,27 @@ class MainActivity : AppCompatActivity() {
             owner = this,
             view = view,
         )
+        // Veri tasarrufunda sessiz videolar da kendiliğinden oynamaz (izin verilen siteler hariç).
+        lifecycleScope.launch {
+            components.dataSaver.active.collect { saving ->
+                sitePermissionsFeature.get()?.sitePermissionsRules = sitePermissionRules(saving)
+            }
+        }
     }
+
+    private fun sitePermissionRules(dataSaver: Boolean) = SitePermissionsRules(
+        autoplayAudible = AutoplayAction.BLOCKED,
+        autoplayInaudible = if (dataSaver) AutoplayAction.BLOCKED else AutoplayAction.ALLOWED,
+        camera = Action.ASK_TO_ALLOW,
+        location = Action.ASK_TO_ALLOW,
+        notification = Action.ASK_TO_ALLOW,
+        microphone = Action.ASK_TO_ALLOW,
+        persistentStorage = Action.ASK_TO_ALLOW,
+        mediaKeySystemAccess = Action.ASK_TO_ALLOW,
+        crossOriginStorageAccess = Action.ASK_TO_ALLOW,
+        localDeviceAccess = Action.ASK_TO_ALLOW,
+        localNetworkAccess = Action.ASK_TO_ALLOW,
+    )
 
     private fun <T> requestPermissionsFor(feature: ViewBoundFeatureWrapper<T>, permissions: Array<String>)
         where T : PermissionsFeature, T : mozilla.components.support.base.feature.LifecycleAwareFeature {

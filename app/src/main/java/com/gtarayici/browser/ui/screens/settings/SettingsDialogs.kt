@@ -37,6 +37,10 @@ import com.gtarayici.browser.components
 import com.gtarayici.browser.diagnostics.Diagnostics
 import com.gtarayici.browser.security.AppLock
 import com.gtarayici.browser.settings.ThemeMode
+import com.gtarayici.browser.settings.CacheSize
+import com.gtarayici.browser.settings.DataSaverMode
+import com.gtarayici.browser.network.DataSaverPolicy
+import com.gtarayici.browser.network.LinkInfo
 import com.gtarayici.browser.ui.designsystem.Spacing
 import com.gtarayici.browser.ui.feedback.InputValidation
 import com.gtarayici.browser.ui.feedback.UiText
@@ -81,6 +85,31 @@ fun themeLabel(mode: ThemeMode) = stringResource(
         ThemeMode.DARK -> R.string.theme_dark
     },
 )
+
+@Composable
+fun dataSaverLabel(mode: DataSaverMode) = stringResource(
+    when (mode) {
+        DataSaverMode.OFF -> R.string.data_saver_off
+        DataSaverMode.AUTO -> R.string.data_saver_auto
+        DataSaverMode.ON -> R.string.data_saver_on
+    },
+)
+
+@Composable
+fun cacheSizeLabel(size: CacheSize) =
+    if (size == CacheSize.AUTO) stringResource(R.string.cache_size_auto)
+    else if (size.megabytes >= 1024) "${size.megabytes / 1024} GB" else "${size.megabytes} MB"
+
+@Composable
+fun connectionLabel(link: LinkInfo?): String {
+    if (link == null) return stringResource(R.string.data_saver_link_none)
+    val parts = buildList {
+        add(stringResource(if (link.metered) R.string.data_saver_link_metered else R.string.data_saver_link_unmetered))
+        if (link.downstreamKbps in 1 until DataSaverPolicy.SLOW_KBPS) add(stringResource(R.string.data_saver_link_slow))
+        if (link.systemSaver) add(stringResource(R.string.data_saver_link_system))
+    }
+    return parts.joinToString(" · ")
+}
 
 /** Özel DNS-over-HTTPS adresi; yazarken denetlenir. */
 @Composable

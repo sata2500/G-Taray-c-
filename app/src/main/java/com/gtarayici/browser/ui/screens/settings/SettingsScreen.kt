@@ -16,6 +16,15 @@ import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Cookie
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Dns
+import androidx.compose.material.icons.rounded.DataSaverOn
+import androidx.compose.material.icons.rounded.HideImage
+import androidx.compose.material.icons.rounded.NetworkCheck
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.runtime.produceState
+import android.text.format.Formatter
+import com.gtarayici.browser.settings.CacheSize
+import com.gtarayici.browser.settings.DataSaverMode
+import mozilla.components.concept.engine.Engine
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.FrontHand
 import androidx.compose.material.icons.rounded.Fullscreen
@@ -75,13 +84,14 @@ enum class SettingsPage(val icon: ImageVector, val title: Int, val summary: Int)
     APPEARANCE(Icons.Rounded.Palette, R.string.settings_appearance, R.string.settings_page_appearance_summary),
     PRIVACY(Icons.Rounded.Shield, R.string.settings_privacy, R.string.settings_page_privacy_summary),
     MEDIA(Icons.Rounded.PlayCircle, R.string.settings_media, R.string.settings_page_media_summary),
+    DATA(Icons.Rounded.DataSaverOn, R.string.settings_data_saver_page, R.string.settings_page_data_summary),
     UPDATES(Icons.Rounded.SystemUpdate, R.string.settings_updates, R.string.settings_page_updates_summary),
     DIAGNOSTICS(Icons.Rounded.BugReport, R.string.diag_settings_title, R.string.diag_settings_summary),
     ABOUT(Icons.Rounded.Info, R.string.settings_about, R.string.settings_page_about_summary),
 }
 
 /** Açık pencere: her seferinde en fazla biri. */
-private enum class SettingsDialog { ENGINE, THEME, DNS, DNS_CUSTOM, PASSWORD, CLEAR_DATA, LOG }
+private enum class SettingsDialog { ENGINE, THEME, DNS, DNS_CUSTOM, PASSWORD, CLEAR_DATA, LOG, DATA_SAVER, CACHE_SIZE }
 
 @Composable
 fun SettingsScreen(onClearData: () -> Unit, onReport: () -> Unit, onBack: () -> Unit) {
@@ -152,6 +162,14 @@ private fun settingsPages(open: (SettingsDialog) -> Unit, onReport: () -> Unit):
     val diagnosticsOn by settings.diagnosticsLog.collectAsState()
     val crashPrompt by settings.crashPrompt.collectAsState()
     val updateState by components.updater.state.collectAsState()
+    val dataSaverMode by settings.dataSaver.collectAsState()
+    val dataSaverActive by components.dataSaver.active.collectAsState()
+    val dataSaverImages by settings.dataSaverBlockImages.collectAsState()
+    val cacheSize by settings.cacheSize.collectAsState()
+    val link by components.dataSaver.link.collectAsState()
+    // Önbellek boyutu temizlemeden sonra yeniden ölçülsün diye sürüm sayacı.
+    var cacheVersion by remember { mutableIntStateOf(0) }
+    val cacheBytes by produceState<Long?>(null, cacheVersion) { value = components.dataSaver.cacheBytes() }
     var isDefault by remember { mutableStateOf(isDefaultBrowser(context)) }
     val requestDefaultBrowser = rememberDefaultBrowserRequest { isDefault = it }
     // Kayıt satır sayısı: temizleme/geri alma sonrası yeniden okunsun diye sürüm sayacı.
@@ -277,6 +295,45 @@ private fun settingsPages(open: (SettingsDialog) -> Unit, onReport: () -> Unit):
                 ),
             ),
         ),
+        SettingsPage.DATA to listOf(
+            SettingSection(
+                null,
+                listOfNotNull(
+                    SettingItem.Action(
+                        s(R.string.settings_data_saver),
+                        "${dataSaverLabel(dataSaverMode)} · ${s(if (dataSaverActive) R.string.data_saver_now_on else R.string.data_saver_now_off)}",
+                        Icons.Rounded.DataSaverOn,
+                    ) { open(SettingsDialog.DATA_SAVER) },
+                    if (dataSaverMode != DataSaverMode.OFF) {
+                        SettingItem.Toggle(s(R.string.settings_data_saver_images), s(R.string.settings_data_saver_images_summary), Icons.Rounded.HideImage, dataSaverImages) {
+                            settings.setDataSaverBlockImages(it)
+                        }
+                    } else null,
+                    SettingItem.Info(s(R.string.data_saver_connection), connectionLabel(link), Icons.Rounded.NetworkCheck),
+                ),
+            ),
+            SettingSection(
+                s(R.string.settings_section_cache),
+                listOf(
+                    SettingItem.Action(s(R.string.settings_cache_size), cacheSizeLabel(cacheSize), Icons.Rounded.Storage) {
+                        open(SettingsDialog.CACHE_SIZE)
+                    },
+                    SettingItem.Action(
+                        s(R.string.settings_cache_clear),
+                        cacheBytes?.let { stringResource(R.string.settings_cache_clear_summary, Formatter.formatShortFileSize(context, it)) },
+                        Icons.Rounded.DeleteSweep,
+                    ) {
+                        components.engine.clearData(
+                            Engine.BrowsingData.allCaches(),
+                            onSuccess = {
+                                cacheVersion++
+                                components.messenger.success(UiText.res(R.string.settings_cache_cleared))
+                            },
+                        )
+                    },
+                ),
+            ),
+        ),
         SettingsPage.UPDATES to listOf(
             SettingSection(
                 null,
@@ -388,5 +445,19 @@ private fun SettingsDialogs(
         SettingsDialog.PASSWORD -> PasswordDialog(onDismiss)
         SettingsDialog.CLEAR_DATA -> ClearDataDialog(onConfirm = { onDismiss(); onClearData() }, onDismiss = onDismiss)
         SettingsDialog.LOG -> DiagnosticsLogDialog(onDismiss)
+        SettingsDialog.DATA_SAVER -> ChoiceDialog(
+            title = stringResource(R.string.settings_data_saver),
+            options = DataSaverMode.entries.map { it to dataSaverLabel(it) },
+            selected = settings.dataSaver.collectAsState().value,
+            onSelect = { settings.setDataSaver(it); onDismiss() },
+            onDismiss = onDismiss,
+        )
+        SettingsDialog.CACHE_SIZE -> ChoiceDialog(
+            title = stringResource(R.string.settings_cache_size),
+            options = CacheSize.entries.map { it to cacheSizeLabel(it) },
+            selected = settings.cacheSize.collectAsState().value,
+            onSelect = { settings.setCacheSize(it); onDismiss() },
+            onDismiss = onDismiss,
+        )
     }
 }

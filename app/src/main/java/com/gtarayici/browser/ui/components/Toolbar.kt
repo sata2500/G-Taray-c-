@@ -1,9 +1,9 @@
 package com.gtarayici.browser.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ContentCopy
@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -97,10 +96,7 @@ fun BottomToolbar(
     actions: ToolbarActions = ToolbarActions(),
 ) {
     val haptics = LocalHapticFeedback.current
-    val threshold = with(LocalDensity.current) { 64.dp.toPx() }
-    var drag by remember { mutableFloatStateOf(0f) }
-    val shift by animateFloatAsState(drag, label = "toolbar-swipe")
-    val swipe = actions.onSwipeTab
+    val swipe = actions.tabSwipe
     Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
         Column {
             if (state.loading) {
@@ -118,18 +114,18 @@ fun BottomToolbar(
                     // Araç çubuğunu yana kaydırmak komşu sekmeye geçer.
                     .then(
                         if (swipe == null) Modifier else Modifier.pointerInput(swipe) {
+                            val velocity = VelocityTracker()
                             detectHorizontalDragGestures(
-                                onDragEnd = {
-                                    if (abs(drag) > threshold) {
-                                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        swipe(if (drag < 0) 1 else -1)
-                                    }
-                                    drag = 0f
+                                onDragStart = {
+                                    velocity.resetTracking()
+                                    swipe.start()
                                 },
-                                onDragCancel = { drag = 0f },
+                                onDragEnd = { swipe.end(velocity.calculateVelocity().x) },
+                                onDragCancel = { swipe.cancel() },
                             ) { change, amount ->
                                 change.consume()
-                                drag = (drag + amount).coerceIn(-threshold * 2, threshold * 2)
+                                velocity.addPosition(change.uptimeMillis, change.position)
+                                if (swipe.drag(amount)) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
                         },
                     )
@@ -150,8 +146,11 @@ fun BottomToolbar(
                     onReaderClick,
                     actions,
                     Modifier.weight(1f).graphicsLayer {
-                        translationX = shift * 0.4f
-                        alpha = 1f - (abs(shift) / (threshold * 4)).coerceAtMost(0.4f)
+                        // Adres alanı sayfayla birlikte kayar ve geçiş noktasına yaklaştıkça soluklaşır.
+                        // Konum çizim aşamasında okunur; kaydırma sırasında araç çubuğu yeniden oluşturulmaz.
+                        val shift = swipe?.shift ?: 0f
+                        translationX = shift * 0.5f
+                        alpha = 1f - (abs(shift) / size.width.coerceAtLeast(1f)).coerceAtMost(0.6f)
                     },
                 )
                 if (state.vpn != VpnIndicator.OFF) {
@@ -333,8 +332,8 @@ private fun TabCounter(count: Int, hasPage: Boolean, onClick: () -> Unit, action
 
 /** Araç çubuğundaki hareket ve uzun basma işlemleri. */
 data class ToolbarActions(
-    /** Komşu sekmeye geç (+1 sonraki, -1 önceki); null ise kaydırma kapalıdır. */
-    val onSwipeTab: ((Int) -> Unit)? = null,
+    /** Kaydırarak komşu sekmeye geçiş; null ise kaydırma kapalıdır. */
+    val tabSwipe: TabSwipeState? = null,
     val onNewTab: (private: Boolean) -> Unit = {},
     val onCloseTab: () -> Unit = {},
     val onCopyUrl: () -> Unit = {},

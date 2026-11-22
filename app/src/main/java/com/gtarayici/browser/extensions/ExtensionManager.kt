@@ -37,6 +37,8 @@ class ExtensionManager(
     private val store: BrowserStore,
     private val settings: AppSettings,
     private val scope: CoroutineScope,
+    /** Veri tasarrufu açıkken yardımcı eklenti sitelere `Save-Data: on` başlığını gönderir. */
+    private val saveData: StateFlow<Boolean> = MutableStateFlow(false),
 ) {
     private val logger = Logger("ExtensionManager")
     private val prefs = context.getSharedPreferences("gtarayici_extensions", Context.MODE_PRIVATE)
@@ -126,8 +128,25 @@ class ExtensionManager(
         )
     }
 
+    /** Yardımcı eklentinin arka plan betiğine açık bağlantı; ayar değişiklikleri buradan iletilir. */
+    private var helperPort: Port? = null
+
+    private fun postSaveData(port: Port? = helperPort) {
+        runCatching { port?.postMessage(JSONObject().put("type", "save-data").put("on", saveData.value)) }
+    }
+
     private fun registerHelperMessages(extension: WebExtension) {
+        scope.launch { saveData.collect { postSaveData() } }
         val handler = object : MessageHandler {
+            override fun onPortConnected(port: Port) {
+                helperPort = port
+                postSaveData(port)
+            }
+
+            override fun onPortDisconnected(port: Port) {
+                if (helperPort == port) helperPort = null
+            }
+
             override fun onPortMessage(message: Any, port: Port) {
                 val json = message as? JSONObject ?: return
                 if (json.optString("type") == "video-rect") {
