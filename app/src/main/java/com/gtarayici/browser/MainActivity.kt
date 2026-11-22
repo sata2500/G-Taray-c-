@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity() {
         controller.captureScreenshot = { onResult -> engineView.captureThumbnail { onResult(it) } }
         scrollContainer = ScrollTrackingLayout(this, engineView, controller.dynamicToolbar, swipeRefresh)
         setupFeatures()
+        com.gtarayici.browser.diagnostics.StartupTimer.watch(this, components.store, lifecycleScope)
         lifecycleScope.launch {
             components.settings.pullToRefresh.collect { updatePullToRefresh() }
         }
