@@ -118,6 +118,17 @@ fun SiteInfoSheet(tabId: String, onDismiss: () -> Unit) {
                 modifier = Modifier.clickable { setProtection(components, tabId, exception) },
             )
 
+            if (url.startsWith("http")) {
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                Text(
+                    stringResource(R.string.site_for_this_site),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                )
+                SiteControls(current)
+            }
+
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             ListRow(
                 leading = { Icon(Icons.Filled.Cookie, null) },

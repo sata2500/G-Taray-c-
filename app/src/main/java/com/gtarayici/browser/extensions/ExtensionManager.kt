@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.drop
 import mozilla.components.browser.state.action.WebExtensionAction
 import mozilla.components.browser.state.state.extension.WebExtensionPromptRequest
 import mozilla.components.browser.state.store.BrowserStore
@@ -75,7 +76,37 @@ class ExtensionManager(
         installBundledUBlockOnce()
         refresh()
         updateIfDue()
+        // "Sitelere karanlık tema" ayarı Dark Reader eklentisini kurar/açar/kapatır.
+        scope.launch { settings.darkSites.drop(1).collect { applyDarkReader(it) } }
     }
+
+    /**
+     * Dark Reader'ı ayara göre açar veya kapatır. Kurulu değilse addons.mozilla.org'dan kurulur (kullanıcı ayarı
+     * kendisi açtığı için izin istemi sorulmadan onaylanır). Kapatınca eklenti kaldırılmaz, yalnızca devre dışı kalır.
+     */
+    private fun applyDarkReader(enabled: Boolean) {
+        engine.listInstalledWebExtensions(onSuccess = { list ->
+            val existing = list.firstOrNull { it.id == DARK_READER_ID }
+            when {
+                existing != null -> if (existing.isEnabled() != enabled) setEnabled(existing, enabled)
+                enabled -> {
+                    autoApprove += DARK_READER_ID
+                    install(DARK_READER_URL) { result ->
+                        result.onSuccess { setAllowedInPrivate(it, true) }
+                            .onFailure {
+                                logger.warn("Dark Reader kurulamadı", it)
+                                autoApprove -= DARK_READER_ID
+                                settings.setDarkSites(false)
+                                onDarkReaderFailed(it)
+                            }
+                    }
+                }
+            }
+        })
+    }
+
+    /** Dark Reader kurulamazsa (ör. internet yok) arayüze bildirilir. */
+    var onDarkReaderFailed: (Throwable) -> Unit = {}
 
     fun refresh() {
         engine.listInstalledWebExtensions(
@@ -212,6 +243,8 @@ class ExtensionManager(
     companion object {
         const val HELPER_ID = "helper@gtarayici.app"
         const val UBLOCK_ID = "uBlock0@raymondhill.net"
+        const val DARK_READER_ID = "addon@darkreader.org"
+        private const val DARK_READER_URL = "https://addons.mozilla.org/firefox/downloads/latest/darkreader/latest.xpi"
         const val NATIVE_APP = "gtarayici"
         const val AMO_ANDROID_URL = "https://addons.mozilla.org/android/"
         private const val UBLOCK_AMO_URL = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"

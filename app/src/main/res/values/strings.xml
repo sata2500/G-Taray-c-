@@ -719,6 +719,33 @@
     <plurals name="backup_n_vpn"><item quantity="one">%d VPN sunucusu</item><item quantity="other">%d VPN sunucusu</item></plurals>
     <plurals name="backup_bookmarks_imported"><item quantity="one">%d yer imi içe aktarıldı</item><item quantity="other">%d yer imi içe aktarıldı</item></plurals>
     <plurals name="backup_bookmarks_exported"><item quantity="one">%d yer imi dışa aktarıldı</item><item quantity="other">%d yer imi dışa aktarıldı</item></plurals>
+    <string name="site_for_this_site">Bu site için</string>
+    <string name="site_text_size">Yazı boyutu</string>
+    <string name="site_text_size_default">Genel ayar kullanılıyor</string>
+    <string name="site_text_size_custom">Bu siteye özel</string>
+    <string name="site_text_size_reset">Genel ayara dön (%%%1$d)</string>
+    <string name="site_text_smaller">Yazıyı küçült</string>
+    <string name="site_text_larger">Yazıyı büyüt</string>
+    <string name="site_desktop">Masaüstü görünümü</string>
+    <string name="site_desktop_summary">Bu site her açıldığında hatırlanır</string>
+    <string name="site_perm_camera">Kamera</string>
+    <string name="site_perm_microphone">Mikrofon</string>
+    <string name="site_perm_location">Konum</string>
+    <string name="site_perm_notification">Bildirimler</string>
+    <string name="site_perm_autoplay">Sesli otomatik oynatma</string>
+    <string name="site_perm_allowed">İzin verildi</string>
+    <string name="site_perm_blocked">Engellendi</string>
+    <string name="site_perm_autoplay_blocked">Engelli (videolar dokununca başlar)</string>
+    <string name="settings_text_zoom">Sayfalarda yazı boyutu</string>
+    <string name="settings_dark_sites">Sitelere karanlık tema</string>
+    <string name="settings_dark_sites_summary">Karanlık teması olmayan siteler de karartılır (Dark Reader eklentisi kurulur)</string>
+    <string name="settings_site_prefs">Siteye özel ayarlar</string>
+    <string name="settings_site_prefs_none">Henüz yok; site bilgisi penceresinden ayarlanır</string>
+    <string name="settings_site_prefs_empty">Hiçbir siteye özel yazı boyutu veya masaüstü görünümü ayarlanmamış. Adres çubuğundaki kilit simgesine dokunup "Bu site için" bölümünden ayarlayabilirsiniz.</string>
+    <string name="site_prefs_zoom">Yazı %%%1$d</string>
+    <string name="site_prefs_reset">Sıfırla</string>
+    <plurals name="settings_site_prefs_count"><item quantity="one">%d site</item><item quantity="other">%d site</item></plurals>
+    <string name="dark_reader_failed">Dark Reader kurulamadı. İnternet bağlantınızı denetleyip ayarı yeniden açın.</string>
 </resources>
 
 

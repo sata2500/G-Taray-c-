@@ -69,7 +69,10 @@ class PageController(private val ctx: ControllerContext, private val tabs: TabAc
 
     override fun toggleDesktopMode() {
         val tab = ctx.selectedTab ?: return
-        components.sessionUseCases.requestDesktopSite(!tab.content.desktopMode, tab.id)
+        val enable = !tab.content.desktopMode
+        // Seçim siteye kaydedilir: bu siteye sonra (başka sekmede de) masaüstü görünümüyle girilir.
+        components.siteSettings.setDesktop(tab.content.url, enable)
+        components.sessionUseCases.requestDesktopSite(enable, tab.id)
         ctx.ui.menuOpen = false
     }
 

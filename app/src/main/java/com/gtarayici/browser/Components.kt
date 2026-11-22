@@ -109,6 +109,12 @@ class Components(private val context: Context) {
         )
     }
 
+    val siteSettings by lazy { com.gtarayici.browser.sites.SiteSettings(context) }
+
+    val siteSettingsApplier by lazy {
+        com.gtarayici.browser.sites.SiteSettingsApplier(context, store, engine, siteSettings, settings, sessionUseCases, applicationScope)
+    }
+
     val backup by lazy { com.gtarayici.browser.backup.BackupManager(context, this) }
 
     val geckoLogins by lazy { com.gtarayici.browser.passwords.GeckoLoginStorage(passwords, settings, applicationScope) }
@@ -123,7 +129,7 @@ class Components(private val context: Context) {
             globalPrivacyControlEnabled = settings.globalPrivacyControl.value
             queryParameterStripping = true
             queryParameterStrippingPrivateBrowsing = true
-            preferredColorScheme = PreferredColorScheme.System
+            preferredColorScheme = colorScheme(settings.theme.value)
             supportMultipleWindows = true
             javaScriptCanOpenWindowsAutomatically = false
             remoteDebuggingEnabled = BuildConfig.DEBUG
@@ -256,6 +262,18 @@ class Components(private val context: Context) {
             target.dohSettingsMode =
                 if (settings.dnsStrict.value) Engine.DohSettingsMode.MAX else Engine.DohSettingsMode.INCREASED
         }
+    }
+
+    /** Siteler uygulamanın temasını izler (uygulama karanlıksa karanlık temalı siteler de karanlık açılır). */
+    private fun colorScheme(theme: com.gtarayici.browser.settings.ThemeMode) = when (theme) {
+        com.gtarayici.browser.settings.ThemeMode.SYSTEM -> PreferredColorScheme.System
+        com.gtarayici.browser.settings.ThemeMode.LIGHT -> PreferredColorScheme.Light
+        com.gtarayici.browser.settings.ThemeMode.DARK -> PreferredColorScheme.Dark
+    }
+
+    /** Tema değişince sitelerin renk düzeni de değişir. */
+    fun applyColorScheme() {
+        engine.settings.preferredColorScheme = colorScheme(settings.theme.value)
     }
 
     private fun trackingPolicy(strict: Boolean) =

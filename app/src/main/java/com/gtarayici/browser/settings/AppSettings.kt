@@ -62,6 +62,9 @@ class AppSettings(context: Context) {
     private fun bool(key: String, default: Boolean) =
         Pref(key, default, { k, d -> getBoolean(k, d) }, { k, v -> putBoolean(k, v) })
 
+    private fun int(key: String, default: Int) =
+        Pref(key, default, { k, d -> getInt(k, d) }, { k, v -> putInt(k, v) })
+
     private fun string(key: String, default: String) =
         Pref(key, default, { k, d -> getString(k, d) ?: d }, { k, v -> putString(k, v) })
 
@@ -100,6 +103,8 @@ class AppSettings(context: Context) {
     private val cacheSizePref = enum("cache_size", CacheSize.MB_512)
     private val savePasswordsPref = bool("save_passwords", true)
     private val autofillPasswordsPref = bool("autofill_passwords", true)
+    private val textZoomPref = int("text_zoom", 100)
+    private val darkSitesPref = bool("dark_sites", false)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -129,6 +134,10 @@ class AppSettings(context: Context) {
     val cacheSize get() = cacheSizePref.flow
     val savePasswords get() = savePasswordsPref.flow
     val autofillPasswords get() = autofillPasswordsPref.flow
+    /** Sayfalardaki yazıların genel boyutu (yüzde); siteye özel boyut bunu geçersiz kılar. */
+    val textZoom get() = textZoomPref.flow
+    /** Karanlık teması olmayan sitelere de karanlık tema (Dark Reader eklentisiyle). */
+    val darkSites get() = darkSitesPref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -158,6 +167,8 @@ class AppSettings(context: Context) {
     fun setCacheSize(value: CacheSize) = cacheSizePref.set(value)
     fun setSavePasswords(value: Boolean) = savePasswordsPref.set(value)
     fun setAutofillPasswords(value: Boolean) = autofillPasswordsPref.set(value)
+    fun setTextZoom(value: Int) = textZoomPref.set(value)
+    fun setDarkSites(value: Boolean) = darkSitesPref.set(value)
 
     /** Yedek için ayarların ham hali (anahtar → değer). */
     fun exportAll(): Map<String, Any?> = prefs.all.toMap()

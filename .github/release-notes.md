@@ -1,14 +1,16 @@
-## G-Tarayıcı 0.11.0
+## G-Tarayıcı 0.12.0
 
-**Parola yöneticisi** (Ayarlar → Gizlilik → Parolalar)
-- Bir sitede oturum açınca parolayı kaydetmek isteyip istemediğiniz sorulur ("Bu sitede asla" da seçilebilir).
-- Giriş formuna dokununca kayıtlı hesaplar alttaki çubukta çıkar; tek hesap varsa kendiliğinden doldurulur.
-- Parolalar telefonda, Android'in donanım anahtar deposundaki anahtarla şifreli tutulur; hiçbir sunucuya gitmez.
-- Parolalar ekranı parmak izi, yüz ya da ekran kilidiyle açılır: arama, parolayı gösterme/kopyalama (pano
-  önizlemesinde gizli), düzenleme, elle ekleme, silme (geri alınabilir). Her profilin parolaları ayrıdır.
+**Siteye özel ayarlar** (adres çubuğundaki kilit simgesi → "Bu site için")
+- Yazı boyutu: her site için ayrı büyütülüp küçültülebilir; site açıldığında hatırlanır.
+- Masaüstü görünümü: bir sitede açınca o site her açıldığında masaüstü görünümüyle gelir (menüdeki düğme de hatırlar).
+- Site izinleri: kamera, mikrofon, konum, bildirim ve sesli otomatik oynatma buradan açılıp kapatılabilir.
+- Ayarlar → Görünüm → Siteye özel ayarlar: ayarlanmış siteleri görme ve sıfırlama.
 
-**Yedekleme ve taşıma** (Ayarlar → Genel)
-- Yer imleri, ayarlar, profiller, VPN sunucuları ve isteğe bağlı geçmiş tek dosyaya yedeklenir.
-- Yedeğe parola verilirse dosya şifrelenir (AES-256) ve kayıtlı parolalar da yedeğe girer.
-- Geri yükleme hiçbir şeyi silmez; yalnızca eksik olanları ekler.
-- Chrome, Firefox, Samsung ve Edge'den yer imleri içe aktarılabilir (HTML); yer imleri HTML olarak dışa da aktarılabilir.
+**Görünüm**
+- Sayfalarda yazı boyutu (genel): tüm siteler için; telefonun yazı boyutu ayarıyla birlikte çalışır.
+- Siteler uygulamanın temasını izler: uygulama karanlıksa karanlık teması olan siteler de karanlık açılır.
+- Sitelere karanlık tema: açınca karanlık teması olmayan siteler de karartılır (Dark Reader eklentisi kendiliğinden
+  kurulur; kapatınca devre dışı kalır).
+
+**Tanılama**
+- Soğuk açılış süresi (ilk kare ve ilk sayfa içeriği) tanılama kaydına yazılır.

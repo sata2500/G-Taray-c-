@@ -52,6 +52,8 @@ class GTarayiciApplication : Application() {
         components.engine.warmUp()
         components.applyGeckoPrefs()
         components.dataSaver.start()
+        components.siteSettingsApplier.start()
+        components.applicationScope.launch { components.settings.theme.collect { components.applyColorScheme() } }
         initExtensions()
         components.vpn.restore()
         components.mediaSessionFeature.start()
@@ -109,6 +111,9 @@ class GTarayiciApplication : Application() {
     }
 
     private fun initExtensions() {
+        components.extensions.onDarkReaderFailed = {
+            components.messenger.error(com.gtarayici.browser.ui.feedback.UiText.res(R.string.dark_reader_failed))
+        }
         try {
             WebExtensionSupport.initialize(
                 runtime = components.engine,
@@ -144,6 +149,12 @@ class GTarayiciApplication : Application() {
                 .whenGoingToBackground()
                 .whenSessionsChange()
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Telefonun yazı ölçeği değişirse sayfalardaki yazı boyutu da güncellenir.
+        if (isMainProcess()) components.siteSettingsApplier.onConfigurationChanged()
     }
 
     override fun onTrimMemory(level: Int) {

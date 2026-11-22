@@ -20,6 +20,9 @@ import androidx.compose.material.icons.rounded.DataSaverOn
 import androidx.compose.material.icons.rounded.HideImage
 import androidx.compose.material.icons.rounded.NetworkCheck
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.TextFields
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.runtime.produceState
 import android.text.format.Formatter
@@ -92,7 +95,7 @@ enum class SettingsPage(val icon: ImageVector, val title: Int, val summary: Int)
 }
 
 /** Açık pencere: her seferinde en fazla biri. */
-private enum class SettingsDialog { ENGINE, THEME, DNS, DNS_CUSTOM, PASSWORD, CLEAR_DATA, LOG, DATA_SAVER, CACHE_SIZE }
+private enum class SettingsDialog { ENGINE, THEME, DNS, DNS_CUSTOM, PASSWORD, CLEAR_DATA, LOG, DATA_SAVER, CACHE_SIZE, TEXT_ZOOM, SITES }
 
 @Composable
 fun SettingsScreen(onClearData: () -> Unit, onReport: () -> Unit, onBack: () -> Unit, onPasswords: () -> Unit = {}) {
@@ -170,6 +173,9 @@ private fun settingsPages(
     val diagnosticsOn by settings.diagnosticsLog.collectAsState()
     val crashPrompt by settings.crashPrompt.collectAsState()
     val updateState by components.updater.state.collectAsState()
+    val textZoom by settings.textZoom.collectAsState()
+    val darkSites by settings.darkSites.collectAsState()
+    val customSites by components.siteSettings.sites.collectAsState()
     val dataSaverMode by settings.dataSaver.collectAsState()
     val dataSaverActive by components.dataSaver.active.collectAsState()
     val dataSaverImages by settings.dataSaverBlockImages.collectAsState()
@@ -212,6 +218,16 @@ private fun settingsPages(
                 null,
                 listOf(
                     SettingItem.Action(s(R.string.settings_theme), themeLabel(theme), Icons.Rounded.Palette) { open(SettingsDialog.THEME) },
+                    SettingItem.Toggle(s(R.string.settings_dark_sites), s(R.string.settings_dark_sites_summary), Icons.Rounded.DarkMode, darkSites) {
+                        settings.setDarkSites(it)
+                    },
+                    SettingItem.Action(s(R.string.settings_text_zoom), "%$textZoom", Icons.Rounded.TextFields) { open(SettingsDialog.TEXT_ZOOM) },
+                    SettingItem.Action(
+                        s(R.string.settings_site_prefs),
+                        if (customSites.isEmpty()) s(R.string.settings_site_prefs_none)
+                        else pluralStringResource(R.plurals.settings_site_prefs_count, customSites.size, customSites.size),
+                        Icons.Rounded.Language,
+                    ) { open(SettingsDialog.SITES) },
                     SettingItem.Toggle(s(R.string.settings_pull_to_refresh), s(R.string.settings_pull_to_refresh_summary), Icons.Rounded.Refresh, pullToRefresh) {
                         settings.setPullToRefresh(it)
                     },
@@ -462,6 +478,14 @@ private fun SettingsDialogs(
             onSelect = { settings.setDataSaver(it); onDismiss() },
             onDismiss = onDismiss,
         )
+        SettingsDialog.TEXT_ZOOM -> ChoiceDialog(
+            title = stringResource(R.string.settings_text_zoom),
+            options = com.gtarayici.browser.sites.TextZoom.CHOICES.map { it to "%$it" },
+            selected = settings.textZoom.collectAsState().value,
+            onSelect = { settings.setTextZoom(it); onDismiss() },
+            onDismiss = onDismiss,
+        )
+        SettingsDialog.SITES -> SitePrefsDialog(onDismiss)
         SettingsDialog.CACHE_SIZE -> ChoiceDialog(
             title = stringResource(R.string.settings_cache_size),
             options = CacheSize.entries.map { it to cacheSizeLabel(it) },

@@ -18,6 +18,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -109,6 +110,42 @@ fun connectionLabel(link: LinkInfo?): String {
         if (link.systemSaver) add(stringResource(R.string.data_saver_link_system))
     }
     return parts.joinToString(" · ")
+}
+
+/** Siteye özel ayarlar (yazı boyutu, masaüstü görünümü) olan siteler; her biri sıfırlanabilir. */
+@Composable
+fun SitePrefsDialog(onDismiss: () -> Unit) {
+    val sites = LocalContext.current.components.siteSettings
+    val list by sites.sites.collectAsState()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_site_prefs)) },
+        text = {
+            if (list.isEmpty()) {
+                Text(stringResource(R.string.settings_site_prefs_empty))
+            } else {
+                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                    list.toSortedMap().forEach { (host, prefs) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(host, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    listOfNotNull(
+                                        prefs.zoom?.let { stringResource(R.string.site_prefs_zoom, it) },
+                                        stringResource(R.string.site_desktop).takeIf { prefs.desktop },
+                                    ).joinToString(" · "),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            TextButton(onClick = { sites.reset(host) }) { Text(stringResource(R.string.site_prefs_reset)) }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } },
+    )
 }
 
 /** Özel DNS-over-HTTPS adresi; yazarken denetlenir. */
