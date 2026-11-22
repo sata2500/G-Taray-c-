@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "G-Tarayıcı Yardımcısı",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Arka planda oynatma, medya kontrolleri, video konumu (resim içinde resim), SponsorBlock sayfadaki indirilebilir öğelerin taranması ve veri tasarrufu başlığı.",
   "browser_specific_settings": {
     "gecko": {
@@ -12,8 +12,7 @@
     "nativeMessaging",
     "nativeMessagingFromContent",
     "geckoViewAddons",
-    "webRequest",
-    "webRequestBlocking",
+    "declarativeNetRequest",
     "<all_urls>",
     "https://sponsor.ajay.app/*"
   ],

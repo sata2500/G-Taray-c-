@@ -63,7 +63,10 @@ object DataSaverPolicy {
  * Veri tasarrufu açıkken:
  *  - Sessiz videolar da kendiliğinden oynamaz (en çok veri harcayan şey budur); izin verilen siteler hariç.
  *  - Videolar dokunulana kadar yalnızca bilgi kısmını indirir.
- *  - Tarayıcı, tıklanacağını tahmin ettiği bağlantıları önceden indirmez ve önceden bağlanmaz.
+ *  - Sayfaların "sonra lazım olabilir" diye işaretlediği dosyalar (link prefetch) önceden indirilmez.
+ *
+ * Önceden bağlanma (DNS, TCP/TLS) ve bağlantı tahmini bilerek açık kalır: neredeyse hiç veri harcamaz ama kapatılınca
+ * sayfadaki her yeni sunucu için bağlantı sonradan kurulur ve resimler belirgin biçimde geç gelir (0.10.0'da görüldü).
  *  - Sitelere `Save-Data: on` başlığı gönderilir; destekleyen siteler hafif sürüm sunar.
  *  - İsteğe bağlı olarak resimler yüklenmez.
  */
@@ -113,18 +116,26 @@ class DataSaver(
     }
 
     private fun apply(on: Boolean, blockImages: Boolean) {
+        if (_active.value != on || on) {
+            val link = _link.value
+            com.gtarayici.browser.diagnostics.Diagnostics.log(
+                "veri tasarrufu ${if (on) "açık" else "kapalı"}" +
+                    (link?.let { " (${if (it.metered) "kotalı" else "kotasız"}, ~${it.downstreamKbps} kbit/sn)" } ?: "") +
+                    if (on && blockImages) ", resimler kapalı" else "",
+                "ağ",
+            )
+        }
         _active.value = on
         if (on) {
             // 0 hiçbiri, 1 yalnızca bilgi (süre, boyut), 2 tamamı.
             GeckoPrefs.set("media.preload.default", 1)
             GeckoPrefs.set("media.preload.auto", 1)
             GeckoPrefs.set("network.prefetch-next", false)
-            GeckoPrefs.set("network.dns.disablePrefetch", true)
-            GeckoPrefs.set("network.predictor.enabled", false)
-            GeckoPrefs.set("network.http.speculative-parallel-limit", 0)
         } else {
             PREFS.forEach(GeckoPrefs::clear)
         }
+        // 0.10.0'da kapatılan ve sayfaları yavaşlatan ayarlar varsayılana döndürülür.
+        LEGACY_PREFS.forEach(GeckoPrefs::clear)
         if (on && blockImages) GeckoPrefs.set("permissions.default.image", IMAGES_BLOCKED) else GeckoPrefs.clear("permissions.default.image")
     }
 
@@ -157,6 +168,8 @@ class DataSaver(
             "media.preload.default",
             "media.preload.auto",
             "network.prefetch-next",
+        )
+        val LEGACY_PREFS = listOf(
             "network.dns.disablePrefetch",
             "network.predictor.enabled",
             "network.http.speculative-parallel-limit",

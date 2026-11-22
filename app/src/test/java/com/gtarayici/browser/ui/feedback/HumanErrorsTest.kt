@@ -36,6 +36,14 @@ class HumanErrorsTest {
     fun `NewPipe kısıtlamaları ve ayrıştırma hataları`() {
         assertEquals(Problem.VideoUnavailable, classify(ErrorArea.VideoInfo, AgeRestrictedContentException("age restricted")))
         assertEquals(Problem.VideoExtraction, classify(ErrorArea.VideoInfo, ParsingException("Could not get video id")))
+        assertEquals(
+            Problem.VideoBlockedForTools,
+            classify(ErrorArea.VideoInfo, org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException("Got error UNPLAYABLE: \"This video is not available\"")),
+        )
+        assertEquals(
+            Problem.VideoUnavailable,
+            classify(ErrorArea.VideoInfo, org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException("Got error LOGIN_REQUIRED: \"Sign in to confirm your age\"")),
+        )
         assertEquals(Problem.RateLimited, classify(ErrorArea.VideoInfo, ReCaptchaException("reCaptcha Challenge requested")))
     }
 

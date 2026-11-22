@@ -42,21 +42,23 @@ browser.runtime.onConnect.addListener((port) => {
   });
 });
 
-// Veri tasarrufu: sitelere "Save-Data: on" başlığı (Firefox bunu kendisi göndermez). Dinleyici yalnızca
-// tasarruf açıkken kayıtlıdır; kapalıyken isteklere hiç dokunulmaz.
-function addSaveData(details) {
-  const headers = details.requestHeaders.filter((h) => h.name.toLowerCase() !== "save-data");
-  headers.push({ name: "Save-Data", value: "on" });
-  return { requestHeaders: headers };
-}
+// Veri tasarrufu: sitelere "Save-Data: on" başlığı (Firefox bunu kendisi göndermez). Başlık motorun kendi kural
+// sistemiyle (declarativeNetRequest) eklenir; istekler eklentiye uğramaz, sayfa yüklemesi yavaşlamaz.
+// (0.10.0'da webRequest ile ekleniyordu; her istek eklentiyi beklediği için sayfalar yavaşlıyordu.)
+const SAVE_DATA_RULE = 1;
 function setSaveData(on) {
-  const listening = browser.webRequest.onBeforeSendHeaders.hasListener(addSaveData);
-  if (on && !listening) {
-    browser.webRequest.onBeforeSendHeaders.addListener(addSaveData, { urls: ["<all_urls>"] }, [
-      "blocking",
-      "requestHeaders",
-    ]);
-  } else if (!on && listening) {
-    browser.webRequest.onBeforeSendHeaders.removeListener(addSaveData);
-  }
+  const dnr = browser.declarativeNetRequest;
+  if (!dnr || !dnr.updateSessionRules) return;
+  const rule = {
+    id: SAVE_DATA_RULE,
+    priority: 1,
+    action: {
+      type: "modifyHeaders",
+      requestHeaders: [{ header: "Save-Data", operation: "set", value: "on" }],
+    },
+    condition: { resourceTypes: ["main_frame", "sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "media"] },
+  };
+  dnr
+    .updateSessionRules({ removeRuleIds: [SAVE_DATA_RULE], addRules: on ? [rule] : [] })
+    .catch(() => {});
 }

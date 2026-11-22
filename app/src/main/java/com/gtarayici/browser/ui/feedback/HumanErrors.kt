@@ -36,6 +36,8 @@ enum class Problem {
     InstallIncompatible,
     InstallInvalid,
     InvalidLink,
+    /** YouTube'un "çocuklar için" videolarda indirme araçlarına kapattığı oynatma (geçici; kütüphane düzeltmesi bekleniyor). */
+    VideoBlockedForTools,
     VideoUnavailable,
     VideoExtraction,
     LanguageUnsupported,
@@ -113,6 +115,7 @@ object HumanErrors {
             Problem.InstallIncompatible -> R.string.err_install_incompatible
             Problem.InstallInvalid -> R.string.err_install_invalid
             Problem.InvalidLink -> R.string.err_invalid_link
+            Problem.VideoBlockedForTools -> R.string.err_video_blocked_for_tools
             Problem.VideoUnavailable -> R.string.err_video_unavailable
             Problem.VideoExtraction -> R.string.err_video_extraction
             Problem.LanguageUnsupported -> R.string.err_language_unsupported
@@ -159,6 +162,8 @@ object HumanErrors {
     /** Sıra önemlidir: daha özel olan önce gelir (ör. video kısıtlaması, genel ağ hatasından önce). */
     private val RULES: List<Pair<Problem, List<String>>> = listOf(
         Problem.AuthFailed to listOf("auth_failed", "authentication failed", "unauthorized", "kimlik doğrulama", "wrong password"),
+        // "UNPLAYABLE: This video is not available": tarayıcıda oynayan video indirme aracına kapalı.
+        Problem.VideoBlockedForTools to listOf("got error unplayable"),
         Problem.VideoUnavailable to listOf(
             "contentnotavailable", "agerestricted", "privatecontent", "geographicrestriction", "paidcontent",
             "premiumcontent", "accountterminated", "contentnotsupported", "video unavailable", "this video is private",

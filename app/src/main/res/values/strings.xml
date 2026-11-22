@@ -454,6 +454,7 @@
     <string name="err_install_incompatible">Bu paket cihazınızla uyumlu değil.</string>
     <string name="err_install_invalid">Kurulum dosyası bozuk. Yeniden indirip deneyin.</string>
     <string name="err_invalid_link">Bağlantının biçimi tanınmadı. Bağlantıyı eksiksiz kopyalayıp yeniden deneyin.</string>
+    <string name="err_video_blocked_for_tools">YouTube bu videonun indirilmesine şu an izin vermiyor. Genellikle "çocuklar için" işaretli videolarda görülür ve tüm indirme uygulamalarını etkiler. Düzeltme çıkınca G-Tarayıcı kendiliğinden güncellenir.</string>
     <string name="err_video_unavailable">Video gizli, yaş sınırlı ya da bölgenizde kullanılamıyor.</string>
     <string name="err_video_extraction">YouTube video bilgilerini beklenen biçimde vermedi. Videoyu yeniden açıp deneyin; sürerse uygulamayı güncelleyin.</string>
     <string name="err_language_unsupported">Bu dil çifti desteklenmiyor. Başka bir dil seçin.</string>
