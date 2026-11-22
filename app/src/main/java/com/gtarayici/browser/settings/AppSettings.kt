@@ -33,14 +33,25 @@ enum class DnsProvider(val title: String, val url: String) {
 class AppSettings(context: Context) {
     private val prefs = context.getSharedPreferences("gtarayici_settings", Context.MODE_PRIVATE)
 
+    /** Tüm ayarlar; yedekten geri yüklenince yeniden okunur. */
+    private val registry = mutableListOf<Pref<*>>()
+
     private inner class Pref<T>(
         private val key: String,
-        default: T,
-        read: SharedPreferences.(String, T) -> T,
+        private val default: T,
+        private val read: SharedPreferences.(String, T) -> T,
         private val write: SharedPreferences.Editor.(String, T) -> Unit,
     ) {
         private val state = MutableStateFlow(prefs.read(key, default))
         val flow: StateFlow<T> = state.asStateFlow()
+
+        init {
+            registry += this
+        }
+
+        fun reload() {
+            state.value = prefs.read(key, default)
+        }
 
         fun set(value: T) {
             prefs.edit { write(key, value) }
@@ -147,6 +158,26 @@ class AppSettings(context: Context) {
     fun setCacheSize(value: CacheSize) = cacheSizePref.set(value)
     fun setSavePasswords(value: Boolean) = savePasswordsPref.set(value)
     fun setAutofillPasswords(value: Boolean) = autofillPasswordsPref.set(value)
+
+    /** Yedek için ayarların ham hali (anahtar → değer). */
+    fun exportAll(): Map<String, Any?> = prefs.all.toMap()
+
+    /** Yedekten gelen ayarları yazar ve uygulamadaki değerleri tazeler. Bilinmeyen türler atlanır. */
+    fun importAll(values: Map<String, Any?>) {
+        prefs.edit {
+            values.forEach { (key, value) ->
+                when (value) {
+                    is Boolean -> putBoolean(key, value)
+                    is Int -> putInt(key, value)
+                    is Long -> putLong(key, value)
+                    is Float -> putFloat(key, value)
+                    is String -> putString(key, value)
+                    is Set<*> -> putStringSet(key, value.filterIsInstance<String>().toSet())
+                }
+            }
+        }
+        registry.forEach { it.reload() }
+    }
 
     /** Bağlamsal ipuçlarının kalıcı durumu (bkz. ui/feedback/Hints). */
     val hintStore = object : com.gtarayici.browser.ui.feedback.HintStore {

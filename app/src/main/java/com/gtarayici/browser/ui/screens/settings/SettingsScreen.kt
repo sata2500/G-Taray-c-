@@ -102,7 +102,8 @@ fun SettingsScreen(onClearData: () -> Unit, onReport: () -> Unit, onBack: () -> 
     BackHandler(enabled = page != null || query.isNotEmpty()) {
         if (query.isNotEmpty()) query = "" else page = null
     }
-    val pages = settingsPages(open = { dialog = it }, onReport = onReport, onPasswords = onPasswords)
+    val backup = rememberBackupUi()
+    val pages = settingsPages(open = { dialog = it }, onReport = onReport, onPasswords = onPasswords, backup = backup)
 
     OverlayScaffold(
         title = page?.let { stringResource(it.title) } ?: stringResource(R.string.menu_settings),
@@ -131,11 +132,17 @@ fun SettingsScreen(onClearData: () -> Unit, onReport: () -> Unit, onBack: () -> 
     }
 
     SettingsDialogs(dialog, onDismiss = { dialog = null }, open = { dialog = it }, onClearData = onClearData)
+    backup.dialogs()
 }
 
 /** Tüm sayfaların satırları; değerler ayarlardan canlı okunur. */
 @Composable
-private fun settingsPages(open: (SettingsDialog) -> Unit, onReport: () -> Unit, onPasswords: () -> Unit): Map<SettingsPage, List<SettingSection>> {
+private fun settingsPages(
+    open: (SettingsDialog) -> Unit,
+    onReport: () -> Unit,
+    onPasswords: () -> Unit,
+    backup: BackupUi,
+): Map<SettingsPage, List<SettingSection>> {
     val context = LocalContext.current
     val components = context.components
     val settings = components.settings
@@ -198,6 +205,7 @@ private fun settingsPages(open: (SettingsDialog) -> Unit, onReport: () -> Unit, 
                     },
                 ),
             ),
+            SettingSection(s(R.string.backup_section), backup.items),
         ),
         SettingsPage.APPEARANCE to listOf(
             SettingSection(

@@ -388,7 +388,7 @@
     <string name="vpn_core_missing_error">VPN bileşeni yüklü değil. VPN ekranından kurun veya VPN\'i kapatın.</string>
     <string name="settings_appearance">Görünüm ve hareketler</string>
     <string name="settings_search_hint">Ayarlarda ara</string>
-    <string name="settings_page_general_summary">Arama motoru, varsayılan tarayıcı, sekmeler</string>
+    <string name="settings_page_general_summary">Arama motoru, varsayılan tarayıcı, sekmeler, yedekleme</string>
     <string name="settings_page_appearance_summary">Tema, adres çubuğu, kaydırma hareketleri</string>
     <string name="settings_page_privacy_summary">İzleyiciler, güvenli DNS, kilitler, veri temizleme</string>
     <string name="settings_page_media_summary">Arka planda oynatma, resim içinde resim, SponsorBlock</string>
@@ -684,6 +684,41 @@
         <item quantity="one">%d kayıtlı parola</item>
         <item quantity="other">%d kayıtlı parola</item>
     </plurals>
+    <string name="backup_section">Yedekleme ve taşıma</string>
+    <string name="backup_create">Yedek oluştur</string>
+    <string name="backup_create_summary">Yer imleri, ayarlar, profiller, VPN sunucuları ve (şifreli yedekte) parolalar tek dosyaya</string>
+    <string name="backup_restore">Yedekten geri yükle</string>
+    <string name="backup_restore_summary">Var olanlar silinmez; yedekte olup burada olmayanlar eklenir</string>
+    <string name="backup_restore_action">Geri yükle</string>
+    <string name="backup_import_html">Yer imlerini içe aktar</string>
+    <string name="backup_import_html_summary">Chrome, Firefox, Samsung ya da Edge\'den dışa aktarılan HTML dosyası</string>
+    <string name="backup_export_html">Yer imlerini dışa aktar</string>
+    <string name="backup_export_html_summary">Diğer tarayıcıların açabildiği HTML dosyası</string>
+    <string name="backup_contents">Yedeğe yer imleri, ayarlar, profiller ve VPN sunucuları girer. Çerezler ve oturumlar taşınamaz.</string>
+    <string name="backup_include_history">Geçmişi de ekle</string>
+    <string name="backup_password">Yedek parolası</string>
+    <string name="backup_password_hint">İsteğe bağlı. Parola verirseniz yedek şifrelenir ve kayıtlı parolalarınız da yedeğe girer.</string>
+    <string name="backup_password_short">En az 8 karakter olmalı</string>
+    <string name="backup_password_repeat">Parolayı tekrar yazın</string>
+    <string name="backup_password_mismatch">Parolalar aynı değil</string>
+    <string name="backup_password_needed">Bu yedek şifreli. Oluştururken verdiğiniz parolayı yazın.</string>
+    <string name="backup_choose_file">Kaydedilecek yeri seç</string>
+    <string name="backup_done">Yedek kaydedildi</string>
+    <string name="backup_done_encrypted">Şifreli yedek kaydedildi. Parolayı unutursanız yedek açılamaz.</string>
+    <string name="backup_err_not_backup">Bu dosya bir G-Tarayıcı yedeği değil ya da bozulmuş</string>
+    <string name="backup_err_newer">Bu yedek daha yeni bir G-Tarayıcı sürümüyle oluşturulmuş; önce uygulamayı güncelleyin</string>
+    <string name="backup_err_io">Dosya okunamadı ya da yazılamadı</string>
+    <string name="backup_err_wrong_password">Parola yanlış</string>
+    <string name="backup_restored">Geri yüklendi: %1$s</string>
+    <string name="backup_restored_with_settings">Ayarlar geri yüklendi; eklenenler: %1$s</string>
+    <string name="backup_restored_nothing_new">yeni kayıt yok (hepsi zaten vardı)</string>
+    <plurals name="backup_n_bookmarks"><item quantity="one">%d yer imi</item><item quantity="other">%d yer imi</item></plurals>
+    <plurals name="backup_n_passwords"><item quantity="one">%d parola</item><item quantity="other">%d parola</item></plurals>
+    <plurals name="backup_n_history"><item quantity="one">%d geçmiş kaydı</item><item quantity="other">%d geçmiş kaydı</item></plurals>
+    <plurals name="backup_n_profiles"><item quantity="one">%d profil</item><item quantity="other">%d profil</item></plurals>
+    <plurals name="backup_n_vpn"><item quantity="one">%d VPN sunucusu</item><item quantity="other">%d VPN sunucusu</item></plurals>
+    <plurals name="backup_bookmarks_imported"><item quantity="one">%d yer imi içe aktarıldı</item><item quantity="other">%d yer imi içe aktarıldı</item></plurals>
+    <plurals name="backup_bookmarks_exported"><item quantity="one">%d yer imi dışa aktarıldı</item><item quantity="other">%d yer imi dışa aktarıldı</item></plurals>
 </resources>
 
 

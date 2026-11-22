@@ -97,6 +97,9 @@ interface HistoryDao {
 
     @Query("DELETE FROM history")
     suspend fun clearAll()
+
+    @Query("SELECT * FROM history")
+    suspend fun everything(): List<HistoryEntry>
 }
 
 @Dao
@@ -125,6 +128,9 @@ interface BookmarkDao {
 
     @Query("DELETE FROM bookmarks WHERE profileId = :profileId")
     suspend fun clear(profileId: String)
+
+    @Query("SELECT * FROM bookmarks")
+    suspend fun everything(): List<Bookmark>
 }
 
 /**

@@ -109,6 +109,8 @@ class Components(private val context: Context) {
         )
     }
 
+    val backup by lazy { com.gtarayici.browser.backup.BackupManager(context, this) }
+
     val geckoLogins by lazy { com.gtarayici.browser.passwords.GeckoLoginStorage(passwords, settings, applicationScope) }
 
     /** Yükleme hatalarında hata sayfası gösterir ve hangi adreslerde gösterildiğini izler. */
@@ -129,6 +131,8 @@ class Components(private val context: Context) {
             suspendMediaWhenInactive = false
             // Yükleme hatalarında (alan adı yok, bağlantı yok…) boş ekran yerine hata sayfası gösterilir.
             requestInterceptor = errorPages
+            // Giriş formlarının algılanması (kaydet/doldur). Açıp kapatma ayarları passwords/ tarafında uygulanır.
+            loginAutofillEnabled = true
             applyDns(this)
         }
     }

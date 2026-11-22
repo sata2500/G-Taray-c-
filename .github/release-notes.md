@@ -1,10 +1,14 @@
-## G-Tarayıcı 0.10.1
+## G-Tarayıcı 0.11.0
 
-**Düzeltmeler**
-- Mobil veride sayfaların ve resimlerin geç yüklenmesi giderildi. 0.10.0'daki veri tasarrufu modu, tarayıcının
-  sunuculara önceden bağlanmasını kapatıyordu ve "Save-Data" başlığını her isteği bekleten bir yöntemle ekliyordu.
-  Önceden bağlanma yeniden açık (neredeyse hiç veri harcamaz); başlık artık motorun kendi kurallarıyla, beklemeden eklenir.
-- YouTube'un "çocuklar için" işaretli bazı videolarda indirmeyi engellemesi artık açıkça anlatılıyor. Bu, NewPipe
-  tabanlı tüm uygulamaları etkileyen YouTube kaynaklı bir değişiklik; kütüphanenin düzeltmesi çıktığında uygulama
-  her gece yapılan denetimle kendiliğinden güncellenir.
-- Tanılama kaydı veri tasarrufunun ne zaman açılıp kapandığını da yazar.
+**Parola yöneticisi** (Ayarlar → Gizlilik → Parolalar)
+- Bir sitede oturum açınca parolayı kaydetmek isteyip istemediğiniz sorulur ("Bu sitede asla" da seçilebilir).
+- Giriş formuna dokununca kayıtlı hesaplar alttaki çubukta çıkar; tek hesap varsa kendiliğinden doldurulur.
+- Parolalar telefonda, Android'in donanım anahtar deposundaki anahtarla şifreli tutulur; hiçbir sunucuya gitmez.
+- Parolalar ekranı parmak izi, yüz ya da ekran kilidiyle açılır: arama, parolayı gösterme/kopyalama (pano
+  önizlemesinde gizli), düzenleme, elle ekleme, silme (geri alınabilir). Her profilin parolaları ayrıdır.
+
+**Yedekleme ve taşıma** (Ayarlar → Genel)
+- Yer imleri, ayarlar, profiller, VPN sunucuları ve isteğe bağlı geçmiş tek dosyaya yedeklenir.
+- Yedeğe parola verilirse dosya şifrelenir (AES-256) ve kayıtlı parolalar da yedeğe girer.
+- Geri yükleme hiçbir şeyi silmez; yalnızca eksik olanları ekler.
+- Chrome, Firefox, Samsung ve Edge'den yer imleri içe aktarılabilir (HTML); yer imleri HTML olarak dışa da aktarılabilir.

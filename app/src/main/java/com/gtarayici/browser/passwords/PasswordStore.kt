@@ -114,6 +114,21 @@ class PasswordStore(
     suspend fun add(origin: String, username: String, password: String) =
         save(LoginEntry(origin = origin, formActionOrigin = origin, httpRealm = null, usernameField = "", passwordField = "", username = username, password = password))
 
+    /** Yedek için tüm profillerin kayıtları, şifresi çözülmüş olarak (yedek ayrıca parolayla şifrelenir). */
+    suspend fun exportAll(): List<Pair<LoginRow, SavedLogin>> = io {
+        dao.everything().mapNotNull { row -> open(row)?.let { row to it } }
+    }
+
+    /** Yedekten gelen kayıt; aynı profilde aynı hesap varsa atlanır. Eklendiyse true. */
+    suspend fun import(row: LoginRow, username: String, password: String): Boolean = io {
+        val exists = dao.allOnce(row.profileId).any { existing ->
+            open(existing)?.let { LoginMatching.sameAccount(it.origin, it.username, row.origin, username) } == true
+        }
+        if (exists || password.isEmpty()) return@io false
+        dao.upsert(row.copy(guid = UUID.randomUUID().toString(), username = cipher.encrypt(username), password = cipher.encrypt(password)))
+        true
+    }
+
     suspend fun touch(guid: String) = io {
         val row = dao.get(guid) ?: return@io
         dao.upsert(row.copy(timesUsed = row.timesUsed + 1, timeLastUsed = clock()))
