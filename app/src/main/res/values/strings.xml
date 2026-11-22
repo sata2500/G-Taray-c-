@@ -762,6 +762,27 @@
     <string name="tabs_search_empty">Bu aramayla eşleşen sekme yok</string>
     <plurals name="tabs_selected"><item quantity="one">%d seçildi</item><item quantity="other">%d seçildi</item></plurals>
     <plurals name="tabs_close_old"><item quantity="one">1 haftadır açılmayan %d sekmeyi kapat</item><item quantity="other">1 haftadır açılmayan %d sekmeyi kapat</item></plurals>
+    <string name="menu_save_for_later">Sonra oku (internetsiz)</string>
+    <string name="menu_read_aloud">Sesli oku</string>
+    <string name="menu_screenshot">Ekran görüntüsü (tam sayfa)</string>
+    <string name="menu_save_pdf">PDF olarak kaydet</string>
+    <string name="reading_list">Okuma listesi</string>
+    <string name="reading_empty">Okuma listeniz boş. Bir makalede menüden "Sonra oku"ya dokunun; internet olmadan da okuyabilirsiniz.</string>
+    <string name="reading_saved">Okuma listesine kaydedildi</string>
+    <string name="reading_open_list">Listeyi aç</string>
+    <string name="reading_deleted">Okuma listesinden çıkarıldı</string>
+    <string name="reading_no_article">Bu sayfada okunacak bir makale bulunamadı</string>
+    <string name="reading_open_original">Özgün sayfayı aç</string>
+    <plurals name="reading_minutes"><item quantity="one">%d dk</item><item quantity="other">%d dk</item></plurals>
+    <string name="speaker_play">Oku</string>
+    <string name="speaker_pause">Duraklat</string>
+    <string name="speaker_previous">Önceki paragraf</string>
+    <string name="speaker_next">Sonraki paragraf</string>
+    <string name="speaker_unavailable">Telefonda metin okuma motoru bulunamadı. Ayarlar → Erişilebilirlik → Metin okuma çıkışı bölümünden bir motor seçin.</string>
+    <string name="screenshot_working">Ekran görüntüsü alınıyor…</string>
+    <string name="screenshot_saved">Ekran görüntüsü Resimler/G-Tarayıcı klasörüne kaydedildi</string>
+    <string name="screenshot_failed">Ekran görüntüsü alınamadı</string>
+    <string name="pdf_saving">PDF hazırlanıyor; İndirilenler\'e kaydedilecek</string>
 </resources>
 
 

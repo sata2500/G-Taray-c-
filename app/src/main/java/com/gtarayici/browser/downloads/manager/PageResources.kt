@@ -92,12 +92,28 @@ class ResourceScanner(private val store: BrowserStore, private val scope: Corout
     private val pending = ConcurrentHashMap<Int, CompletableDeferred<PageScan>>()
     private val ids = AtomicInteger()
 
+    private val articles = ConcurrentHashMap<Int, CompletableDeferred<JSONObject?>>()
+
     private val handler = object : MessageHandler {
         override fun onPortMessage(message: Any, port: Port) {
             val json = message as? JSONObject ?: return
-            if (json.optString("type") != "resources") return
-            pending.remove(json.optInt("id"))?.complete(PageScan.parse(json))
+            when (json.optString("type")) {
+                "resources" -> pending.remove(json.optInt("id"))?.complete(PageScan.parse(json))
+                "article" -> articles.remove(json.optInt("id"))?.complete(json.optJSONObject("article"))
+            }
         }
+    }
+
+    /** Sayfanın makale metnini ister (başlık, site, bloklar); makale bulunamazsa veya yanıt yoksa null. */
+    suspend fun article(session: EngineSession): JSONObject? {
+        val helper = extension ?: return null
+        register(session)
+        val port = helper.getConnectedPort(APP, session) ?: return null
+        val id = ids.incrementAndGet()
+        val result = CompletableDeferred<JSONObject?>()
+        articles[id] = result
+        port.postMessage(JSONObject().put("type", "article").put("id", id))
+        return withTimeoutOrNull(TIMEOUT_MS) { result.await() }.also { articles.remove(id) }
     }
 
     /** Yardımcı eklenti kurulunca çağrılır. */

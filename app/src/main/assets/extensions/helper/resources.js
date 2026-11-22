@@ -128,6 +128,72 @@
 
   if (!isTop) return;
 
+  // --- Makale çıkarma ("Sonra oku" ve sesli okuma) ---------------------------------------------------------
+  // Sayfadaki asıl metni bulur: <article> varsa o, yoksa en çok paragraf metni içeren kap. Başlıklar, paragraflar,
+  // liste öğeleri ve alıntılar sırasıyla alınır; menü, reklam, yorum gibi bölümler atlanır.
+  const SKIP = /(^|[\s_-])(nav|navbox|menu|footer|header|comment|comments|share|social|related|sidebar|advert|ad|ads|promo|cookie|newsletter|breadcrumb|infobox|toc|reference|references|reflist|caption|subscribe|recommended)([\s_-]|$)/i;
+  function visibleText(el) {
+    return (el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
+  }
+  function skipped(el) {
+    for (let node = el; node && node !== document.body; node = node.parentElement) {
+      const tag = node.tagName;
+      if (tag === "NAV" || tag === "FOOTER" || tag === "ASIDE" || tag === "FORM" || tag === "BUTTON" ||
+          tag === "TABLE" || tag === "FIGURE" || tag === "FIGCAPTION" || tag === "SUP") return true;
+      const name = (node.className && node.className.baseVal === undefined ? node.className : "") + " " + (node.id || "");
+      if (SKIP.test(name) && node.tagName !== "ARTICLE" && node.tagName !== "MAIN") return true;
+      if (node.getAttribute && node.getAttribute("aria-hidden") === "true") return true;
+    }
+    return false;
+  }
+  function bestContainer() {
+    const article = document.querySelectorAll("article");
+    if (article.length === 1 && visibleText(article[0]).length > 500) return article[0];
+    const scores = new Map();
+    document.querySelectorAll("p").forEach((p) => {
+      const len = visibleText(p).length;
+      if (len < 40 || skipped(p)) return;
+      const parent = p.parentElement;
+      if (!parent) return;
+      scores.set(parent, (scores.get(parent) || 0) + len);
+      const grand = parent.parentElement;
+      if (grand) scores.set(grand, (scores.get(grand) || 0) + len / 2);
+    });
+    let best = null;
+    let bestScore = 0;
+    scores.forEach((score, el) => { if (score > bestScore) { best = el; bestScore = score; } });
+    return bestScore > 300 ? best : null;
+  }
+  function extractArticle() {
+    const root = bestContainer();
+    if (!root) return null;
+    const blocks = [];
+    let total = 0;
+    root.querySelectorAll("h1, h2, h3, h4, p, li, blockquote, pre").forEach((el) => {
+      if (total > 200000 || skipped(el)) return;
+      // İç içe öğeler iki kez alınmasın (ör. li içindeki p).
+      if (el.parentElement && el.parentElement.closest("p, li, blockquote, pre") && root.contains(el.parentElement)) return;
+      const text = visibleText(el);
+      if (!text || (el.tagName === "LI" && text.length < 3)) return;
+      const kind = /^H[1-4]$/.test(el.tagName) ? "h" : el.tagName === "LI" ? "li" : el.tagName === "BLOCKQUOTE" ? "q" : "p";
+      blocks.push({ k: kind, t: text });
+      total += text.length;
+    });
+    if (total < 300) return null;
+    const meta = (name) => {
+      const el = document.querySelector('meta[property="' + name + '"], meta[name="' + name + '"]');
+      return el ? el.getAttribute("content") : "";
+    };
+    const h1 = document.querySelector("h1");
+    return {
+      title: meta("og:title") || (h1 ? visibleText(h1) : "") || document.title,
+      site: meta("og:site_name") || location.hostname.replace(/^www\./, ""),
+      byline: meta("author") || "",
+      lang: document.documentElement.lang || "",
+      blocks: blocks,
+    };
+  }
+
   // Ana çerçeve: uygulamayla bağlantı. Uygulama "collect" ister, sonuç "resources" olarak döner.
   let attempts = 0;
   function connect() {
@@ -138,6 +204,12 @@
       return;
     }
     port.onMessage.addListener((message) => {
+      if (message && message.type === "article") {
+        let article = null;
+        try { article = extractArticle(); } catch (e) {}
+        try { port.postMessage({ type: "article", id: message.id, article: article }); } catch (e) {}
+        return;
+      }
       if (!message || message.type !== "collect") return;
       collectWithFrames(message.id, 800).then((result) => {
         try {

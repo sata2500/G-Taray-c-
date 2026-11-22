@@ -122,6 +122,11 @@ internal fun OverlayPage(
         Overlay.PROFILES -> ProfilesScreen(controller, onBack = { controller.closeOverlay() })
         Overlay.EXTENSIONS -> ExtensionsScreen(controller, onBack = { controller.closeOverlay() })
         Overlay.VPN -> VpnScreen(onBack = { controller.closeOverlay() })
+        Overlay.READING -> com.gtarayici.browser.ui.screens.ReadingListScreen(
+            onOpenUrl = { controller.loadUrl(it, inNewTab = true) },
+            onSpeak = { article, from -> controller.reading.speak(article, from) },
+            onBack = { controller.closeOverlay() },
+        )
         Overlay.PASSWORDS -> com.gtarayici.browser.ui.screens.PasswordsScreen(
             onOpen = { controller.loadUrl(it, inNewTab = true) },
             onBack = { controller.closeOverlay() },

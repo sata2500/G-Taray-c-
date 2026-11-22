@@ -221,6 +221,7 @@ fun BrowserApp(
             LaunchedEffect(pageUrl, current?.loading, barsVisibleOnly) { dynamic.show() }
             val bars: @Composable () -> Unit = {
                 com.gtarayici.browser.ui.components.LoginPickerBar(controller.loginPicker)
+                com.gtarayici.browser.ui.components.SpeakerBar(components.speaker)
                 if (controller.findInPageOpen && pageUrl != null) {
                     FindInPageBar(onClose = { controller.closeFindInPage() })
                 }

@@ -115,6 +115,10 @@ class Components(private val context: Context) {
         com.gtarayici.browser.sites.SiteSettingsApplier(context, store, engine, siteSettings, settings, sessionUseCases, applicationScope)
     }
 
+    val readingList by lazy { com.gtarayici.browser.reading.ReadingList(context, applicationScope) }
+
+    val speaker by lazy { com.gtarayici.browser.reading.Speaker(context) }
+
     val backup by lazy { com.gtarayici.browser.backup.BackupManager(context, this) }
 
     val geckoLogins by lazy { com.gtarayici.browser.passwords.GeckoLoginStorage(passwords, settings, applicationScope) }

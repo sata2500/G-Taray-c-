@@ -58,6 +58,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.gtarayici.browser.R
+import androidx.compose.material.icons.rounded.BookmarkAdd
+import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.material.icons.rounded.Screenshot
+import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.AutoStories
 import com.gtarayici.browser.ui.BrowserController
 import com.gtarayici.browser.ui.Overlay
 import com.gtarayici.browser.ui.designsystem.AppShape
@@ -135,7 +140,15 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
                         if (state.readerActive) {
                             { MenuRow(Icons.Rounded.TextFields, stringResource(R.string.reader_settings)) { controller.openReaderSettings() } }
                         } else null,
+                        if (!state.readerActive) {
+                            { MenuRow(Icons.Rounded.BookmarkAdd, stringResource(R.string.menu_save_for_later)) { controller.reading.saveForLater() } }
+                        } else null,
+                        if (!state.readerActive) {
+                            { MenuRow(Icons.Rounded.RecordVoiceOver, stringResource(R.string.menu_read_aloud)) { controller.reading.readAloud() } }
+                        } else null,
                         { MenuRow(Icons.Rounded.FindInPage, stringResource(R.string.menu_find_in_page)) { controller.openFindInPage() } },
+                        { MenuRow(Icons.Rounded.Screenshot, stringResource(R.string.menu_screenshot)) { controller.reading.captureFullPage() } },
+                        { MenuRow(Icons.Rounded.PictureAsPdf, stringResource(R.string.menu_save_pdf)) { controller.reading.saveAsPdf() } },
                         { MenuRow(Icons.Rounded.InstallMobile, stringResource(R.string.menu_install_app)) { controller.openInstallDialog() } },
                         { MenuRow(Icons.Rounded.ContentCopy, stringResource(R.string.menu_copy_link)) { controller.copyLink() } },
                         {
@@ -151,6 +164,7 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
             }
             SectionCard(
                 listOf(
+                    { MenuRow(Icons.Rounded.AutoStories, stringResource(R.string.reading_list)) { controller.open(Overlay.READING) } },
                     { MenuRow(Icons.Rounded.QrCodeScanner, stringResource(R.string.menu_scan_qr)) { controller.openQrScanner() } },
                     { MenuRow(Icons.Rounded.ManageAccounts, stringResource(R.string.menu_profiles)) { controller.open(Overlay.PROFILES) } },
                     { MenuRow(Icons.Rounded.BugReport, stringResource(R.string.menu_report)) { controller.openReport() } },
