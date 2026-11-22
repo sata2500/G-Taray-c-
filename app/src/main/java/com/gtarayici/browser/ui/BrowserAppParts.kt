@@ -87,6 +87,9 @@ internal fun OverlayPage(
             onOpenUrl = { controller.loadUrl(it) },
             onDismiss = { controller.closeOverlay() },
             onScanQr = { controller.openQrScanner() },
+            openTabs = profileTabs.filter { it.content.private == private },
+            currentTabId = selectedTabId,
+            onSwitchTab = { controller.selectTab(it) },
         )
         Overlay.QR -> QrScannerScreen(
             onOpen = { controller.loadUrl(it) },
@@ -100,6 +103,7 @@ internal fun OverlayPage(
             onSelect = { controller.selectTab(it) },
             onClose = { controller.closeTab(it) },
             onCloseAll = { controller.closeAllTabs(it) },
+            onCloseMany = { components.tabsUseCases.removeTabs(it) },
             onNewTab = { controller.newTab(it) },
             onNewTabInGroup = { controller.newTabInGroup(it) },
             onBack = { controller.closeOverlay() },

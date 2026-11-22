@@ -105,6 +105,7 @@ class AppSettings(context: Context) {
     private val autofillPasswordsPref = bool("autofill_passwords", true)
     private val textZoomPref = int("text_zoom", 100)
     private val darkSitesPref = bool("dark_sites", false)
+    private val searchSuggestionsPref = bool("search_suggestions", true)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -138,6 +139,8 @@ class AppSettings(context: Context) {
     val textZoom get() = textZoomPref.flow
     /** Karanlık teması olmayan sitelere de karanlık tema (Dark Reader eklentisiyle). */
     val darkSites get() = darkSitesPref.flow
+    /** Yazarken arama motorundan öneri alınsın mı (gizli sekmelerde hiç alınmaz). */
+    val searchSuggestions get() = searchSuggestionsPref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -169,6 +172,7 @@ class AppSettings(context: Context) {
     fun setAutofillPasswords(value: Boolean) = autofillPasswordsPref.set(value)
     fun setTextZoom(value: Int) = textZoomPref.set(value)
     fun setDarkSites(value: Boolean) = darkSitesPref.set(value)
+    fun setSearchSuggestions(value: Boolean) = searchSuggestionsPref.set(value)
 
     /** Yedek için ayarların ham hali (anahtar → değer). */
     fun exportAll(): Map<String, Any?> = prefs.all.toMap()

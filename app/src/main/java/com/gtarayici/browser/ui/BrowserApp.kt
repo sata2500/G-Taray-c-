@@ -84,6 +84,7 @@ private data class TabSummary(
     val readerUrl: String?,
     val offerTranslate: Boolean,
     val translated: Boolean,
+    val crashed: Boolean = false,
 )
 
 @Composable
@@ -129,6 +130,7 @@ fun BrowserApp(
                 readerActive = it.readerState.active,
                 readerUrl = it.readerState.activeUrl,
                 offerTranslate = it.translationsState.isOfferTranslate,
+                crashed = it.engineState.crashed,
                 translated = it.translationsState.isTranslated,
             )
         }
@@ -298,6 +300,11 @@ fun BrowserApp(
                                 onProtectionClick = { controller.open(Overlay.SETTINGS) },
                             )
                         }
+                    }
+                    if (current?.crashed == true && !pictureInPicture) {
+                        com.gtarayici.browser.ui.components.CrashedTabNotice(
+                            onRestore = { selectedTabId?.let { components.sessionUseCases.crashRecovery.invoke(listOf(it)) } },
+                        )
                     }
                     if (!pictureInPicture) TabSwipeLayer(tabSwipe)
                     if (floatingBars && !pictureInPicture) {

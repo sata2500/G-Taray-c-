@@ -22,6 +22,13 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tab
+import androidx.compose.material.icons.filled.NorthWest
+import androidx.compose.runtime.collectAsState
+import com.gtarayici.browser.search.SearchShortcuts
+import com.gtarayici.browser.search.SearchSuggestions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import com.gtarayici.browser.ui.designsystem.ListRow
@@ -58,7 +65,15 @@ import com.gtarayici.browser.search.UrlInput
 import kotlinx.coroutines.delay
 import mozilla.components.support.ktx.util.URLStringUtils
 
-private data class Suggestion(val icon: ImageVector, val title: String, val subtitle: String?, val target: String)
+/** Öneri satırı: dokununca adres açılır ya da ([tabId] varsa) o sekmeye geçilir; [fill] metni giriş alanına koyar. */
+private data class Suggestion(
+    val icon: ImageVector,
+    val title: String,
+    val subtitle: String?,
+    val target: String,
+    val tabId: String? = null,
+    val fill: String? = null,
+)
 
 /**
  * Adres/arama giriş ekranı. Giriş alanı başparmağa yakın olsun diye altta durur;
@@ -73,6 +88,10 @@ fun SearchScreen(
     onOpenUrl: (String) -> Unit,
     onDismiss: () -> Unit,
     onScanQr: () -> Unit = {},
+    /** Açık sekmeler (aynı profil ve aynı gizlilik): "Sekmeye geç" önerileri için. */
+    openTabs: List<mozilla.components.browser.state.state.TabSessionState> = emptyList(),
+    currentTabId: String? = null,
+    onSwitchTab: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val db = context.components.database
@@ -81,6 +100,10 @@ fun SearchScreen(
         mutableStateOf(TextFieldValue(initialUrl, selection = TextRange(0, initialUrl.length)))
     }
     var suggestions by remember { mutableStateOf(emptyList<Suggestion>()) }
+    val remoteEnabled by context.components.settings.searchSuggestions.collectAsState()
+    val client = context.components.client
+    val switchLabel = stringResource(R.string.search_switch_to_tab)
+    val resources = androidx.compose.ui.platform.LocalResources.current
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
@@ -93,23 +116,52 @@ fun SearchScreen(
         }
         delay(120)
         val list = mutableListOf<Suggestion>()
+        val shortcut = SearchShortcuts.resolve(query)
+        if (shortcut != null) {
+            val (site, text) = shortcut
+            list += Suggestion(Icons.Filled.Search, text, resources.getString(R.string.search_on_site, site.title), site.url(text))
+        }
         if (!query.contains(' ') && URLStringUtils.isURLLike(query)) {
             list += Suggestion(Icons.Filled.Language, query, null, UrlInput.toLoadableUrl(query, engine))
         }
-        list += Suggestion(Icons.Filled.Search, query, engine.title, engine.searchUrl(query))
+        if (shortcut == null) list += Suggestion(Icons.Filled.Search, query, engine.title, engine.searchUrl(query))
+        openTabs.asSequence()
+            .filter { it.id != currentTabId && TextMatch.matches(query, it.content.title, it.content.url) }
+            .take(3)
+            .forEach { tab ->
+                list += Suggestion(
+                    Icons.Filled.Tab,
+                    tab.content.title.ifBlank { UrlInput.displayUrl(tab.content.url) },
+                    "$switchLabel · ${UrlInput.displayUrl(tab.content.url)}",
+                    tab.content.url,
+                    tabId = tab.id,
+                )
+            }
         if (!private) {
             db.bookmarks().list(profileId).asSequence()
                 .filter { TextMatch.matches(query, it.title, it.url) }.take(4).forEach {
-                    list += Suggestion(Icons.Filled.Bookmark, it.title, UrlInput.displayUrl(it.url), it.url)
+                    if (list.none { s -> s.target == it.url }) {
+                        list += Suggestion(Icons.Filled.Bookmark, it.title, UrlInput.displayUrl(it.url), it.url)
+                    }
                 }
             db.history().candidates(profileId).asSequence()
-                .filter { TextMatch.matches(query, it.title, it.url) }.take(8).forEach { h ->
+                .filter { TextMatch.matches(query, it.title, it.url) }.take(6).forEach { h ->
                 if (list.none { it.target == h.url }) {
                     list += Suggestion(Icons.Filled.History, h.title.ifBlank { h.url }, UrlInput.displayUrl(h.url), h.url)
                 }
             }
         }
         suggestions = list
+        // Arama motorunun önerileri ağdan gelir; yerel öneriler beklemeden gösterilir, bunlar sonra eklenir.
+        if (!private && remoteEnabled && shortcut == null && query.length >= 2 && !query.contains("://")) {
+            delay(150)
+            val remote = withContext(Dispatchers.IO) { SearchSuggestions.fetch(client, engine, query) }
+            if (remote.isNotEmpty()) {
+                val searchIndex = list.indexOfFirst { it.target == engine.searchUrl(query) }.coerceAtLeast(0)
+                val extra = remote.map { Suggestion(Icons.Filled.Search, it, null, engine.searchUrl(it), fill = it) }
+                suggestions = list.toMutableList().apply { addAll(searchIndex + 1, extra) }
+            }
+        }
     }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
@@ -120,7 +172,17 @@ fun SearchScreen(
                         leading = { Icon(s.icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                         headline = { Text(s.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         supporting = s.subtitle?.let { { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
-                        modifier = Modifier.clickable { onOpenUrl(s.target) },
+                        trailing = s.fill?.let { text ->
+                            {
+                                IconButton(onClick = {
+                                    val filled = "$text "
+                                    value = TextFieldValue(filled, selection = TextRange(filled.length))
+                                }) {
+                                    Icon(Icons.Filled.NorthWest, stringResource(R.string.search_fill))
+                                }
+                            }
+                        },
+                        modifier = Modifier.clickable { s.tabId?.let(onSwitchTab) ?: onOpenUrl(s.target) },
                     )
                 }
             }
@@ -157,7 +219,12 @@ fun SearchScreen(
                         imeAction = ImeAction.Go,
                         autoCorrectEnabled = false,
                     ),
-                    keyboardActions = KeyboardActions(onGo = { if (value.text.isNotBlank()) onSubmit(value.text) }),
+                    keyboardActions = KeyboardActions(onGo = {
+                        val text = value.text
+                        if (text.isBlank()) return@KeyboardActions
+                        // "yt kedi" gibi kısayollar doğrudan o sitede arar.
+                        SearchShortcuts.resolve(text)?.let { (site, query) -> onOpenUrl(site.url(query)) } ?: onSubmit(text)
+                    }),
                     shape = RoundedCornerShape(24.dp),
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,

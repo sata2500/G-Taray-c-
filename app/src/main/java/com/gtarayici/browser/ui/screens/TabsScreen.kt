@@ -9,6 +9,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +64,8 @@ fun TabsScreen(
     onSelect: (String) -> Unit,
     onClose: (String) -> Unit,
     onCloseAll: (private: Boolean) -> Unit,
+    /** Birden çok sekmeyi tek seferde kapatır (tek "Geri al" ile geri gelir). */
+    onCloseMany: (List<String>) -> Unit = { ids -> ids.forEach(onClose) },
     onNewTab: (private: Boolean) -> Unit,
     onNewTabInGroup: (groupId: String) -> Unit,
     onBack: () -> Unit,
@@ -75,17 +87,67 @@ fun TabsScreen(
     val ungrouped = visible.filter { it.id !in grouped }
     var groupTarget by remember { mutableStateOf<TabSessionState?>(null) }
     var editGroup by remember { mutableStateOf<TabGroup?>(null) }
+    // Arama ve seçim kipi
+    var searching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var picked by remember { mutableStateOf<Set<String>?>(null) }
+    var groupPicked by remember { mutableStateOf(false) }
+    var overflow by remember { mutableStateOf(false) }
+    androidx.activity.compose.BackHandler(enabled = picked != null || searching) {
+        if (picked != null) picked = null else { searching = false; query = "" }
+    }
+    LaunchedEffect(showPrivate) { picked = null }
+    val selectionMode = picked != null
+    val tapCard: (String) -> Unit = { id ->
+        val current = picked
+        if (current != null) picked = if (id in current) current - id else current + id else onSelect(id)
+    }
+    val oldTabs = visible.filter { System.currentTimeMillis() - it.lastAccess > OLD_TAB_MS && it.id != selectedTabId && it.lastAccess > 0 }
+    val filtered = if (query.isBlank()) null else visible.filter {
+        com.gtarayici.browser.search.TextMatch.matches(query, it.content.title, it.content.url)
+    }
 
     OverlayScaffold(
         title = stringResource(R.string.action_tabs),
         onBack = onBack,
         actions = {
-            if (visible.isNotEmpty()) {
-                TextButton(onClick = { onCloseAll(showPrivate) }) { Text(stringResource(R.string.tabs_close_all)) }
+            val chosen = picked
+            if (chosen != null) {
+                Text(
+                    pluralStringResource(R.plurals.tabs_selected, chosen.size, chosen.size),
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(end = 4.dp),
+                )
+                IconButton(onClick = { picked = visible.map { it.id }.toSet() }) {
+                    Icon(Icons.Filled.SelectAll, stringResource(R.string.tabs_select_all))
+                }
+                IconButton(onClick = { groupPicked = true }, enabled = chosen.isNotEmpty()) {
+                    Icon(Icons.Filled.CreateNewFolder, stringResource(R.string.tab_groups_add_to))
+                }
+                IconButton(onClick = { onCloseMany(chosen.toList()); picked = null }, enabled = chosen.isNotEmpty()) {
+                    Icon(Icons.Filled.Delete, stringResource(R.string.tabs_close_selected))
+                }
+            } else if (visible.isNotEmpty()) {
+                IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
+                    Icon(Icons.Filled.Search, stringResource(R.string.tabs_search))
+                }
+                Box {
+                    IconButton(onClick = { overflow = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.action_menu)) }
+                    DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }) {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.tabs_select)) }, onClick = { overflow = false; picked = emptySet() })
+                        if (oldTabs.isNotEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text(pluralStringResource(R.plurals.tabs_close_old, oldTabs.size, oldTabs.size)) },
+                                onClick = { overflow = false; onCloseMany(oldTabs.map { it.id }) },
+                            )
+                        }
+                        DropdownMenuItem(text = { Text(stringResource(R.string.tabs_close_all)) }, onClick = { overflow = false; onCloseAll(showPrivate) })
+                    }
+                }
             }
         },
         floatingActionButton = {
-            if (!locked) {
+            if (!locked && !selectionMode) {
                 AddFab(stringResource(if (showPrivate) R.string.menu_new_private_tab else R.string.menu_new_tab)) {
                     onNewTab(showPrivate)
                 }
@@ -115,8 +177,32 @@ fun TabsScreen(
                     },
                 )
             }
+            if (searching && !locked) FilterField(query) { query = it }
             if (locked) {
                 LockedPrivateTabs(onUnlockPrivate)
+            } else if (filtered != null) {
+                if (filtered.isEmpty()) {
+                    EmptyState(stringResource(R.string.tabs_search_empty))
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 165.dp),
+                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 96.dp),
+                    ) {
+                        items(filtered, key = { it.id }) { tab ->
+                            TabCard(
+                                tab,
+                                selected = tab.id == selectedTabId,
+                                groupColor = null,
+                                onSelect = tapCard,
+                                onClose = onClose,
+                                onAddToGroup = { groupTarget = tab },
+                                onRemoveFromGroup = null,
+                                checked = picked?.contains(tab.id),
+                                onStartSelection = { picked = setOf(tab.id) },
+                            )
+                        }
+                    }
+                }
             } else if (visible.isEmpty()) {
                 EmptyState(stringResource(R.string.tabs_empty))
             } else {
@@ -144,10 +230,12 @@ fun TabsScreen(
                                     tab,
                                     selected = tab.id == selectedTabId,
                                     groupColor = Color(group.color),
-                                    onSelect = onSelect,
+                                    onSelect = tapCard,
                                     onClose = onClose,
                                     onAddToGroup = { groupTarget = tab },
                                     onRemoveFromGroup = { tabGroups.removeTab(tab.id) },
+                                    checked = picked?.contains(tab.id),
+                                    onStartSelection = { picked = setOf(tab.id) },
                                 )
                             }
                         }
@@ -167,14 +255,36 @@ fun TabsScreen(
                             tab,
                             selected = tab.id == selectedTabId,
                             groupColor = null,
-                            onSelect = onSelect,
+                            onSelect = tapCard,
                             onClose = onClose,
                             onAddToGroup = { groupTarget = tab },
                             onRemoveFromGroup = null,
+                            checked = picked?.contains(tab.id),
+                            onStartSelection = { picked = setOf(tab.id) },
                         )
                     }
                 }
             }
+        }
+    }
+
+    if (groupPicked) {
+        val chosen = visible.filter { it.id in picked.orEmpty() }
+        val first = chosen.firstOrNull()
+        if (first == null) {
+            groupPicked = false
+        } else {
+            AddToGroupDialog(
+                groups = allGroups.filter { it.contextId == first.contextId },
+                onPick = { group -> chosen.forEach { tabGroups.addTab(group.id, it.id) }; groupPicked = false; picked = null },
+                onCreate = { name, color ->
+                    val group = tabGroups.create(name, color, first)
+                    chosen.drop(1).forEach { tabGroups.addTab(group.id, it.id) }
+                    groupPicked = false
+                    picked = null
+                },
+                onDismiss = { groupPicked = false },
+            )
         }
     }
 
@@ -224,3 +334,6 @@ private fun LockedPrivateTabs(onUnlock: () -> Unit) {
         FilledTonalButton(onClick = onUnlock) { Text(stringResource(R.string.tabs_private_unlock)) }
     }
 }
+
+/** Bu süredir açılmamış sekmeler "eski" sayılır (7 gün). */
+private const val OLD_TAB_MS = 7L * 24 * 60 * 60 * 1000

@@ -59,6 +59,7 @@ class GTarayiciApplication : Application() {
         components.mediaSessionFeature.start()
         components.historyRecorder.start()
         com.gtarayici.browser.diagnostics.startDiagnosticsWatchers(components)
+        com.gtarayici.browser.diagnostics.HealthWatchers.start(this, components.store, components.applicationScope)
         com.gtarayici.browser.ui.feedback.startNetworkMonitor(
             this,
             com.gtarayici.browser.ui.feedback.NetworkStatusReporter(components.messenger, components.applicationScope),

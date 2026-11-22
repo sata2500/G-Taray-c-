@@ -68,6 +68,9 @@ internal fun TabCard(
     onClose: (String) -> Unit,
     onAddToGroup: () -> Unit,
     onRemoveFromGroup: (() -> Unit)?,
+    /** Seçim kipinde işaretli mi; null ise seçim kipi kapalıdır. */
+    checked: Boolean? = null,
+    onStartSelection: () -> Unit = {},
 ) {
     var menu by remember { mutableStateOf(false) }
     val offset = remember { Animatable(0f) }
@@ -102,6 +105,7 @@ internal fun TabCard(
                 alpha = 1f - (abs(offset.value) / width).coerceIn(0f, 0.85f)
             }
             .draggable(
+                enabled = checked == null,
                 orientation = Orientation.Horizontal,
                 state = rememberDraggableState { delta -> scope.launch { offset.snapTo(offset.value + delta) } },
                 onDragStopped = { velocity ->
@@ -117,11 +121,12 @@ internal fun TabCard(
             )
             .combinedClickable(
                 onClick = { onSelect(tab.id) },
-                onLongClick = { menu = true },
+                onLongClick = { if (checked == null) menu = true },
             ),
     ) {
         // Uzun basınca: gruba ekle / gruptan çıkar
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.tabs_select)) }, onClick = { menu = false; onStartSelection() })
             DropdownMenuItem(text = { Text(stringResource(R.string.tab_groups_add_to)) }, onClick = { menu = false; onAddToGroup() })
             if (onRemoveFromGroup != null) {
                 DropdownMenuItem(
@@ -140,8 +145,12 @@ internal fun TabCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = { onClose(tab.id) }, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.Filled.Close, stringResource(R.string.action_close), modifier = Modifier.size(18.dp))
+            if (checked != null) {
+                androidx.compose.material3.Checkbox(checked = checked, onCheckedChange = { onSelect(tab.id) })
+            } else {
+                IconButton(onClick = { onClose(tab.id) }, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Filled.Close, stringResource(R.string.action_close), modifier = Modifier.size(18.dp))
+                }
             }
         }
         Box(

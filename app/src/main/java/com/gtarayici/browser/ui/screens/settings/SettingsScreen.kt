@@ -174,6 +174,7 @@ private fun settingsPages(
     val crashPrompt by settings.crashPrompt.collectAsState()
     val updateState by components.updater.state.collectAsState()
     val textZoom by settings.textZoom.collectAsState()
+    val searchSuggest by settings.searchSuggestions.collectAsState()
     val darkSites by settings.darkSites.collectAsState()
     val customSites by components.siteSettings.sites.collectAsState()
     val dataSaverMode by settings.dataSaver.collectAsState()
@@ -198,6 +199,10 @@ private fun settingsPages(
                 null,
                 listOf(
                     SettingItem.Action(s(R.string.settings_search_engine), engine.title, Icons.Rounded.Search) { open(SettingsDialog.ENGINE) },
+                    SettingItem.Toggle(s(R.string.settings_search_suggestions), s(R.string.settings_search_suggestions_summary), Icons.Rounded.Lightbulb, searchSuggest) {
+                        settings.setSearchSuggestions(it)
+                    },
+                    SettingItem.Info(s(R.string.settings_search_shortcuts), com.gtarayici.browser.search.SearchShortcuts.ALL.joinToString(" · ") { "${it.keyword} = ${it.title}" }, Icons.Rounded.Search),
                     SettingItem.Action(
                         s(R.string.settings_default_browser),
                         s(if (isDefault) R.string.settings_default_browser_active else R.string.settings_default_browser_summary),

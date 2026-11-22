@@ -746,6 +746,22 @@
     <string name="site_prefs_reset">Sıfırla</string>
     <plurals name="settings_site_prefs_count"><item quantity="one">%d site</item><item quantity="other">%d site</item></plurals>
     <string name="dark_reader_failed">Dark Reader kurulamadı. İnternet bağlantınızı denetleyip ayarı yeniden açın.</string>
+    <string name="tab_crashed_title">Bu sayfa kapandı</string>
+    <string name="tab_crashed_summary">Sayfanın çalıştığı süreç beklenmedik biçimde durdu (çoğunlukla telefonun belleği azaldığında olur). Diğer sekmeleriniz etkilenmedi.</string>
+    <string name="tab_crashed_restore">Yeniden yükle</string>
+    <string name="search_switch_to_tab">Sekmeye geç</string>
+    <string name="search_on_site">%1$s üzerinde ara</string>
+    <string name="search_fill">Öneriyi düzenle</string>
+    <string name="settings_search_suggestions">Arama önerileri</string>
+    <string name="settings_search_suggestions_summary">Yazarken arama motorundan tamamlama önerileri alınır. Yazdığınız metin arama motoruna gider; gizli sekmelerde hiç gönderilmez.</string>
+    <string name="settings_search_shortcuts">Arama kısayolları</string>
+    <string name="tabs_select">Seç</string>
+    <string name="tabs_select_all">Tümünü seç</string>
+    <string name="tabs_close_selected">Seçilenleri kapat</string>
+    <string name="tabs_search">Sekmelerde ara</string>
+    <string name="tabs_search_empty">Bu aramayla eşleşen sekme yok</string>
+    <plurals name="tabs_selected"><item quantity="one">%d seçildi</item><item quantity="other">%d seçildi</item></plurals>
+    <plurals name="tabs_close_old"><item quantity="one">1 haftadır açılmayan %d sekmeyi kapat</item><item quantity="other">1 haftadır açılmayan %d sekmeyi kapat</item></plurals>
 </resources>
 
 

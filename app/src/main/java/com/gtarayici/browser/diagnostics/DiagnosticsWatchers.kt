@@ -4,7 +4,6 @@ import com.gtarayici.browser.Components
 import com.gtarayici.browser.vpn.VpnCoreState
 import com.gtarayici.browser.vpn.VpnStatus
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.content.DownloadState
@@ -36,11 +35,14 @@ fun startDiagnosticsWatchers(components: Components) {
         components.store.flow()
             .map { state -> state.downloads.values.map { Triple(it.id, it.status, it.contentType) } }
             .distinctUntilChanged()
-            .drop(1) // Açılışta geri yüklenen eski indirmeler kaydedilmez.
             .collect { downloads ->
                 downloads.forEach { (id, status, type) ->
-                    if (reported[id] == status) return@forEach
+                    val previous = reported[id]
+                    if (previous == status) return@forEach
                     reported[id] = status
+                    // Açılışta geri yüklenen, zaten bitmiş indirmeler ilk görüldüklerinde yazılmaz
+                    // (kayıtta her açılışta "tamamlandı (×3)" görünüyordu).
+                    if (previous == null && status != DownloadState.Status.DOWNLOADING) return@forEach
                     when (status) {
                         DownloadState.Status.COMPLETED -> Diagnostics.log("tamamlandı (${type ?: "tür bilinmiyor"})", "indirme")
                         DownloadState.Status.FAILED -> Diagnostics.log("başarısız (${type ?: "tür bilinmiyor"})", "indirme")
