@@ -140,6 +140,7 @@ fun BrowserApp(
     val translationSupported by store.observe { it.translationEngine.isEngineSupported == true }
     val toolbarSwipe by components.settings.toolbarSwipeTabs.collectAsState()
     val hideToolbar by components.settings.hideToolbarOnScroll.collectAsState()
+    val tabsRestored by components.tabsRestored.collectAsState()
     val messenger = components.messenger
     ClosedTabsUndo(controller)
     var dismissedOffer by remember { mutableStateOf<String?>(null) }
@@ -286,7 +287,8 @@ fun BrowserApp(
                     // Motor görünümü her zaman yerinde kalır; aksi halde bağlı özellikler serbest bırakılır.
                     // PiP sırasında da gizlenmez: sayfa çizilmeye devam etmeli (YouTube oynatıcısı buna bağlı).
                     AndroidView(factory = { engineView }, modifier = Modifier.keepSizeDuringPip(pictureInPicture))
-                    if (showHome && !pictureInPicture) {
+                    // Açılışta sekmeler geri yüklenirken (eklentiler/VPN beklenirken) ana sayfa bir anlığına görünmesin.
+                    if (showHome && !pictureInPicture && tabsRestored) {
                         Box(Modifier.padding(bottom = if (floatingBars) with(LocalDensity.current) { toolbarHeight.toDp() } else 0.dp)) {
                             HomeScreen(
                                 private = private,

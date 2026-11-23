@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- Web sitelerini gerçek uygulama (WebAPK) olarak yükleyebilmek için -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -129,6 +130,16 @@
         <receiver
             android:name=".vpn.VpnActionReceiver"
             android:exported="false" />
+
+        <!-- VPN açıkken uygulamanın arka planda kapatılmaması için; yalnızca VPN bildirimini taşır. -->
+        <service
+            android:name=".vpn.VpnKeepAliveService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Tarayıcının kendi VPN/vekil bağlantısını uygulama arka plandayken açık tutar" />
+        </service>
 
         <service
             android:name=".media.MediaSessionService"

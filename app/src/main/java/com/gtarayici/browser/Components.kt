@@ -115,6 +115,13 @@ class Components(private val context: Context) {
         com.gtarayici.browser.sites.SiteSettingsApplier(context, store, engine, siteSettings, settings, sessionUseCases, applicationScope)
     }
 
+    val vpnNotifier by lazy {
+        com.gtarayici.browser.vpn.VpnNotifier(context, vpn, applicationScope, keepAlive = { settings.vpnKeepAlive.value })
+    }
+
+    /** Açılışta sekmeler geri yüklendi mi (yüklenene kadar ana sayfa yerine boş ekran gösterilir). */
+    val tabsRestored = kotlinx.coroutines.flow.MutableStateFlow(false)
+
     val readingList by lazy { com.gtarayici.browser.reading.ReadingList(context, applicationScope) }
 
     val speaker by lazy { com.gtarayici.browser.reading.Speaker(context) }

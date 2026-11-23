@@ -11,14 +11,33 @@ import androidx.core.app.NotificationManagerCompat
 import com.gtarayici.browser.MainActivity
 import com.gtarayici.browser.R
 import com.gtarayici.browser.components
+import android.app.Notification
+import android.app.Service
+import android.content.pm.ServiceInfo
+import android.os.Build
+import android.os.IBinder
+import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
+import com.gtarayici.browser.diagnostics.Diagnostics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
  * VPN açıkken sabit bir bildirim gösterir: hangi sunucuya bağlı olduğu ve "Bağlantıyı kes" düğmesi. Yüklü web
  * uygulamalarında adres çubuğu ve menü olmadığından VPN buradan kapatılabilir; diğer uygulamalardayken de görünür.
+ *
+ * "VPN arka planda açık kalsın" ayarı açıksa bildirim bir ön plan hizmetine aittir: Android uygulamayı arka planda
+ * kapatmaz, VPN bağlı kalır ve uygulama yeniden açıldığında beklemeden doğrudan açılır.
  */
-class VpnNotifier(private val context: Context, private val vpn: VpnManager, private val scope: CoroutineScope) {
+class VpnNotifier(
+    private val context: Context,
+    private val vpn: VpnManager,
+    private val scope: CoroutineScope,
+    private val keepAlive: () -> Boolean,
+) {
+    /** Hizmet başlarken gösterilecek son bildirim. */
+    @Volatile var current: Notification? = null
+        private set
 
     fun start() {
         val manager = context.getSystemService(NotificationManager::class.java)
@@ -33,7 +52,28 @@ class VpnNotifier(private val context: Context, private val vpn: VpnManager, pri
                     is VpnStatus.Connected -> show(context.getString(R.string.vpn_notification_connected, status.server.name))
                     VpnStatus.Connecting -> show(context.getString(R.string.vpn_notification_connecting))
                     is VpnStatus.Error -> show(context.getString(R.string.vpn_notification_error))
-                    VpnStatus.Off -> NotificationManagerCompat.from(context).cancel(ID)
+                    VpnStatus.Off -> {
+                        current = null
+                        context.stopService(Intent(context, VpnKeepAliveService::class.java))
+                        NotificationManagerCompat.from(context).cancel(ID)
+                    }
+                }
+            }
+        }
+    }
+
+    /** "VPN arka planda açık kalsın" ayarı değişince hizmet başlatılır ya da durdurulur (bildirim kalır). */
+    fun onKeepAliveChanged(on: Boolean) {
+        val notification = current ?: return
+        if (on) {
+            runCatching { ContextCompat.startForegroundService(context, Intent(context, VpnKeepAliveService::class.java)) }
+        } else {
+            context.stopService(Intent(context, VpnKeepAliveService::class.java))
+            val manager = NotificationManagerCompat.from(context)
+            if (manager.areNotificationsEnabled()) {
+                try {
+                    manager.notify(ID, notification)
+                } catch (_: SecurityException) {
                 }
             }
         }
@@ -63,6 +103,12 @@ class VpnNotifier(private val context: Context, private val vpn: VpnManager, pri
             .setContentIntent(open)
             .addAction(0, context.getString(R.string.vpn_disconnect), disconnect)
             .build()
+        current = notification
+        if (keepAlive()) {
+            // Hizmet zaten çalışıyorsa aynı kimlikle bildirim güncellenir; çalışmıyorsa başlatılır.
+            runCatching { ContextCompat.startForegroundService(context, Intent(context, VpnKeepAliveService::class.java)) }
+                .onFailure { Diagnostics.log("arka plan hizmeti başlatılamadı: ${it.javaClass.simpleName}", "vpn") }
+        }
         // Bildirim izni yoksa gösterilmez; VPN yine çalışır.
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return
@@ -76,6 +122,26 @@ class VpnNotifier(private val context: Context, private val vpn: VpnManager, pri
         const val CHANNEL = "vpn"
         const val ID = 4207
         const val ACTION_DISCONNECT = "com.gtarayici.browser.vpn.DISCONNECT"
+    }
+}
+
+/** VPN açıkken uygulamanın arka planda kapatılmamasını sağlayan ön plan hizmeti (yalnızca bildirim taşır). */
+class VpnKeepAliveService : Service() {
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val notification = applicationContext.components.vpnNotifier.current
+        if (notification == null) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
+        runCatching { ServiceCompat.startForeground(this, VpnNotifier.ID, notification, type) }
+            .onFailure {
+                Diagnostics.log("arka plan hizmeti ön plana alınamadı: ${it.javaClass.simpleName}", "vpn")
+                stopSelf()
+            }
+        return START_NOT_STICKY
     }
 }
 

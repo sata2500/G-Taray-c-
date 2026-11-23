@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.DataSaverOn
 import androidx.compose.material.icons.rounded.HideImage
 import androidx.compose.material.icons.rounded.NetworkCheck
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.VpnLock
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.ui.res.pluralStringResource
@@ -175,6 +176,7 @@ private fun settingsPages(
     val updateState by components.updater.state.collectAsState()
     val textZoom by settings.textZoom.collectAsState()
     val searchSuggest by settings.searchSuggestions.collectAsState()
+    val vpnKeepAlive by settings.vpnKeepAlive.collectAsState()
     val darkSites by settings.darkSites.collectAsState()
     val customSites by components.siteSettings.sites.collectAsState()
     val dataSaverMode by settings.dataSaver.collectAsState()
@@ -266,6 +268,10 @@ private fun settingsPages(
             SettingSection(
                 s(R.string.settings_section_connection),
                 listOfNotNull(
+                    SettingItem.Toggle(s(R.string.settings_vpn_keep_alive), s(R.string.settings_vpn_keep_alive_summary), Icons.Rounded.VpnLock, vpnKeepAlive) {
+                        settings.setVpnKeepAlive(it)
+                        components.vpnNotifier.onKeepAliveChanged(it)
+                    },
                     SettingItem.Action(
                         s(R.string.settings_dns),
                         if (dnsProvider == DnsProvider.CUSTOM) dnsCustom.ifBlank { dnsProvider.title } else dnsProvider.title,

@@ -106,6 +106,7 @@ class AppSettings(context: Context) {
     private val textZoomPref = int("text_zoom", 100)
     private val darkSitesPref = bool("dark_sites", false)
     private val searchSuggestionsPref = bool("search_suggestions", true)
+    private val vpnKeepAlivePref = bool("vpn_keep_alive", true)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -141,6 +142,8 @@ class AppSettings(context: Context) {
     val darkSites get() = darkSitesPref.flow
     /** Yazarken arama motorundan öneri alınsın mı (gizli sekmelerde hiç alınmaz). */
     val searchSuggestions get() = searchSuggestionsPref.flow
+    /** VPN açıkken uygulama arka planda kapatılmasın (ön plan hizmeti). */
+    val vpnKeepAlive get() = vpnKeepAlivePref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -173,6 +176,7 @@ class AppSettings(context: Context) {
     fun setTextZoom(value: Int) = textZoomPref.set(value)
     fun setDarkSites(value: Boolean) = darkSitesPref.set(value)
     fun setSearchSuggestions(value: Boolean) = searchSuggestionsPref.set(value)
+    fun setVpnKeepAlive(value: Boolean) = vpnKeepAlivePref.set(value)
 
     /** Yedek için ayarların ham hali (anahtar → değer). */
     fun exportAll(): Map<String, Any?> = prefs.all.toMap()

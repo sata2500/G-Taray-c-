@@ -798,6 +798,8 @@
     <string name="vpn_notification_connected">%1$s sunucusuna bağlı</string>
     <string name="vpn_notification_connecting">Bağlanıyor…</string>
     <string name="vpn_notification_error">Bağlantı kurulamadı; tarayıcı trafiği güvenlik için durduruldu</string>
+    <string name="settings_vpn_keep_alive">VPN arka planda açık kalsın</string>
+    <string name="settings_vpn_keep_alive_summary">VPN açıkken Android uygulamayı arka planda kapatmaz: VPN bağlı kalır, uygulama beklemeden açılır. Bildirimlerde "VPN açık" durur. Biraz daha fazla bellek kullanır.</string>
 </resources>
 
 

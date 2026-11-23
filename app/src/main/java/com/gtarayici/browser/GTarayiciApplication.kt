@@ -62,7 +62,7 @@ class GTarayiciApplication : Application() {
         components.applicationScope.launch { components.settings.theme.collect { components.applyColorScheme() } }
         initExtensions()
         components.vpn.restore()
-        com.gtarayici.browser.vpn.VpnNotifier(this, components.vpn, components.applicationScope).start()
+        components.vpnNotifier.start()
         reloadFailedPagesOnVpnConnect()
         components.mediaSessionFeature.start()
         components.historyRecorder.start()
@@ -177,7 +177,11 @@ class GTarayiciApplication : Application() {
             }
             val waited = android.os.SystemClock.uptimeMillis() - started
             if (waited > 300) com.gtarayici.browser.diagnostics.Diagnostics.log("sekmeler $waited ms beklendi (eklentiler/VPN)", "açılış")
-            components.tabsUseCases.restore(components.sessionStorage)
+            try {
+                components.tabsUseCases.restore(components.sessionStorage)
+            } finally {
+                components.tabsRestored.value = true
+            }
             components.tabGroups.start()
             components.sessionStorage
                 .autoSave(components.store)
