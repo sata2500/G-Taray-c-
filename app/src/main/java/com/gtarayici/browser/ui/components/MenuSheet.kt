@@ -50,9 +50,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
@@ -100,100 +104,103 @@ data class MenuState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuSheet(state: MenuState, controller: BrowserController) {
+    // İki sayfa: sade ana menü ve "Tüm seçenekler". Menü her açılışta ana sayfadan başlar.
+    var all by remember { mutableStateOf(false) }
     ModalBottomSheet(
         onDismissRequest = { controller.menuOpen = false },
         sheetState = com.gtarayici.browser.ui.designsystem.rememberFullSheetState(),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Column(
-            Modifier.navigationBarsPadding().padding(bottom = Spacing.lg).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            Modifier.navigationBarsPadding().padding(bottom = Spacing.md).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
-            if (state.hasPage) PageActions(state, controller)
-            if (state.extensionActions.isNotEmpty()) ExtensionActions(state.extensionActions, controller)
-
-            // Bu sayfa için: yalnızca o an işe yarayanlar (video, çeviri, okuma ayarları) ve en sık kullanılanlar.
-            // Seyrek kullanılan sayfa işlemleri "Diğer sayfa işlemleri" altında katlı durur.
-            if (state.hasPage) {
-                var more by rememberSaveable { mutableStateOf(false) }
-                SectionCard(
-                    listOf(
-                        if (state.isYouTubeVideo) {
-                            { MenuRow(Icons.Rounded.OndemandVideo, stringResource(R.string.menu_download_video)) { controller.openYouTubeDownload() } }
-                        } else null,
-                        if (state.canTranslate) {
-                            { MenuRow(Icons.Rounded.Translate, stringResource(R.string.menu_translate)) { controller.openTranslate() } }
-                        } else null,
-                        if (state.readerActive) {
-                            { MenuRow(Icons.Rounded.TextFields, stringResource(R.string.reader_settings)) { controller.openReaderSettings() } }
-                        } else null,
-                        { MenuRow(Icons.Rounded.FindInPage, stringResource(R.string.menu_find_in_page)) { controller.openFindInPage() } },
-                        if (!state.readerActive) {
-                            { MenuRow(Icons.Rounded.BookmarkAdd, stringResource(R.string.menu_save_for_later)) { controller.reading.saveForLater() } }
-                        } else null,
-                        {
-                            MenuRow(Icons.Rounded.Download, stringResource(R.string.menu_page_downloads)) {
-                                controller.menuOpen = false
-                                controller.pageDownloadsOpen = true
-                            }
-                        },
-                        {
-                            SwitchRow(
-                                title = stringResource(R.string.menu_desktop_site),
-                                checked = state.desktopMode,
-                                icon = Icons.Rounded.DesktopWindows,
-                                iconStyle = RowIconStyle.Plain,
-                            ) { controller.toggleDesktopMode() }
-                        },
-                        {
-                            NavRow(
-                                title = stringResource(R.string.menu_more_page_actions),
-                                summary = if (more) null else stringResource(R.string.menu_more_page_actions_summary),
-                                icon = if (more) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                                showChevron = false,
-                                iconStyle = RowIconStyle.Plain,
-                            ) { more = !more }
-                        },
-                        if (more && !state.readerActive) {
-                            { MenuRow(Icons.Rounded.RecordVoiceOver, stringResource(R.string.menu_read_aloud)) { controller.reading.readAloud() } }
-                        } else null,
-                        if (more) {
-                            { MenuRow(Icons.Rounded.Screenshot, stringResource(R.string.menu_screenshot)) { controller.reading.captureFullPage() } }
-                        } else null,
-                        if (more) {
-                            { MenuRow(Icons.Rounded.PictureAsPdf, stringResource(R.string.menu_save_pdf)) { controller.reading.saveAsPdf() } }
-                        } else null,
-                        if (more) {
-                            { MenuRow(Icons.Rounded.ContentCopy, stringResource(R.string.menu_copy_link)) { controller.copyLink() } }
-                        } else null,
-                        if (more) {
-                            { MenuRow(Icons.Rounded.InstallMobile, stringResource(R.string.menu_install_app)) { controller.openInstallDialog() } }
-                        } else null,
-                    ),
-                )
-            }
-
-            // Uygulamanın bölümleri: tek dokunuşla, kaydırmadan
-            val tiles = listOf(
-                MenuTileSpec(Icons.Rounded.Add, R.string.menu_tile_new_tab) { controller.newTab(private = false) },
-                MenuTileSpec(Icons.Rounded.VisibilityOff, R.string.menu_tile_private_tab) { controller.newTab(private = true) },
-                MenuTileSpec(Icons.Rounded.Bookmarks, R.string.menu_bookmarks) { controller.open(Overlay.BOOKMARKS) },
-                MenuTileSpec(Icons.Rounded.History, R.string.menu_history) { controller.open(Overlay.HISTORY) },
-                MenuTileSpec(Icons.Rounded.Download, R.string.menu_downloads) { controller.open(Overlay.DOWNLOADS) },
-                MenuTileSpec(Icons.Rounded.AutoStories, R.string.menu_tile_reading) { controller.open(Overlay.READING) },
-                MenuTileSpec(Icons.Rounded.VpnKey, R.string.menu_vpn) { controller.open(Overlay.VPN) },
-                MenuTileSpec(Icons.Rounded.Settings, R.string.menu_settings) { controller.open(Overlay.SETTINGS) },
-                MenuTileSpec(Icons.Rounded.Extension, R.string.menu_extensions) { controller.open(Overlay.EXTENSIONS) },
-                MenuTileSpec(Icons.Rounded.ManageAccounts, R.string.menu_profiles) { controller.open(Overlay.PROFILES) },
-                MenuTileSpec(Icons.Rounded.QrCodeScanner, R.string.menu_tile_qr) { controller.openQrScanner() },
-                MenuTileSpec(Icons.Rounded.BugReport, R.string.menu_tile_report) { controller.openReport() },
-            )
-            TileGrid(columns = 4, count = tiles.size, modifier = Modifier.padding(horizontal = Spacing.sm)) { index, modifier ->
-                val tile = tiles[index]
-                Tile(stringResource(tile.label), modifier, icon = tile.icon, onClick = tile.onClick)
-            }
+            if (all) AllOptions(state, controller, onBack = { all = false }) else MainMenu(state, controller, onAll = { all = true })
         }
     }
+}
+
+/**
+ * Ana menü: gezinme düğmeleri, yalnızca o an işe yarayan bir iki satır ve dört kısayol. Geri kalan her şey
+ * "Tüm seçenekler"de.
+ */
+@Composable
+private fun MainMenu(state: MenuState, controller: BrowserController, onAll: () -> Unit) {
+    if (state.hasPage) {
+        PageActions(state, controller)
+        Spacer(Modifier.height(Spacing.xs))
+        if (state.isYouTubeVideo) {
+            MenuRow(Icons.Rounded.OndemandVideo, stringResource(R.string.menu_download_video)) { controller.openYouTubeDownload() }
+        }
+        if (state.canTranslate) {
+            MenuRow(Icons.Rounded.Translate, stringResource(R.string.menu_translate)) { controller.openTranslate() }
+        }
+        MenuRow(Icons.Rounded.FindInPage, stringResource(R.string.menu_find_in_page)) { controller.openFindInPage() }
+        SwitchRow(
+            title = stringResource(R.string.menu_desktop_site),
+            checked = state.desktopMode,
+            icon = Icons.Rounded.DesktopWindows,
+            iconStyle = RowIconStyle.Plain,
+        ) { controller.toggleDesktopMode() }
+    }
+    MenuRow(Icons.Rounded.Apps, stringResource(R.string.menu_all_options)) { onAll() }
+    HorizontalDivider(Modifier.padding(horizontal = Spacing.screen, vertical = Spacing.xs))
+    val tiles = listOf(
+        MenuTileSpec(Icons.Rounded.Bookmarks, R.string.menu_bookmarks) { controller.open(Overlay.BOOKMARKS) },
+        MenuTileSpec(Icons.Rounded.History, R.string.menu_history) { controller.open(Overlay.HISTORY) },
+        MenuTileSpec(Icons.Rounded.Download, R.string.menu_downloads) { controller.open(Overlay.DOWNLOADS) },
+        MenuTileSpec(Icons.Rounded.Settings, R.string.menu_settings) { controller.open(Overlay.SETTINGS) },
+    )
+    TileGrid(columns = 4, count = tiles.size, modifier = Modifier.padding(horizontal = Spacing.sm)) { index, modifier ->
+        val tile = tiles[index]
+        Tile(stringResource(tile.label), modifier, icon = tile.icon, onClick = tile.onClick)
+    }
+}
+
+/** Tüm seçenekler: sayfa işlemleri ve uygulamanın bölümleri, sade bir liste halinde. */
+@Composable
+private fun AllOptions(state: MenuState, controller: BrowserController, onBack: () -> Unit) {
+    Row(Modifier.padding(horizontal = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.action_back)) }
+        Text(stringResource(R.string.menu_all_options), style = MaterialTheme.typography.titleMedium)
+    }
+    if (state.extensionActions.isNotEmpty()) ExtensionActions(state.extensionActions, controller)
+    if (state.hasPage) {
+        MenuHeader(stringResource(R.string.menu_section_page))
+        if (state.readerActive) {
+            MenuRow(Icons.Rounded.TextFields, stringResource(R.string.reader_settings)) { controller.openReaderSettings() }
+        } else {
+            MenuRow(Icons.Rounded.BookmarkAdd, stringResource(R.string.menu_save_for_later)) { controller.reading.saveForLater() }
+            MenuRow(Icons.Rounded.RecordVoiceOver, stringResource(R.string.menu_read_aloud)) { controller.reading.readAloud() }
+        }
+        MenuRow(Icons.Rounded.Download, stringResource(R.string.menu_page_downloads)) {
+            controller.menuOpen = false
+            controller.pageDownloadsOpen = true
+        }
+        MenuRow(Icons.Rounded.Screenshot, stringResource(R.string.menu_screenshot)) { controller.reading.captureFullPage() }
+        MenuRow(Icons.Rounded.PictureAsPdf, stringResource(R.string.menu_save_pdf)) { controller.reading.saveAsPdf() }
+        MenuRow(Icons.Rounded.ContentCopy, stringResource(R.string.menu_copy_link)) { controller.copyLink() }
+        MenuRow(Icons.Rounded.InstallMobile, stringResource(R.string.menu_install_app)) { controller.openInstallDialog() }
+    }
+    MenuHeader(stringResource(R.string.menu_section_app))
+    MenuRow(Icons.Rounded.Add, stringResource(R.string.menu_new_tab)) { controller.newTab(private = false) }
+    MenuRow(Icons.Rounded.VisibilityOff, stringResource(R.string.menu_new_private_tab)) { controller.newTab(private = true) }
+    MenuRow(Icons.Rounded.AutoStories, stringResource(R.string.reading_list)) { controller.open(Overlay.READING) }
+    MenuRow(Icons.Rounded.VpnKey, stringResource(R.string.menu_vpn)) { controller.open(Overlay.VPN) }
+    MenuRow(Icons.Rounded.Extension, stringResource(R.string.menu_extensions)) { controller.open(Overlay.EXTENSIONS) }
+    MenuRow(Icons.Rounded.ManageAccounts, stringResource(R.string.menu_profiles)) { controller.open(Overlay.PROFILES) }
+    MenuRow(Icons.Rounded.QrCodeScanner, stringResource(R.string.menu_scan_qr)) { controller.openQrScanner() }
+    MenuRow(Icons.Rounded.BugReport, stringResource(R.string.menu_report)) { controller.openReport() }
+}
+
+@Composable
+private fun MenuHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = Spacing.screen + Spacing.xs, top = Spacing.md, bottom = Spacing.xs),
+    )
 }
 
 private class MenuTileSpec(val icon: ImageVector, val label: Int, val onClick: () -> Unit)

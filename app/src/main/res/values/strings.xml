@@ -790,6 +790,9 @@
     <string name="menu_tile_report">Sorun bildir</string>
     <string name="pdf_saved">PDF hazır; İndirilenler\'e kaydediliyor</string>
     <string name="pdf_failed">PDF oluşturulamadı. Sayfa tam yüklendikten sonra tekrar deneyin.</string>
+    <string name="menu_all_options">Tüm seçenekler</string>
+    <string name="menu_section_page">Bu sayfa</string>
+    <string name="menu_section_app">Uygulama</string>
 </resources>
 
 

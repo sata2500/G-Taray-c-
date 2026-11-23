@@ -94,6 +94,8 @@ class DownloadQueue(
     private val runtimes = ConcurrentHashMap<String, Runtime>()
 
     fun enqueue(request: NewDownload): String {
+        // Aynı indirme ikinci kez bildirilirse (ör. etkinlik yeniden oluşturulunca) süren iş bozulmasın.
+        if (runtimes[request.id]?.job?.isActive == true) return request.id
         val name = DownloadNames.finalName(request.suggestedName, request.url, request.mime, request.kind)
         runtimes[request.id] = Runtime(request).also { it.name = name }
         _tasks.update { list ->
@@ -160,6 +162,8 @@ class DownloadQueue(
 
     private fun start(id: String) {
         val runtime = runtimes[id] ?: return
+        // Aynı iş iki kez başlatılırsa iki iş parçacığı aynı dosyaya yazar ve dosya bozulur.
+        if (runtime.job?.isActive == true) return
         edit(id) { it.copy(status = TaskStatus.RUNNING, error = null) }
         runtime.job = scope.launch(Dispatchers.IO) {
             val meter = launch { measure(id, runtime) }
@@ -217,12 +221,17 @@ class DownloadQueue(
                 val file = runtime.file ?: PublicFile.create(context, runtime.name!!, runtime.mime).also { runtime.file = it }
                 file.reset()
                 runtime.bytes.set(0)
+                Diagnostics.log("hazır bağlantıdan yazılıyor (${request.mime ?: "tür bilinmiyor"})", "indirme")
+                val expectPdf = request.mime?.startsWith("application/pdf") == true
                 request.response.body.useStream { input ->
                     val buffer = ByteArray(64 * 1024)
                     var position = 0L
                     while (true) {
                         val read = input.read(buffer)
                         if (read < 0) break
+                        if (position == 0L && expectPdf && !looksLikePdf(buffer, read)) {
+                            throw IllegalStateException("PDF yerine başka bir içerik geldi")
+                        }
                         file.sink.write(position, buffer, read)
                         position += read
                         runtime.bytes.addAndGet(read.toLong())
@@ -231,6 +240,12 @@ class DownloadQueue(
             }
             else -> {
                 val probe = runtime.probe ?: segmented.probe(request.url, ctx).also { runtime.probe = it }
+                // Adres beklenen dosya yerine bir web sayfası döndürüyorsa (ör. süresi dolmuş bağlantı, oturum
+                // gerektiren dosya, "PDF olarak kaydet") sayfanın HTML'i dosya diye kaydedilmez.
+                if (servesPageInsteadOf(request.mime, probe.mime)) {
+                    throw IllegalStateException("Adres dosya yerine bir web sayfası döndürdü")
+                }
+                Diagnostics.log("adresten indiriliyor (${probe.mime ?: "tür bilinmiyor"})", "indirme")
                 if (runtime.file == null) {
                     // Sunucunun önerdiği ad yalnızca sayfadan ad gelmediyse kullanılır.
                     val name = DownloadNames.finalName(
@@ -271,7 +286,7 @@ class DownloadQueue(
         val request = runtime.request
         if (!request.url.startsWith("http")) return false
         val probe = runtime.probe ?: runCatching { segmented.probe(request.url, request.context) }.getOrNull() ?: return false
-        if (!probe.rangesSupported || probe.total < SegmentPlanner.MIN_SPLIT_BYTES || connections() <= 1) return false
+        if (!shouldSplit(request.mime, probe, connections())) return false
         runtime.probe = probe
         runCatching { request.response?.close() }
         return true
@@ -376,6 +391,29 @@ class DownloadQueue(
     }
 
     companion object {
+        /**
+         * Hazır bağlantı bırakılıp adresten yeniden (çok parçalı) indirilsin mi? Adresin verdiği dosya, motorun verdiği
+         * dosyayla aynı türde olmalı: "PDF olarak kaydet"te adres sayfanın kendisidir ve HTML döner; o zaman yeniden
+         * indirmek PDF yerine sayfanın HTML'ini kaydeder (0.14–0.15'te PDF'ler bu yüzden bozuk açılıyordu).
+         */
+        internal fun looksLikePdf(buffer: ByteArray, length: Int): Boolean =
+            length >= 5 && String(buffer, 0, 5, Charsets.US_ASCII) == "%PDF-"
+
+        /** İstenen dosya HTML değilken adres HTML döndürüyor mu? */
+        internal fun servesPageInsteadOf(requestMime: String?, servedMime: String?): Boolean {
+            val wanted = requestMime?.substringBefore(';')?.trim()?.lowercase().orEmpty()
+            val served = servedMime?.substringBefore(';')?.trim()?.lowercase().orEmpty()
+            if (wanted.isEmpty() || wanted == "application/octet-stream" || wanted.contains("html")) return false
+            return served == "text/html" || served == "application/xhtml+xml"
+        }
+
+        internal fun shouldSplit(requestMime: String?, probe: Probe, connections: Int): Boolean {
+            if (!probe.rangesSupported || probe.total < SegmentPlanner.MIN_SPLIT_BYTES || connections <= 1) return false
+            if (requestMime.isNullOrBlank() || requestMime == "application/octet-stream") return true
+            val wanted = requestMime.substringBefore(';').trim().lowercase()
+            val served = probe.mime?.substringBefore(';')?.trim()?.lowercase() ?: return false
+            return wanted == served
+        }
         const val MAX_RUNNING = 3
         const val DEFAULT_CONNECTIONS = 8
     }
