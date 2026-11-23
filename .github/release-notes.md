@@ -1,14 +1,24 @@
-## G-Tarayıcı 0.15.2
+## G-Tarayıcı 0.16.0
 
-**Daha sade menü**
-- Ana menüde yalnızca: geri, ileri, yenile, yer imi, paylaş; o an işe yarıyorsa "Videoyu indir" ve "Çevir";
-  sayfada bul; masaüstü görünümü; "Tüm seçenekler"; ve yer imleri, geçmiş, indirmeler, ayarlar kısayolları.
-- Diğer her şey "Tüm seçenekler" sayfasında, iki başlık altında sade bir liste: Bu sayfa (sonra oku, sesli oku,
-  sayfadaki indirilebilir öğeler, ekran görüntüsü, PDF, bağlantıyı kopyala, uygulama olarak yükle) ve Uygulama
-  (yeni sekme, gizli sekme, okuma listesi, VPN, eklentiler, profiller, QR kod, sorun bildir).
+**Ekran kapalıyken sıradaki video**
+- YouTube ve YouTube Music'te ekran kapalıyken sıradaki video açılıyor ama başlamıyordu. Motor sıradaki video için
+  otomatik oynatma izni istiyor; izinleri yanıtlayan bileşen ekran görünmezken çalışmadığı için istek yanıtsız
+  kalıyordu. Artık ekran kapalıyken otomatik oynatma istekleri site izinlerine göre yanıtlanır.
+- Ek güvence: bir video bittikten sonra açılan yeni video birkaç saniye içinde başlamazsa oynatılır.
 
-**Düzeltmeler**
-- "PDF olarak kaydet" ile oluşan PDF açılmıyordu: dosyanın başına sayfanın HTML'i yazılıyordu. İndirme yöneticisi
-  artık hazır PDF'i adresten yeniden indirmeye kalkmaz, aynı indirmeyi iki kez başlatmaz ve adres dosya yerine web
-  sayfası döndürürse kaydetmeden durur. PDF'in başlığı yazılırken doğrulanır.
-- "PDF olarak kaydet" PDF hazır olduğunda uygulamayı kapatıyordu (0.15.1'de düzeltildi).
+**Resim içinde resim**
+- Video küçük pencereye bazen geç kopyalanıyordu (özellikle YouTube'da video alttaki küçük oynatıcıdayken); erken
+  vazgeçildiği için küçük pencerede sayfa görünüyordu. Artık daha uzun beklenir ve bir kez yeniden denenir; bu
+  sürede ve kopyalanamazsa sayfa yerine videonun son karesi gösterilir.
+
+**Tam ekran yönü**
+- Tam ekran videoda ekran videonun yönüne döner: yatay video yatay, dikey video (Shorts gibi) dikey açılır.
+  Yüklü web uygulamalarında da geçerli.
+
+**Web uygulaması simgeleri**
+- Ana ekrana yüklenen web uygulamalarının simgeleri artık Android'in uyarlanabilir simgesiyle oluşturulur;
+  başlatıcının kutusunu doldurur, küçük görünmez. Var olan web uygulamalarında yeni simge için uygulamayı
+  menüden ("Uygulama olarak yükle") yeniden yükleyin.
+
+**Diğer**
+- Sekme grubu başlığındaki düğmeler sağ kenara hizalandı.

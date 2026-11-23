@@ -144,6 +144,8 @@ class WebAppActivity : AppCompatActivity() {
             view,
         )
         manifest?.let { lifecycle.addObserver(WebAppActivityFeature(this, components.icons, it)) }
+        // Tam ekran videoda ekran videonun yönüne döner.
+        lifecycle.addObserver(mozilla.components.feature.media.fullscreen.MediaSessionFullscreenFeature(this, components.store, tabId))
         pip = PipController(this, components, fixedTabId = id, engineView = { view }).also { it.start() }
         com.gtarayici.browser.media.BackgroundPlayGuard(this, components, fixedTabId = id).start()
 

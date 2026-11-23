@@ -104,7 +104,15 @@ class NativeVideoPip(
         firstFrameShown = false
         pipView.visibility = View.VISIBLE
         showLastFrame()
-        // Sayfada oynayan video yoksa Gecko pencere açmadan isteği tamamlar; o durumda oynatıcı kapatılır.
+        // Gecko videoyu kopyalamayı bazen 10 sn'ye kadar geciktirir (özellikle YouTube'un küçük oynatıcısında).
+        // Önce bekler, gerekirse bir kez yeniden ister; yine olmazsa vazgeçer.
+        player.postDelayed({
+            if (active && source === session && pipSession == null) {
+                Diagnostics.pip("video henüz kopyalanmadı; yeniden isteniyor")
+                session.setFocused(true)
+                runCatching { pip.request() }
+            }
+        }, RETRY_AFTER_MS)
         player.postDelayed({ if (active && source === session && pipSession == null) fail("video bulunamadı") }, ATTACH_TIMEOUT_MS)
         // Gecko oynayan videoyu odaklı çerçevede arar; uygulamadan çıkarken GeckoView odağı bırakır.
         session.setFocused(true)
@@ -138,6 +146,13 @@ class NativeVideoPip(
     private fun fail(reason: String) {
         logger.warn("Video PiP kurulamadı: $reason")
         Diagnostics.pip("PiP oynatıcısı kurulamadı: $reason")
+        // Videonun son karesi gösteriliyorsa küçük pencerede sayfa yerine o kalır (ses sürer); Gecko geç de olsa
+        // videoyu kopyalarsa oynatıcı yine açılır. Son kare yoksa sayfa gösterilir.
+        if (placeholder.isVisible) {
+            releasePipSession()
+            Diagnostics.pip("küçük pencerede videonun son karesi gösteriliyor")
+            return
+        }
         exit(dismissed = false)
     }
 
@@ -192,7 +207,8 @@ class NativeVideoPip(
     }
 
     companion object {
-        private const val ATTACH_TIMEOUT_MS = 2500L
+        private const val RETRY_AFTER_MS = 5_000L
+        private const val ATTACH_TIMEOUT_MS = 14_000L
         private const val PLACEHOLDER_GRACE_MS = 120L
 
         /** a-c'nin motor görünümünün içindeki GeckoView'ı bulur. */

@@ -53,6 +53,9 @@ class GTarayiciApplication : Application() {
         components.applyGeckoPrefs()
         components.dataSaver.start()
         components.siteSettingsApplier.start()
+        com.gtarayici.browser.media.BackgroundAutoplay(
+            components.store, components.permissionStorage, components.dataSaver, components.applicationScope,
+        ).start(this)
         components.applicationScope.launch { components.settings.theme.collect { components.applyColorScheme() } }
         initExtensions()
         components.vpn.restore()

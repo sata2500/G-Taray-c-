@@ -66,6 +66,7 @@ class WebApkInstaller(private val context: Context, private val components: Comp
             val manifest = manifestFor(tab)
             components.manifestStorage.saveManifest(manifest)
 
+            val adaptive = runCatching { adaptiveIcon(manifest, tab) }.getOrNull()
             val spec = WebApkSpec(
                 packageName = WebApkPackager.packageNameFor(manifest.startUrl),
                 label = manifest.shortName?.takeIf { it.isNotBlank() } ?: manifest.name,
@@ -73,6 +74,8 @@ class WebApkInstaller(private val context: Context, private val components: Comp
                 scope = manifest.scope ?: manifest.startUrl,
                 hostPackage = context.packageName,
                 iconPng = iconPng(manifest, tab),
+                foregroundPng = adaptive?.first,
+                backgroundPng = adaptive?.second,
             )
             val template = context.assets.open("webapk/shell.apk").use { it.readBytes() }
             val (key, certificate) = signingKey()
@@ -101,6 +104,40 @@ class WebApkInstaller(private val context: Context, private val components: Comp
             display = WebAppManifest.DisplayMode.STANDALONE,
             scope = "${uri.scheme}://${uri.host}/",
         )
+    }
+
+    /**
+     * Uyarlanabilir simge (ön plan, arka plan; 432 px). Başlatıcı simgeyi kendi biçimiyle (daire, yuvarlak kare)
+     * keser; eski tip simgeler ise küçültülüp kutuya konduğu için küçük görünür.
+     *  - Maskelenebilir simge tam boy ön plan olur, arka plan simgenin kenar rengidir.
+     *  - Diğerleri güvenli alana (merkezdeki ~%62) sığdırılır; arka plan simgenin köşe rengi (saydamsa beyaz).
+     */
+    private suspend fun adaptiveIcon(manifest: WebAppManifest, tab: SessionState): Pair<ByteArray, ByteArray>? {
+        val request = if (manifest.icons.isNotEmpty()) {
+            manifest.toIconRequest().copy(size = IconRequest.Size.LAUNCHER)
+        } else {
+            IconRequest(tab.content.url, size = IconRequest.Size.LAUNCHER)
+        }
+        val icon = runCatching { components.icons.loadIcon(request).await() }.getOrNull()
+        val source = icon?.bitmap ?: tab.content.icon ?: return null
+        val size = ADAPTIVE_SIZE
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        val corner = source.getPixel(0, 0)
+        val background = when {
+            android.graphics.Color.alpha(corner) > 200 -> corner or 0xFF000000.toInt()
+            else -> 0xFFFFFFFF.toInt()
+        }
+        val foreground = createBitmap(size, size)
+        Canvas(foreground).apply {
+            val inset = if (icon?.maskable == true) 0f else size * ADAPTIVE_INSET
+            drawBitmap(source, null, RectF(inset, inset, size - inset, size - inset), paint)
+        }
+        val back = createBitmap(size, size).apply { eraseColor(background) }
+        fun png(bitmap: Bitmap) = ByteArrayOutputStream().use { stream ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            stream.toByteArray()
+        }
+        return png(foreground) to png(back)
     }
 
     /** 192 piksel başlatıcı simgesi. Maskelenebilir simgeler daire içine, diğerleri kenar boşluğuyla çizilir. */
@@ -189,6 +226,9 @@ class WebApkInstaller(private val context: Context, private val components: Comp
     }
 
     private companion object {
+        const val ADAPTIVE_SIZE = 432
+        /** 108 birimlik tuvalde logo ~67 birim (güvenli alan 66): her kenardan ~%19. */
+        const val ADAPTIVE_INSET = 0.19f
         const val KEYSTORE = "AndroidKeyStore"
         const val KEY_ALIAS = "gtarayici_webapk_signing"
     }

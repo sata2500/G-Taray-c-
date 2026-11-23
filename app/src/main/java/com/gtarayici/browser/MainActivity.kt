@@ -105,6 +105,8 @@ class MainActivity : AppCompatActivity() {
         scrollContainer = ScrollTrackingLayout(this, engineView, controller.dynamicToolbar, swipeRefresh)
         setupFeatures()
         com.gtarayici.browser.diagnostics.StartupTimer.watch(this, components.store, lifecycleScope)
+        // Tam ekran videoda ekran videonun yönüne döner (yatay video → yatay, dikey video → dikey).
+        lifecycle.addObserver(mozilla.components.feature.media.fullscreen.MediaSessionFullscreenFeature(this, components.store, null))
         lifecycleScope.launch {
             components.settings.pullToRefresh.collect { updatePullToRefresh() }
         }

@@ -100,11 +100,16 @@
     if (video && !video.paused) registerHandlers();
   }, 2000);
 
-  // Ekran kapalıyken YouTube'un kendi geçişi gecikebilir; video bitince sıradakine geçilir.
+  // Ekran kapalıyken YouTube'un kendi geçişi gecikebilir; oynatma listesinde video bitince sıradakine geçilir.
+  // Ayrıca (listede olsun olmasın) bir video bittikten sonra açılan yeni video kendiliğinden başlamazsa
+  // birkaç kez "oynat" denenir. Yalnızca bir video bittikten sonraki ilk 30 saniyede; kullanıcının kendi
+  // duraklatmasına karışılmaz.
+  let endedAt = 0;
   document.addEventListener(
     "ended",
     (event) => {
       if (!(event.target instanceof HTMLVideoElement) || !backgroundPlay) return;
+      endedAt = Date.now();
       if (!inPlaylist()) return;
       const endedUrl = location.href;
       setTimeout(() => {
@@ -113,6 +118,25 @@
     },
     true
   );
+  let lastUrl = location.href;
+  setInterval(() => {
+    if (location.href === lastUrl) return;
+    lastUrl = location.href;
+    if (!backgroundPlay || Date.now() - endedAt > 30000) return;
+    let tries = 0;
+    const kick = setInterval(() => {
+      const video = document.querySelector("video");
+      if (++tries > 8 || (video && !video.paused && video.currentTime > 0)) {
+        clearInterval(kick);
+        return;
+      }
+      const p = player();
+      try {
+        if (p && typeof p.playVideo === "function") p.playVideo();
+        else if (video) video.play().catch(() => {});
+      } catch (e) {}
+    }, 1500);
+  }, 1000);
 
   const CATEGORIES = ["sponsor", "selfpromo", "interaction"];
   let currentVideoId = null;

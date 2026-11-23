@@ -19,6 +19,9 @@ data class WebApkSpec(
     val scope: String,
     val hostPackage: String,
     val iconPng: ByteArray,
+    /** Uyarlanabilir simgenin ön planı (432 px) ve arka planı; null ise şablondakiler kalır. */
+    val foregroundPng: ByteArray? = null,
+    val backgroundPng: ByteArray? = null,
 )
 
 /**
@@ -74,9 +77,15 @@ object WebApkPackager {
                                 else -> null
                             }
                         }
-                        name.startsWith("res/") && name.endsWith(".png") && !iconReplaced -> {
-                            data = spec.iconPng
-                            iconReplaced = true
+                        // Derleme kaynak adlarını kısalttığı için (res/Gx.png gibi) simge parçaları boyutlarından
+                        // tanınır: arka plan 1×1, ön plan 432×432, diğeri eski tip simge (192×192).
+                        name.startsWith("res/") && name.endsWith(".png") -> when (pngWidth(data)) {
+                            1 -> spec.backgroundPng?.let { data = it }
+                            ADAPTIVE_WIDTH -> spec.foregroundPng?.let { data = it }
+                            else -> if (!iconReplaced) {
+                                data = spec.iconPng
+                                iconReplaced = true
+                            }
                         }
                     }
                     output.putNextEntry(copyEntry(entry, data))
@@ -98,6 +107,15 @@ object WebApkPackager {
             .sign()
         unsigned.delete()
         return signed
+    }
+
+    private const val ADAPTIVE_WIDTH = 432
+
+    /** PNG başlığındaki genişlik; PNG değilse -1. */
+    internal fun pngWidth(data: ByteArray): Int {
+        if (data.size < 24 || data[1] != 'P'.code.toByte() || data[2] != 'N'.code.toByte()) return -1
+        return ((data[16].toInt() and 0xFF) shl 24) or ((data[17].toInt() and 0xFF) shl 16) or
+            ((data[18].toInt() and 0xFF) shl 8) or (data[19].toInt() and 0xFF)
     }
 
     /** Sıkıştırılmamış (STORED) girdiler öyle kalmalıdır (resources.arsc için zorunlu). */

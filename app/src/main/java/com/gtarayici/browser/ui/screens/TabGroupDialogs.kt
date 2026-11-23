@@ -77,19 +77,21 @@ internal fun GroupHeader(
     ) {
         Box(Modifier.size(12.dp).clip(CircleShape).background(Color(group.color)))
         Spacer(Modifier.width(10.dp))
-        Text(
-            group.name.ifBlank { stringResource(R.string.tab_groups_unnamed) },
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false),
-        )
-        Text(
-            "  ·  $count",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.weight(1f))
+        // Ad ve sayı kalan genişliği tek başına kullanır; düğmeler her zaman sağ kenarda durur.
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                group.name.ifBlank { stringResource(R.string.tab_groups_unnamed) },
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            Text(
+                "  ·  $count",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Icon(
             if (group.collapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
             contentDescription = stringResource(if (group.collapsed) R.string.tab_groups_expand else R.string.tab_groups_collapse),
