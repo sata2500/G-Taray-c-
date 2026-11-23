@@ -1,24 +1,16 @@
-## G-Tarayıcı 0.16.0
+## G-Tarayıcı 0.16.1
 
-**Ekran kapalıyken sıradaki video**
-- YouTube ve YouTube Music'te ekran kapalıyken sıradaki video açılıyor ama başlamıyordu. Motor sıradaki video için
-  otomatik oynatma izni istiyor; izinleri yanıtlayan bileşen ekran görünmezken çalışmadığı için istek yanıtsız
-  kalıyordu. Artık ekran kapalıyken otomatik oynatma istekleri site izinlerine göre yanıtlanır.
-- Ek güvence: bir video bittikten sonra açılan yeni video birkaç saniye içinde başlamazsa oynatılır.
+**Reklam engelleyici açılışta**
+- Uygulama açılırken önceki sekmeler artık reklam engelleyici (uBlock Origin) yüklendikten sonra açılır. Önceden
+  ilk sayfa bazen engelleyici hazır olmadan açılıyor, ancak yenileyince reklamlar engelleniyordu.
 
-**Resim içinde resim**
-- Video küçük pencereye bazen geç kopyalanıyordu (özellikle YouTube'da video alttaki küçük oynatıcıdayken); erken
-  vazgeçildiği için küçük pencerede sayfa görünüyordu. Artık daha uzun beklenir ve bir kez yeniden denenir; bu
-  sürede ve kopyalanamazsa sayfa yerine videonun son karesi gösterilir.
+**VPN açılışta**
+- VPN açık bırakıldıysa sekmeler VPN bağlanınca açılır (en fazla 8 sn beklenir); ilk sayfa artık "bağlantı hatası"
+  ile açılmaz.
+- Açılışta bağlantı kurulamazsa kendiliğinden iki kez daha denenir.
+- VPN sonradan bağlanırsa, bağlantı hatası gösteren sayfalar kendiliğinden yenilenir.
 
-**Tam ekran yönü**
-- Tam ekran videoda ekran videonun yönüne döner: yatay video yatay, dikey video (Shorts gibi) dikey açılır.
-  Yüklü web uygulamalarında da geçerli.
-
-**Web uygulaması simgeleri**
-- Ana ekrana yüklenen web uygulamalarının simgeleri artık Android'in uyarlanabilir simgesiyle oluşturulur;
-  başlatıcının kutusunu doldurur, küçük görünmez. Var olan web uygulamalarında yeni simge için uygulamayı
-  menüden ("Uygulama olarak yükle") yeniden yükleyin.
-
-**Diğer**
-- Sekme grubu başlığındaki düğmeler sağ kenara hizalandı.
+**VPN bildirimi**
+- VPN açıkken bildirimlerde "G-Tarayıcı VPN açık" bildirimi durur: bağlı sunucu ve "Bağlantıyı kes" düğmesi.
+  Yüklü web uygulamalarından ve diğer uygulamalardan VPN'i kapatmak için tarayıcıya dönmek gerekmez. Bildirime
+  dokununca VPN ekranı açılır.

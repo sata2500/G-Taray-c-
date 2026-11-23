@@ -386,6 +386,7 @@ class MainActivity : AppCompatActivity() {
                 controller.loadUrl(url, inNewTab = true, private = false)
             }
             ACTION_OPEN_DOWNLOADS -> controller.open(Overlay.DOWNLOADS)
+            ACTION_OPEN_VPN -> controller.open(Overlay.VPN)
             Intent.ACTION_WEB_SEARCH -> {
                 val query = intent.getStringExtra(SearchManager.QUERY) ?: return
                 controller.loadUrl(components.settings.searchEngine.value.searchUrl(query), inNewTab = true)
@@ -419,6 +420,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val ACTION_OPEN_DOWNLOADS = "com.gtarayici.browser.OPEN_DOWNLOADS"
+        const val ACTION_OPEN_VPN = "com.gtarayici.browser.OPEN_VPN"
         private const val UPDATE_CHECK_DELAY_MS = 8_000L
     }
 }

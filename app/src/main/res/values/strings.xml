@@ -793,6 +793,11 @@
     <string name="menu_all_options">Tüm seçenekler</string>
     <string name="menu_section_page">Bu sayfa</string>
     <string name="menu_section_app">Uygulama</string>
+    <string name="vpn_notification_channel">VPN durumu</string>
+    <string name="vpn_notification_title">G-Tarayıcı VPN açık</string>
+    <string name="vpn_notification_connected">%1$s sunucusuna bağlı</string>
+    <string name="vpn_notification_connecting">Bağlanıyor…</string>
+    <string name="vpn_notification_error">Bağlantı kurulamadı; tarayıcı trafiği güvenlik için durduruldu</string>
 </resources>
 
 

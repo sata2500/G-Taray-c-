@@ -108,6 +108,21 @@ class ExtensionManager(
     /** Dark Reader kurulamazsa (ör. internet yok) arayüze bildirilir. */
     var onDarkReaderFailed: (Throwable) -> Unit = {}
 
+    /**
+     * Motor kurulu eklentileri yükleyene kadar bekler (en fazla [timeoutMs]). Açılışta sekmeler bundan sonra geri
+     * yüklenir; aksi halde ilk sayfa uBlock Origin hazır olmadan, reklamlar engellenmeden açılabiliyordu.
+     */
+    suspend fun awaitLoaded(timeoutMs: Long) {
+        kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
+            kotlinx.coroutines.suspendCancellableCoroutine<Unit> { continuation ->
+                engine.listInstalledWebExtensions(
+                    onSuccess = { if (continuation.isActive) continuation.resumeWith(Result.success(Unit)) },
+                    onError = { if (continuation.isActive) continuation.resumeWith(Result.success(Unit)) },
+                )
+            }
+        }
+    }
+
     fun refresh() {
         engine.listInstalledWebExtensions(
             // Yerleşik eklentiler (yardımcı eklenti, Mozilla'nın okuma görünümü) kullanıcıya gösterilmez; kapatılırsa

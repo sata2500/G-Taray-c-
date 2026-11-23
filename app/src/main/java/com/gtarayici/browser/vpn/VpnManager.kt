@@ -83,7 +83,8 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
     fun restore() {
         val server = activeServerId?.let { id -> servers.value.firstOrNull { it.id == id } }
         if (enabled && server != null) {
-            connect(server)
+            // Açılışta ağ henüz hazır olmayabilir: bağlanamazsa birkaç kez daha denenir.
+            connect(server, retries = RESTORE_RETRIES)
         } else {
             // Önceki oturumdan kalmış olabilecek vekil ayarını temizle.
             prefs.edit { putBoolean(KEY_ENABLED, false) }
@@ -190,7 +191,7 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         if (server.id in _lastTests.value) _lastTests.value = _lastTests.value - server.id
     }
 
-    fun connect(server: VpnServer) {
+    fun connect(server: VpnServer, retries: Int = 0) {
         stopProcess()
         activeServerId = server.id
         prefs.edit { putBoolean(KEY_ENABLED, true) }
@@ -205,6 +206,13 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
                 test().onSuccess { rememberTest(server.id, it) }
             }.onFailure { error ->
                 logger.warn("VPN başlatılamadı", error)
+                if (retries > 0 && enabled && activeServerId == server.id) {
+                    com.gtarayici.browser.diagnostics.Diagnostics.log("bağlanamadı, yeniden deneniyor: ${error.message}", "vpn")
+                    applyProxy(DEAD_PORT)
+                    kotlinx.coroutines.delay(RETRY_DELAY_MS * (RESTORE_RETRIES - retries + 1))
+                    if (enabled && activeServerId == server.id && _status.value == VpnStatus.Connecting) connect(server, retries - 1)
+                    return@onFailure
+                }
                 // Kapalı başarısızlık: vekil ayarı ölü bir porta yönlendirilir, trafik sızmaz.
                 applyProxy(DEAD_PORT)
                 _status.value = VpnStatus.Error(com.gtarayici.browser.ui.feedback.HumanErrors.detail(error))
@@ -394,6 +402,8 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
 
     companion object {
         private const val KEY_SERVERS = "servers"
+        private const val RESTORE_RETRIES = 2
+        private const val RETRY_DELAY_MS = 2_000L
         private const val KEY_ACTIVE = "active"
         private const val KEY_TESTS = "last_tests"
         private const val KEY_ENABLED = "enabled"

@@ -7,6 +7,9 @@ import android.os.Looper
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.support.base.log.logger.Logger
@@ -59,6 +62,8 @@ class GTarayiciApplication : Application() {
         components.applicationScope.launch { components.settings.theme.collect { components.applyColorScheme() } }
         initExtensions()
         components.vpn.restore()
+        com.gtarayici.browser.vpn.VpnNotifier(this, components.vpn, components.applicationScope).start()
+        reloadFailedPagesOnVpnConnect()
         components.mediaSessionFeature.start()
         components.historyRecorder.start()
         com.gtarayici.browser.diagnostics.startDiagnosticsWatchers(components)
@@ -143,8 +148,35 @@ class GTarayiciApplication : Application() {
         }
     }
 
+    /** VPN (yeniden) bağlanınca, bağlantı hatası gösteren sekmeler kendiliğinden yenilenir. */
+    private fun reloadFailedPagesOnVpnConnect() {
+        components.applicationScope.launch {
+            components.vpn.status
+                .map { it is com.gtarayici.browser.vpn.VpnStatus.Connected }
+                .distinctUntilChanged()
+                .collect { connected ->
+                    if (!connected) return@collect
+                    val failed = components.errorPages.failedUrls.value
+                    (components.store.state.tabs + components.store.state.customTabs)
+                        .filter { it.content.url in failed && it.engineState.engineSession != null }
+                        .forEach { components.sessionUseCases.reload(it.id) }
+                }
+        }
+    }
+
     private fun restoreTabs() {
         components.applicationScope.launch {
+            // Sekmeler, reklam engelleyici yüklenince ve (açık bırakıldıysa) VPN bağlanınca geri yüklenir; böylece ilk
+            // sayfa reklamlarla ya da "vekil bağlantısı reddedildi" hatasıyla açılmaz. Beklemenin üst sınırı vardır.
+            val started = android.os.SystemClock.uptimeMillis()
+            components.extensions.awaitLoaded(EXTENSIONS_WAIT_MS)
+            if (components.vpn.status.value == com.gtarayici.browser.vpn.VpnStatus.Connecting) {
+                kotlinx.coroutines.withTimeoutOrNull(VPN_WAIT_MS) {
+                    components.vpn.status.first { it != com.gtarayici.browser.vpn.VpnStatus.Connecting }
+                }
+            }
+            val waited = android.os.SystemClock.uptimeMillis() - started
+            if (waited > 300) com.gtarayici.browser.diagnostics.Diagnostics.log("sekmeler $waited ms beklendi (eklentiler/VPN)", "açılış")
             components.tabsUseCases.restore(components.sessionStorage)
             components.tabGroups.start()
             components.sessionStorage
@@ -169,6 +201,9 @@ class GTarayiciApplication : Application() {
         }
     }
 }
+
+private const val EXTENSIONS_WAIT_MS = 3_000L
+private const val VPN_WAIT_MS = 8_000L
 
 private val MEDIA_SITES = listOf(
     "https://www.youtube.com",

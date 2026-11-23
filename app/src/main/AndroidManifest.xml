@@ -126,6 +126,10 @@
             android:name=".vpn.VpnCoreInstallReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".vpn.VpnActionReceiver"
+            android:exported="false" />
+
         <service
             android:name=".media.MediaSessionService"
             android:exported="false"
