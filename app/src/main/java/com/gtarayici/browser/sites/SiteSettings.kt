@@ -18,9 +18,24 @@ import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.lib.state.ext.flow
 import org.json.JSONObject
 
-/** Bir siteye özel ayarlar. [zoom] yüzde olarak yazı boyutu; null ise genel ayar kullanılır. */
-data class SitePrefs(val zoom: Int? = null, val desktop: Boolean = false) {
-    val isDefault: Boolean get() = zoom == null && !desktop
+/**
+ * Bir siteye özel ayarlar. [zoom] yüzde olarak yazı boyutu; null ise genel ayar kullanılır. [pip] küçük pencere
+ * (resim içinde resim); null ise varsayılan kullanılır (müzik sitelerinde kapalı, diğerlerinde açık).
+ */
+data class SitePrefs(val zoom: Int? = null, val desktop: Boolean = false, val pip: Boolean? = null) {
+    val isDefault: Boolean get() = zoom == null && !desktop && pip == null
+}
+
+/** Müzik siteleri: uygulamadan çıkınca küçük pencere yerine yalnızca arka planda çalınır. */
+object MusicSites {
+    private val HOSTS = listOf(
+        "music.youtube.com", "open.spotify.com", "soundcloud.com", "music.apple.com", "deezer.com",
+        "listen.tidal.com", "tidal.com", "music.amazon.com", "music.amazon.com.tr", "music.amazon.de",
+        "fizy.com", "play.fizy.com", "muud.com.tr", "radiogarden.com", "radio.garden", "bandcamp.com",
+    )
+
+    /** Site adı ([SiteSettings.key] biçiminde, "www." olmadan) listedeki bir siteye veya alt alanına ait mi? */
+    fun contains(host: String): Boolean = HOSTS.any { host == it || host.endsWith(".$it") }
 }
 
 /** Yazı boyutu adımları ve sınırları (saf, test edilebilir). */
@@ -51,6 +66,12 @@ class SiteSettings(context: Context) {
 
     fun setDesktop(url: String, on: Boolean) = update(url) { it.copy(desktop = on) }
 
+    /** Bu sitede uygulamadan çıkınca küçük pencere açılsın mı (site ayarı yoksa müzik sitelerinde hayır). */
+    fun pipAllowed(url: String): Boolean = get(url).pip ?: !MusicSites.contains(key(url))
+
+    /** Varsayılanla aynıysa site ayarı silinir. */
+    fun setPip(url: String, on: Boolean) = update(url) { it.copy(pip = if (on == !MusicSites.contains(key(url))) null else on) }
+
     fun reset(host: String) = update(host) { SitePrefs() }
 
     private fun update(url: String, change: (SitePrefs) -> SitePrefs) {
@@ -65,14 +86,25 @@ class SiteSettings(context: Context) {
         val json = JSONObject(prefs.getString(KEY, "{}") ?: "{}")
         json.keys().asSequence().associateWith { host ->
             val o = json.getJSONObject(host)
-            SitePrefs(zoom = if (o.has("zoom")) o.getInt("zoom") else null, desktop = o.optBoolean("desktop"))
+            SitePrefs(
+                zoom = if (o.has("zoom")) o.getInt("zoom") else null,
+                desktop = o.optBoolean("desktop"),
+                pip = if (o.has("pip")) o.getBoolean("pip") else null,
+            )
         }
     }.getOrDefault(emptyMap())
 
     private fun save() {
         val json = JSONObject()
         _sites.value.forEach { (host, site) ->
-            json.put(host, JSONObject().apply { site.zoom?.let { put("zoom", it) }; put("desktop", site.desktop) })
+            json.put(
+                host,
+                JSONObject().apply {
+                    site.zoom?.let { put("zoom", it) }
+                    put("desktop", site.desktop)
+                    site.pip?.let { put("pip", it) }
+                },
+            )
         }
         prefs.edit { putString(KEY, json.toString()) }
     }
@@ -82,7 +114,11 @@ class SiteSettings(context: Context) {
 
         /** "https://www.Example.com/yol" → "example.com"; site adı ya da adres verilebilir. */
         fun key(urlOrHost: String): String {
-            val host = if (urlOrHost.contains("://")) UrlInput.host(urlOrHost) else urlOrHost
+            val host = if (urlOrHost.contains("://")) {
+                runCatching { java.net.URI(urlOrHost.trim()).host }.getOrNull() ?: UrlInput.host(urlOrHost)
+            } else {
+                urlOrHost
+            }
             return host.lowercase().removePrefix("www.")
         }
     }

@@ -133,6 +133,7 @@ fun SitePrefsDialog(onDismiss: () -> Unit) {
                                     listOfNotNull(
                                         prefs.zoom?.let { stringResource(R.string.site_prefs_zoom, it) },
                                         stringResource(R.string.site_desktop).takeIf { prefs.desktop },
+                                        prefs.pip?.let { stringResource(if (it) R.string.site_prefs_pip_on else R.string.site_prefs_pip_off) },
                                     ).joinToString(" · "),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -12,6 +12,7 @@ import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material3.FilledTonalIconButton
@@ -100,6 +101,16 @@ fun SiteControls(tab: TabSessionState) {
         supporting = { Text(stringResource(R.string.site_desktop_summary)) },
         trailing = { Switch(checked = desktop, onCheckedChange = { toggleDesktop() }) },
         modifier = Modifier.clickable { toggleDesktop() },
+    )
+
+    // Küçük pencere (resim içinde resim): müzik sitelerinde varsayılan olarak kapalı, yalnızca arka planda çalınır.
+    val pipOn = components.siteSettings.pipAllowed(url)
+    ListRow(
+        leading = { Icon(Icons.Rounded.PictureInPictureAlt, null) },
+        headline = { Text(stringResource(R.string.site_pip)) },
+        supporting = { Text(stringResource(if (pipOn) R.string.site_pip_on else R.string.site_pip_off)) },
+        trailing = { Switch(checked = pipOn, onCheckedChange = { components.siteSettings.setPip(url, it) }) },
+        modifier = Modifier.clickable { components.siteSettings.setPip(url, !pipOn) },
     )
 
     SitePermissionRows(tab)

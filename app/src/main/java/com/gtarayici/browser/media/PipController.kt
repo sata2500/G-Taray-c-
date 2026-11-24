@@ -56,12 +56,21 @@ class PipController(
     /** Küçük pencerede gösterilen, yalnızca videoyu içeren görünüm (arayüz bunu sayfanın üstüne yerleştirir). */
     val pipView: android.view.View get() = native.pipView
 
-    private data class MediaInfo(val tabId: String, val playing: Boolean, val features: Long, val width: Long, val height: Long)
+    private data class MediaInfo(
+        val tabId: String,
+        val playing: Boolean,
+        val features: Long,
+        val width: Long,
+        val height: Long,
+        /** Bu sitede küçük pencere açılabilir mi (müzik sitelerinde varsayılan olarak hayır; site ayarı). */
+        val pipAllowed: Boolean = true,
+    )
 
     private var media: MediaInfo? = null
     private val supported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
     /** Küçük pencere yalnızca görünür bir video oynarken anlamlıdır; yalnızca ses varsa arka planda çalmak yeterli. */
-    private val enabled get() = supported && components.settings.autoPictureInPicture.value && !components.extensions.videoHidden.value
+    private val enabled get() = supported && components.settings.autoPictureInPicture.value &&
+        !components.extensions.videoHidden.value && media?.pipAllowed != false
 
     /** Küçük penceredeki önceki / oynat-duraklat / sonraki düğmeleri. */
     private val receiver = object : BroadcastReceiver() {
@@ -81,8 +90,8 @@ class PipController(
         ContextCompat.registerReceiver(activity, receiver, IntentFilter(ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
         activity.lifecycle.addObserver(lifecycleObserver)
         activity.lifecycleScope.launch {
-            components.store.flow()
-                .map { state -> state.mediaInfo() }
+            // Site ayarı (küçük pencere açık/kapalı) değişince de yeniden değerlendirilir.
+            kotlinx.coroutines.flow.combine(components.store.flow(), components.siteSettings.sites) { state, _ -> state.mediaInfo() }
                 .distinctUntilChanged()
                 .collect { info ->
                     media = info
@@ -312,6 +321,7 @@ class PipController(
             features = state.features.flags,
             width = state.elementMetadata?.width ?: 0,
             height = state.elementMetadata?.height ?: 0,
+            pipAllowed = components.siteSettings.pipAllowed(tab.content.url),
         )
     }
 
