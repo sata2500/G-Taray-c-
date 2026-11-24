@@ -1,9 +1,13 @@
-## G-Tarayıcı 0.16.5
+## G-Tarayıcı 0.16.6
 
-**Ekran kapalıyken sıradaki şarkı**
-- YouTube Music (ve YouTube oynatma listeleri) ekran kapalıyken bir şarkı bitince sıradakine geçmiyordu; ekran
-  açılınca "Tekrar çevrimiçi" görünüyordu. Şarkılar arasındaki boşlukta Android uygulamayı uyutup internetini
-  kesiyordu. Artık medya çalarken ve çalma durduktan sonra 3 dakika boyunca uygulama "medya oynatan" durumda kalır;
-  bu sürede işlemci ve Wi-Fi uyanık tutulur, sıradaki şarkı yüklenip çalar.
-- Bu sırada bildirimlerin en altında küçük bir "Arka planda oynatma açık" bildirimi durur (sessiz, simgesiz).
-  Ayarlar → Medya → "Arka planda oynatma" kapalıysa devreye girmez.
+**Ekran kapalıyken sıradaki şarkı (asıl neden)**
+- Tanılama kaydı nedeni gösterdi: ekran kapalıyken sıradaki şarkının otomatik oynatma isteği uygulama tarafından
+  reddediliyordu ("otomatik oynatma engellendi"). Kayıtlı site izni bulunamayınca varsayılan kurala düşülüyor,
+  veri tasarrufu açıkken de engelleniyordu. Artık medya oynatan sekmenin sıradaki şarkı/video için istediği izin,
+  siteyi açıkça engellemediyseniz verilir. 0.16.5'teki arka plan oynatma hizmetiyle birlikte YouTube Music ekran
+  kapalıyken sıradaki şarkıya geçmelidir.
+
+**İndirmeler iki kez iniyordu**
+- Uygulamanın indirme yöneticisi bir indirmeyi başlatınca Mozilla'nın kendi indirme hizmeti de aynı dosyayı ikinci kez
+  indiriyordu (gizli sekmede ve normal sekmede; ikinci kopya "(1)" ekiyle kaydediliyordu). Düzeltildi; her indirme
+  bir kez iner.

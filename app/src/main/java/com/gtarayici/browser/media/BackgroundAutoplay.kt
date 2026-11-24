@@ -56,18 +56,34 @@ class BackgroundAutoplay(
         val origin = request.uri?.getOrigin()
         val private = store.state.tabs.firstOrNull { it.id == tabId }?.content?.private ?: false
         val stored = origin?.let { runCatching { storage.findSitePermissionsBy(it, includeTemporary = true, private = private) }.getOrNull() }
+        val tab = (store.state.tabs + store.state.customTabs).firstOrNull { it.id == tabId }
+        // Ekran kapalıyken medya oynatan sekmenin sıradaki şarkı/video için istediği izin, kullanıcı o siteyi açıkça
+        // engellemediyse verilir: kullanıcı oynatmayı kendisi başlattı ve sürmesini istiyor. (0.16.0–0.16.5'te kayıtlı
+        // izin bulunamayınca varsayılan kurala düşülüyor ve YouTube Music'te sıradaki şarkı engelleniyordu.)
+        val continuingPlayback = tab?.mediaSessionState != null
         val allow = request.permissions.all { permission ->
             when (permission) {
-                is Permission.ContentAutoPlayAudible ->
-                    stored?.autoplayAudible == SitePermissions.AutoplayStatus.ALLOWED
-                is Permission.ContentAutoPlayInaudible ->
-                    stored?.let { it.autoplayInaudible == SitePermissions.AutoplayStatus.ALLOWED } ?: !dataSaver.active.value
+                is Permission.ContentAutoPlayAudible -> when (stored?.autoplayAudible) {
+                    SitePermissions.AutoplayStatus.ALLOWED -> true
+                    SitePermissions.AutoplayStatus.BLOCKED -> false
+                    null -> continuingPlayback
+                }
+                is Permission.ContentAutoPlayInaudible -> when (stored?.autoplayInaudible) {
+                    SitePermissions.AutoplayStatus.ALLOWED -> true
+                    SitePermissions.AutoplayStatus.BLOCKED -> false
+                    null -> continuingPlayback || !dataSaver.active.value
+                }
                 else -> false
             }
         }
         if (allow) request.grant() else request.reject()
         store.dispatch(ContentAction.ConsumePermissionsRequest(tabId, request))
-        Diagnostics.log("ekran kapalıyken otomatik oynatma ${if (allow) "izin verildi" else "engellendi"}", "medya")
+        // Ziyaret edilen site kayda yazılmaz; yalnızca kararın nedeni.
+        Diagnostics.log(
+            "ekran kapalıyken otomatik oynatma ${if (allow) "izin verildi" else "engellendi"} (" +
+                "kayıtlı izin ${if (stored == null) "yok" else "var"}, oynatma ${if (continuingPlayback) "sürüyordu" else "yoktu"})",
+            "medya",
+        )
         if (handled.size > MAX_REMEMBERED) handled.clear()
     }
 

@@ -343,7 +343,15 @@ class DownloadQueue(
                 currentBytesCopied = task.done,
                 status = status,
             )
-            store.dispatch(if (existing == null) DownloadAction.AddDownloadAction(state) else DownloadAction.UpdateDownloadAction(state))
+            if (existing == null) {
+                // Mozilla'nın indirme ara katmanı "yeni indirme" eklenince kendi indirme hizmetini başlatıp aynı dosyayı
+                // ikinci kez indiriyordu (her indirme iki kopya). Hizmet bitmiş/başarısız kayıtlar için başlatılmadığından
+                // kayıt önce bu durumla eklenir, hemen ardından gerçek durumuyla güncellenir.
+                store.dispatch(DownloadAction.AddDownloadAction(state.copy(status = DownloadState.Status.FAILED)))
+                if (status != DownloadState.Status.FAILED) store.dispatch(DownloadAction.UpdateDownloadAction(state))
+            } else {
+                store.dispatch(DownloadAction.UpdateDownloadAction(state))
+            }
         }
     }
 
