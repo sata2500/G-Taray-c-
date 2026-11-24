@@ -114,6 +114,8 @@ internal fun OverlayPage(
         Overlay.BOOKMARKS -> BookmarksScreen(onOpen = { controller.loadUrl(it) }, onBack = { controller.closeOverlay() })
         Overlay.DOWNLOADS -> DownloadsScreen(onBack = { controller.closeOverlay() })
         Overlay.SETTINGS -> SettingsScreen(
+            startPage = remember { controller.settingsStartPage.also { controller.settingsStartPage = null } },
+            onGuide = { controller.open(Overlay.GUIDE) },
             onClearData = { controller.clearBrowsingData() },
             onPasswords = { controller.open(Overlay.PASSWORDS) },
             onReport = { controller.openReport() },
@@ -122,6 +124,7 @@ internal fun OverlayPage(
         Overlay.PROFILES -> ProfilesScreen(controller, onBack = { controller.closeOverlay() })
         Overlay.EXTENSIONS -> ExtensionsScreen(controller, onBack = { controller.closeOverlay() })
         Overlay.VPN -> VpnScreen(onBack = { controller.closeOverlay() })
+        Overlay.GUIDE -> com.gtarayici.browser.ui.screens.GuideScreen(controller, onBack = { controller.closeOverlay() })
         Overlay.READING -> com.gtarayici.browser.ui.screens.ReadingListScreen(
             onOpenUrl = { controller.loadUrl(it, inNewTab = true) },
             onSpeak = { article, from -> controller.reading.speak(article, from) },

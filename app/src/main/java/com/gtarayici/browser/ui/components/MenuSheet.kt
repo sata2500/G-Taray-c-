@@ -55,6 +55,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -183,6 +184,7 @@ private fun AllOptions(state: MenuState, controller: BrowserController, onBack: 
         MenuRow(Icons.Rounded.InstallMobile, stringResource(R.string.menu_install_app)) { controller.openInstallDialog() }
     }
     MenuHeader(stringResource(R.string.menu_section_app))
+    MenuRow(Icons.Rounded.Lightbulb, stringResource(R.string.guide_title)) { controller.open(Overlay.GUIDE) }
     MenuRow(Icons.Rounded.Add, stringResource(R.string.menu_new_tab)) { controller.newTab(private = false) }
     MenuRow(Icons.Rounded.VisibilityOff, stringResource(R.string.menu_new_private_tab)) { controller.newTab(private = true) }
     MenuRow(Icons.Rounded.AutoStories, stringResource(R.string.reading_list)) { controller.open(Overlay.READING) }

@@ -44,7 +44,7 @@
     <string name="settings_section_connection">Bağlantı</string>
     <string name="settings_section_locks">Kilitler</string>
     <string name="settings_section_data">Veriler</string>
-    <string name="home_protection_on">Koruma açık · izleyiciler ve reklamlar engelleniyor</string>
+    <string name="home_protection_on">Reklamlar ve izleyiciler engelleniyor</string>
     <string name="home_empty_hint">Sık ziyaret ettiğiniz siteler ve yer imleriniz burada görünecek.</string>
     <string name="home_private_body">Bu sekmeyi kapattığınızda geçmiş, çerezler ve site verileri silinir. İndirdiğiniz dosyalar ve eklediğiniz yer imleri korunur.</string>
 
@@ -392,8 +392,7 @@
     <string name="settings_page_appearance_summary">Tema, adres çubuğu, kaydırma hareketleri</string>
     <string name="settings_page_privacy_summary">İzleyiciler, güvenli DNS, kilitler, veri temizleme</string>
     <string name="settings_page_media_summary">Arka planda oynatma, resim içinde resim, SponsorBlock</string>
-    <string name="settings_page_updates_summary">Yeni sürümleri denetle</string>
-    <string name="settings_page_about_summary">Sürüm, motor, lisans</string>
+    <string name="settings_page_about_summary">Güncellemeler, rehber, sürüm</string>
     <string name="settings_hide_toolbar">Kaydırınca adres çubuğunu gizle</string>
     <string name="settings_hide_toolbar_summary">Sayfayı aşağı kaydırınca çubuk iner, yukarı kaydırınca geri gelir</string>
     <string name="settings_unload_tabs">Kullanılmayan sekmeleri uyut</string>
@@ -813,6 +812,53 @@
     <string name="vpn_tile_label">Tarayıcı VPN</string>
     <string name="vpn_tile_off">Kapalı</string>
     <string name="vpn_tile_error">Bağlanamadı</string>
+    <string name="guide_title">Neler yapabilirsin?</string>
+    <string name="guide_summary">Göze hemen çarpmayan özelliklerin kısa rehberi</string>
+    <string name="guide_intro">G-Tarayıcı\'nın kolayca gözden kaçan özellikleri. "Aç" ilgili ekranı açar.</string>
+    <string name="guide_open">Aç</string>
+    <string name="guide_section_browse">Gezinme</string>
+    <string name="guide_section_privacy">Gizlilik ve güvenlik</string>
+    <string name="guide_section_media">Video, müzik ve okuma</string>
+    <string name="guide_section_sites">Siteler</string>
+    <string name="guide_section_tools">Araçlar</string>
+    <string name="guide_swipe_title">Kaydırarak sekme değiştir</string>
+    <string name="guide_swipe_text">Alttaki adres çubuğunu sağa veya sola kaydır; sayfa parmağınla kayar, yan sekme gelir.</string>
+    <string name="guide_longpress_title">Uzun basma kısayolları</string>
+    <string name="guide_longpress_text">Adres çubuğuna uzun bas: bağlantıyı kopyala, yapıştır ve git. Sekme sayacına uzun bas: yeni sekme, gizli sekme, sekmeyi kapat.</string>
+    <string name="guide_shortcuts_title">Arama kısayolları</string>
+    <string name="guide_shortcuts_text">Adres çubuğuna "yt kedi" yaz, YouTube\'da arar; "w İstanbul" Vikipedi\'de. Açık sekmeler de aramada çıkar.</string>
+    <string name="guide_tabs_title">Sekme grupları ve seçim</string>
+    <string name="guide_tabs_text">Sekmeye uzun bas: gruba ekle ya da seç. Seçtiğin sekmeleri tek seferde kapat; bir haftadır açmadıklarını topluca kapat.</string>
+    <string name="guide_blocking_title">Reklam ve izleyici engelleme</string>
+    <string name="guide_blocking_text">Her sitede kendiliğinden açık. Bir site bozuk görünürse kilit simgesine dokunup o sitede korumayı kapatabilirsin.</string>
+    <string name="guide_private_title">Gizli sekmeler ve kilit</string>
+    <string name="guide_private_text">Gizli sekmeler iz bırakmaz; istersen parmak iziyle kilitlenir ve ekran görüntüsü alınamaz.</string>
+    <string name="guide_passwords_title">Parolalar</string>
+    <string name="guide_passwords_text">Oturum açınca parolanı kaydetmeyi önerir, sonra kendiliğinden doldurur. Parolalar telefonda şifreli durur.</string>
+    <string name="guide_vpn_title">Tarayıcı VPN\'i</string>
+    <string name="guide_vpn_text">Yalnızca tarayıcının trafiğini başka ülkeden geçirir. Bildirim panelindeki hızlı ayarlara "Tarayıcı VPN" düğmesini ekleyebilirsin.</string>
+    <string name="guide_profiles_title">Profiller</string>
+    <string name="guide_profiles_text">İş ve kişisel gibi ayrı profiller: çerezler, geçmiş, yer imleri ve parolalar birbirine karışmaz.</string>
+    <string name="guide_background_title">Arka planda oynatma ve küçük pencere</string>
+    <string name="guide_background_text">Uygulamadan çıkınca video küçük pencerede sürer; müzik sitelerinde yalnızca ses arka planda çalar, ekran kapalıyken de.</string>
+    <string name="guide_download_title">Video ve dosya indirme</string>
+    <string name="guide_download_text">YouTube\'da videonun yanındaki indirme düğmesi. Diğer sitelerde menü → Tüm seçenekler → Sayfadaki indirilebilir öğeler.</string>
+    <string name="guide_reading_title">Okuma listesi ve sesli okuma</string>
+    <string name="guide_reading_text">Makaleyi "Sonra oku" ile kaydet, internetsiz oku. "Sesli oku" makaleyi seslendirir.</string>
+    <string name="guide_translate_title">Sayfa çevirisi</string>
+    <string name="guide_translate_text">Başka dildeki sayfada altta çeviri önerisi çıkar. Çeviri telefonda yapılır, metin hiçbir yere gönderilmez.</string>
+    <string name="guide_site_title">Siteye özel ayarlar</string>
+    <string name="guide_site_text">Adres çubuğundaki kilit simgesi → "Bu site için": yazı boyutu, masaüstü görünümü, küçük pencere ve izinler.</string>
+    <string name="guide_data_title">Veri tasarrufu</string>
+    <string name="guide_data_text">Mobil veride kendiliğinden açılır: sessiz videolar kendiliğinden oynamaz, büyük önbellek sayesinde siteler tekrar indirilmez.</string>
+    <string name="guide_webapp_title">Siteyi uygulama yap</string>
+    <string name="guide_webapp_text">Menü → Tüm seçenekler → Uygulama olarak yükle: site ana ekranda kendi simgesiyle, adres çubuğu olmadan açılır.</string>
+    <string name="guide_quick_title">Simge kısayolları</string>
+    <string name="guide_quick_text">G-Tarayıcı simgesine uzun bas: yeni sekme, gizli sekme, QR kod, VPN.</string>
+    <string name="guide_backup_title">Yedekleme ve taşıma</string>
+    <string name="guide_backup_text">Yer imleri, ayarlar, profiller ve (şifreli yedekte) parolalar tek dosyaya. Chrome ve Firefox\'tan yer imi aktarılabilir.</string>
+    <string name="guide_report_title">Sorun bildir</string>
+    <string name="guide_report_text">Bir şey ters giderse bildir; ekran görüntüsü ve tanılama kaydı eklenir, kişisel bilgiler maskelenir.</string>
 </resources>
 
 

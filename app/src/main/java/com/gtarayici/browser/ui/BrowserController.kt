@@ -19,7 +19,7 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.feature.readerview.ReaderViewFeature
 
 /** Tam ekran kaplayan ikincil ekranlar. */
-enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR, REPORT, PASSWORDS, READING }
+enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR, REPORT, PASSWORDS, READING, GUIDE }
 
 /**
  * Arayüzün tarayıcı üzerinde yaptığı işlemlerin tek giriş noktası. İşin kendisi parçalara ayrılmıştır
@@ -115,6 +115,14 @@ class BrowserController private constructor(
         onboarding = false
         statePrefs.edit { putBoolean(KEY_ONBOARDED, true) }
         onOnboardingFinished()
+    }
+
+    /** Ayarlar belirli bir sayfasıyla açılacaksa (rehberden "Aç"). Ayarlar ekranı açılınca okunur ve temizlenir. */
+    var settingsStartPage: com.gtarayici.browser.ui.screens.settings.SettingsPage? = null
+
+    fun openSettings(page: com.gtarayici.browser.ui.screens.settings.SettingsPage) {
+        settingsStartPage = page
+        open(Overlay.SETTINGS)
     }
 
     fun open(overlay: Overlay) {

@@ -1,14 +1,13 @@
-## G-Tarayıcı 0.17.0
+## G-Tarayıcı 0.18.0
 
-**Hızlı ayarlarda VPN düğmesi**
-- Bildirim panelindeki hızlı ayarlara "Tarayıcı VPN" düğmesi eklenebilir (paneldeki kalem/düzenle simgesi → düğmeyi
-  sürükleyin). Tek dokunuşla son kullanılan sunucuya bağlanır veya bağlantıyı keser; bağlı sunucu düğmenin altında
-  görünür. Tarayıcıyı açmak gerekmez; yalnızca tarayıcının ve web uygulamalarının trafiğini etkiler.
+**Neler yapabilirsin? (uygulama içi rehber)**
+- Göze hemen çarpmayan özelliklerin kısa rehberi: kaydırarak sekme değiştirme, uzun basma ve arama kısayolları,
+  parolalar, VPN, arka planda oynatma, okuma listesi, siteye özel ayarlar, yedekleme… Her madde tek cümle; "Aç"
+  ilgili ekranı açar. Menü → Tüm seçenekler ya da Ayarlar → Hakkında'dan açılır.
 
-**Uygulama simgesi kısayolları**
-- G-Tarayıcı simgesine uzun basınca: Yeni sekme, Yeni gizli sekme, QR kod tara, VPN. Kısayollar ana ekrana ayrı simge
-  olarak da sürüklenebilir.
+**Daha sade**
+- Ayarlarda "Güncellemeler" ayrı sayfa olmaktan çıkıp "Hakkında" sayfasına taşındı (7 bölüm kaldı).
+- Ana sayfadaki koruma etiketi kısaldı ("Reklamlar ve izleyiciler engelleniyor"), tek satıra sığar.
 
-**Özel arama motoru**
-- Ayarlar → Genel → Arama motoru → "Özel arama motoru…": listede olmayan bir arama motorunu adresiyle ekleyin
-  (ör. https://ornek.com/ara?q=%s).
+**Kod bakımı**
+- En büyük iki ekran (VPN ve Ayarlar) daha küçük, anlaşılır dosyalara bölündü; davranış değişmedi.
