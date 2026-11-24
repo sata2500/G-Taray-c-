@@ -1,8 +1,9 @@
-## G-Tarayıcı 0.16.4
+## G-Tarayıcı 0.16.5
 
-**Müzik sitelerinde küçük pencere yok, yalnızca arka planda çalma**
-- YouTube Music, Spotify, SoundCloud, Apple Music, Deezer, Tidal, Amazon Music, fizy, Bandcamp ve Radio Garden'da
-  uygulamadan çıkınca küçük pencere (resim içinde resim) açılmaz; müzik arka planda çalmaya devam eder, bildirimden
-  ve kilit ekranından denetlenir. YouTube'da (video sitelerinde) küçük pencere eskisi gibi açılır.
-- Her site için ayarlanabilir: adres çubuğundaki kilit simgesi → "Bu site için" → "Küçük pencere". Listede olmayan
-  bir sitede kapatabilir, listedeki bir sitede açabilirsiniz.
+**Ekran kapalıyken sıradaki şarkı**
+- YouTube Music (ve YouTube oynatma listeleri) ekran kapalıyken bir şarkı bitince sıradakine geçmiyordu; ekran
+  açılınca "Tekrar çevrimiçi" görünüyordu. Şarkılar arasındaki boşlukta Android uygulamayı uyutup internetini
+  kesiyordu. Artık medya çalarken ve çalma durduktan sonra 3 dakika boyunca uygulama "medya oynatan" durumda kalır;
+  bu sürede işlemci ve Wi-Fi uyanık tutulur, sıradaki şarkı yüklenip çalar.
+- Bu sırada bildirimlerin en altında küçük bir "Arka planda oynatma açık" bildirimi durur (sessiz, simgesiz).
+  Ayarlar → Medya → "Arka planda oynatma" kapalıysa devreye girmez.

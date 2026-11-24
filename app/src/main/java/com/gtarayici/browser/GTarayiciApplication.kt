@@ -63,6 +63,7 @@ class GTarayiciApplication : Application() {
         initExtensions()
         components.vpn.restore()
         components.vpnNotifier.start()
+        com.gtarayici.browser.media.BackgroundPlayback(this, components.store, components.settings, components.applicationScope).start()
         reloadFailedPagesOnVpnConnect()
         components.mediaSessionFeature.start()
         components.historyRecorder.start()

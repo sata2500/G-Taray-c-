@@ -805,6 +805,9 @@
     <string name="site_pip_off">Uygulamadan çıkınca küçük pencere açılmaz; ses arka planda çalar</string>
     <string name="site_prefs_pip_on">Küçük pencere açık</string>
     <string name="site_prefs_pip_off">Küçük pencere kapalı</string>
+    <string name="background_playback_channel">Arka planda oynatma</string>
+    <string name="background_playback_title">Arka planda oynatma açık</string>
+    <string name="background_playback_text">Ekran kapalıyken sıradaki şarkıya geçilebilsin diye</string>
 </resources>
 
 

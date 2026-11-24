@@ -131,6 +131,13 @@
             android:name=".vpn.VpnActionReceiver"
             android:exported="false" />
 
+        <!-- Ekran kapalıyken oynatma listesinde sıradaki şarkıya geçilebilsin diye oynatma sırasında ve hemen sonrasında
+             uygulamayı medya oynatan durumda tutar. -->
+        <service
+            android:name=".media.BackgroundPlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
         <!-- VPN açıkken uygulamanın arka planda kapatılmaması için; yalnızca VPN bildirimini taşır. -->
         <service
             android:name=".vpn.VpnKeepAliveService"
