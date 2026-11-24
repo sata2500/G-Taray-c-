@@ -60,7 +60,8 @@ class PipController(
 
     private var media: MediaInfo? = null
     private val supported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
-    private val enabled get() = supported && components.settings.autoPictureInPicture.value
+    /** Küçük pencere yalnızca görünür bir video oynarken anlamlıdır; yalnızca ses varsa arka planda çalmak yeterli. */
+    private val enabled get() = supported && components.settings.autoPictureInPicture.value && !components.extensions.videoHidden.value
 
     /** Küçük penceredeki önceki / oynat-duraklat / sonraki düğmeleri. */
     private val receiver = object : BroadcastReceiver() {
@@ -91,6 +92,9 @@ class PipController(
         // Videonun ekrandaki konumu değişince geçiş animasyonu ipucu güncellenir.
         activity.lifecycleScope.launch {
             components.extensions.videoRect.collect { if (media?.playing == true) updateParams() }
+        }
+        activity.lifecycleScope.launch {
+            components.extensions.videoHidden.collect { if (media?.playing == true) updateParams() }
         }
     }
 

@@ -28,27 +28,64 @@
     return best;
   }
 
-  function report() {
-    const video = playingVideo();
-    if (!video) return;
+  // YouTube Music'te şarkı modunda video öğesi oynar ama yerine kapak resmi gösterilir; yalnızca ses vardır.
+  // İki işaret: oynatıcının çalma kipi (şarkı) ya da kapak resminin görünür olması (video kipinde gizlenir).
+  function youtubeMusicAudioOnly() {
+    if (location.hostname !== "music.youtube.com") return false;
+    const player = document.querySelector("ytmusic-player");
+    if (!player) return false;
+    if (player.getAttribute("playback-mode") === "ATV_PREFERRED") return true;
+    const image = player.querySelector("#song-image");
+    if (!image) return false;
+    try {
+      if (typeof image.checkVisibility === "function" &&
+          !image.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return false;
+    } catch (e) {}
+    const r = image.getBoundingClientRect();
+    return r.width > 40 && r.height > 40;
+  }
+
+  // Video gerçekten görünüyor mu: gizli, saydam, çok küçük veya ekran dışında değil.
+  function visible(video) {
+    try {
+      if (typeof video.checkVisibility === "function" &&
+          !video.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return false;
+    } catch (e) {}
     const r = video.getBoundingClientRect();
-    if (r.width < 40 || r.height < 40) return;
-    const key = [r.left, r.top, r.width, r.height, window.innerWidth].map(Math.round).join(",");
+    if (r.width < 40 || r.height < 40) return false;
+    return r.bottom > 0 && r.right > 0 && r.top < window.innerHeight && r.left < window.innerWidth;
+  }
+
+  function send(message, key) {
     if (key === lastReport) return;
     try {
       if (!port) {
         port = browser.runtime.connect({ name: "gt-media" });
         port.onDisconnect.addListener(() => (port = null));
       }
-      port.postMessage({
-        type: "video-rect",
-        x: r.left, y: r.top, w: r.width, h: r.height,
-        vw: window.innerWidth, vh: window.innerHeight,
-      });
+      port.postMessage(message);
       lastReport = key;
     } catch (e) {
       port = null;
     }
+  }
+
+  function report() {
+    const video = playingVideo();
+    // Bu çerçevede oynayan video yoksa bir şey söylenmez (video bir iç çerçevede olabilir).
+    if (!video) return;
+    // Oynayan video var ama görünmüyor: yalnızca ses; uygulama küçük pencereye (PiP) geçmez.
+    if (youtubeMusicAudioOnly() || !visible(video)) {
+      send({ type: "video-rect", hidden: true }, "hidden");
+      return;
+    }
+    const r = video.getBoundingClientRect();
+    const key = [r.left, r.top, r.width, r.height, window.innerWidth].map(Math.round).join(",");
+    send({
+      type: "video-rect",
+      x: r.left, y: r.top, w: r.width, h: r.height,
+      vw: window.innerWidth, vh: window.innerHeight,
+    }, key);
   }
 
   let pending = 0;

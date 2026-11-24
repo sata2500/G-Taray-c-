@@ -57,6 +57,14 @@ class ExtensionManager(
     /** Oynayan videonun sayfadaki son konumu (CSS pikseli); PiP geçiş animasyonu ve son kare için. */
     val videoRect: StateFlow<VideoRect?> = _videoRect.asStateFlow()
 
+    private val _videoHidden = MutableStateFlow(false)
+
+    /**
+     * Oynayan video var ama görünmüyor (ör. YouTube Music şarkı modu: yalnızca ses ve kapak resmi). Bu durumda
+     * uygulamadan çıkınca küçük pencere (PiP) açılmaz, ses arka planda sürer.
+     */
+    val videoHidden: StateFlow<Boolean> = _videoHidden.asStateFlow()
+
     /** Yardımcı eklenti kurulunca çağrılır (ör. sayfa taraması için sekme bağlantıları). */
     var onHelperReady: (WebExtension) -> Unit = {}
 
@@ -195,7 +203,11 @@ class ExtensionManager(
 
             override fun onPortMessage(message: Any, port: Port) {
                 val json = message as? JSONObject ?: return
-                if (json.optString("type") == "video-rect") {
+                if (json.optString("type") == "video-rect" && json.optBoolean("hidden")) {
+                    _videoHidden.value = true
+                    _videoRect.value = null
+                } else if (json.optString("type") == "video-rect") {
+                    _videoHidden.value = false
                     _videoRect.value = VideoRect(
                         json.optDouble("x"), json.optDouble("y"), json.optDouble("w"), json.optDouble("h"),
                         json.optDouble("vw"), json.optDouble("vh"),
