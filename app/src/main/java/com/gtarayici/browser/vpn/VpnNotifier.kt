@@ -106,8 +106,10 @@ class VpnNotifier(
         current = notification
         if (keepAlive()) {
             // Hizmet zaten çalışıyorsa aynı kimlikle bildirim güncellenir; çalışmıyorsa başlatılır.
-            runCatching { ContextCompat.startForegroundService(context, Intent(context, VpnKeepAliveService::class.java)) }
+            val started = runCatching { ContextCompat.startForegroundService(context, Intent(context, VpnKeepAliveService::class.java)) }
                 .onFailure { Diagnostics.log("arka plan hizmeti başlatılamadı: ${it.javaClass.simpleName}", "vpn") }
+                .isSuccess
+            if (started) return
         }
         // Bildirim izni yoksa gösterilmez; VPN yine çalışır.
         val manager = NotificationManagerCompat.from(context)

@@ -149,6 +149,33 @@ fun SitePrefsDialog(onDismiss: () -> Unit) {
     )
 }
 
+/** Özel arama motoru: arama sonuç sayfasının adresi, aranan metnin yerinde %s. */
+@Composable
+fun CustomSearchDialog(initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var value by remember { mutableStateOf(initial.ifBlank { "https://" }) }
+    val valid = com.gtarayici.browser.search.CustomSearch.isValid(value)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.search_engine_custom)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.search_engine_custom_help), style = MaterialTheme.typography.bodyMedium)
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    singleLine = true,
+                    isError = value.length > 8 && !valid,
+                    placeholder = { Text("https://ornek.com/ara?q=%s") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSave(value) }, enabled = valid) { Text(stringResource(R.string.action_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
 /** Özel DNS-over-HTTPS adresi; yazarken denetlenir. */
 @Composable
 fun DnsCustomDialog(initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {

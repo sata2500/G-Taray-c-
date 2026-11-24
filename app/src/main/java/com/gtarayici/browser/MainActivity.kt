@@ -387,6 +387,9 @@ class MainActivity : AppCompatActivity() {
             }
             ACTION_OPEN_DOWNLOADS -> controller.open(Overlay.DOWNLOADS)
             ACTION_OPEN_VPN -> controller.open(Overlay.VPN)
+            ACTION_NEW_TAB -> controller.newTab(private = false)
+            ACTION_NEW_PRIVATE_TAB -> controller.newTab(private = true)
+            ACTION_SCAN_QR -> controller.openQrScanner()
             Intent.ACTION_WEB_SEARCH -> {
                 val query = intent.getStringExtra(SearchManager.QUERY) ?: return
                 controller.loadUrl(components.settings.searchEngine.value.searchUrl(query), inNewTab = true)
@@ -421,6 +424,9 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val ACTION_OPEN_DOWNLOADS = "com.gtarayici.browser.OPEN_DOWNLOADS"
         const val ACTION_OPEN_VPN = "com.gtarayici.browser.OPEN_VPN"
+        const val ACTION_NEW_TAB = "com.gtarayici.browser.NEW_TAB"
+        const val ACTION_NEW_PRIVATE_TAB = "com.gtarayici.browser.NEW_PRIVATE_TAB"
+        const val ACTION_SCAN_QR = "com.gtarayici.browser.SCAN_QR"
         private const val UPDATE_CHECK_DELAY_MS = 8_000L
     }
 }

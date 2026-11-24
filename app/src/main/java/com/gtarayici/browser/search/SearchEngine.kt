@@ -13,9 +13,32 @@ enum class SearchEngine(val title: String, private val template: String) {
     GOOGLE("Google", "https://www.google.com/search?q=%s"),
     BING("Bing", "https://www.bing.com/search?q=%s"),
     YANDEX("Yandex", "https://yandex.com.tr/search/?text=%s"),
+
+    /** Kullanıcının adresini girdiği arama motoru ([CustomSearch]). */
+    CUSTOM("Özel", ""),
     ;
 
-    fun searchUrl(query: String): String = template.replace("%s", Uri.encode(query.trim()))
+    fun searchUrl(query: String): String {
+        val pattern = if (this == CUSTOM) CustomSearch.template.ifBlank { DUCKDUCKGO.template } else template
+        return pattern.replace("%s", Uri.encode(query.trim()))
+    }
+}
+
+/**
+ * Özel arama motorunun adres kalıbı ("https://ornek.com/ara?q=%s"); ayarlardan yüklenir. Kalıp geçersizse ya da boşsa
+ * DuckDuckGo kullanılır.
+ */
+object CustomSearch {
+    @Volatile var template: String = ""
+
+    /** Kalıp geçerli mi: http(s) adresi ve içinde %s. */
+    fun isValid(pattern: String): Boolean {
+        val text = pattern.trim()
+        return (text.startsWith("https://") || text.startsWith("http://")) && text.contains("%s") && !text.contains(' ')
+    }
+
+    /** "https://www.ornek.com/ara?q=%s" → "ornek.com" (seçenek listesinde gösterilir). */
+    fun label(pattern: String): String = runCatching { java.net.URI(pattern.replace("%s", "x")).host.removePrefix("www.") }.getOrNull().orEmpty()
 }
 
 object UrlInput {

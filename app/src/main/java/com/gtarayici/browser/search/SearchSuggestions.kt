@@ -20,6 +20,7 @@ object SearchSuggestions {
         SearchEngine.ECOSIA -> "https://ac.ecosia.org/autocomplete?type=list&q=%s"
         SearchEngine.YANDEX -> "https://suggest.yandex.com.tr/suggest-ff.cgi?part=%s"
         SearchEngine.STARTPAGE -> "https://www.startpage.com/osuggestions?q=%s"
+        SearchEngine.CUSTOM -> null
     }
 
     /** Ağ isteği yapar (ana iş parçacığında çağrılmamalı). Hata olursa boş liste. */

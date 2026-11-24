@@ -96,7 +96,7 @@ enum class SettingsPage(val icon: ImageVector, val title: Int, val summary: Int)
 }
 
 /** Açık pencere: her seferinde en fazla biri. */
-private enum class SettingsDialog { ENGINE, THEME, DNS, DNS_CUSTOM, PASSWORD, CLEAR_DATA, LOG, DATA_SAVER, CACHE_SIZE, TEXT_ZOOM, SITES }
+private enum class SettingsDialog { ENGINE, CUSTOM_ENGINE, THEME, DNS, DNS_CUSTOM, PASSWORD, CLEAR_DATA, LOG, DATA_SAVER, CACHE_SIZE, TEXT_ZOOM, SITES }
 
 @Composable
 fun SettingsScreen(onClearData: () -> Unit, onReport: () -> Unit, onBack: () -> Unit, onPasswords: () -> Unit = {}) {
@@ -200,7 +200,11 @@ private fun settingsPages(
             SettingSection(
                 null,
                 listOf(
-                    SettingItem.Action(s(R.string.settings_search_engine), engine.title, Icons.Rounded.Search) { open(SettingsDialog.ENGINE) },
+                    SettingItem.Action(
+                        s(R.string.settings_search_engine),
+                        if (engine == SearchEngine.CUSTOM) com.gtarayici.browser.search.CustomSearch.label(settings.customSearchUrl.collectAsState().value) else engine.title,
+                        Icons.Rounded.Search,
+                    ) { open(SettingsDialog.ENGINE) },
                     SettingItem.Toggle(s(R.string.settings_search_suggestions), s(R.string.settings_search_suggestions_summary), Icons.Rounded.Lightbulb, searchSuggest) {
                         settings.setSearchSuggestions(it)
                     },
@@ -448,9 +452,20 @@ private fun SettingsDialogs(
         null -> Unit
         SettingsDialog.ENGINE -> ChoiceDialog(
             title = stringResource(R.string.settings_search_engine),
-            options = SearchEngine.entries.map { it to it.title },
+            options = SearchEngine.entries.map { it to if (it == SearchEngine.CUSTOM) stringResource(R.string.search_engine_custom) else it.title },
             selected = settings.searchEngine.collectAsState().value,
-            onSelect = { settings.setSearchEngine(it); onDismiss() },
+            onSelect = {
+                if (it == SearchEngine.CUSTOM) open(SettingsDialog.CUSTOM_ENGINE) else { settings.setSearchEngine(it); onDismiss() }
+            },
+            onDismiss = onDismiss,
+        )
+        SettingsDialog.CUSTOM_ENGINE -> CustomSearchDialog(
+            initial = settings.customSearchUrl.collectAsState().value,
+            onSave = {
+                settings.setCustomSearchUrl(it)
+                settings.setSearchEngine(SearchEngine.CUSTOM)
+                onDismiss()
+            },
             onDismiss = onDismiss,
         )
         SettingsDialog.THEME -> ChoiceDialog(

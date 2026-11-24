@@ -107,6 +107,7 @@ class AppSettings(context: Context) {
     private val darkSitesPref = bool("dark_sites", false)
     private val searchSuggestionsPref = bool("search_suggestions", true)
     private val vpnKeepAlivePref = bool("vpn_keep_alive", true)
+    private val customSearchPref = string("custom_search_url", "")
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -144,6 +145,8 @@ class AppSettings(context: Context) {
     val searchSuggestions get() = searchSuggestionsPref.flow
     /** VPN açıkken uygulama arka planda kapatılmasın (ön plan hizmeti). */
     val vpnKeepAlive get() = vpnKeepAlivePref.flow
+    /** Özel arama motorunun adres kalıbı (%s aranan metin). */
+    val customSearchUrl get() = customSearchPref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -177,6 +180,14 @@ class AppSettings(context: Context) {
     fun setDarkSites(value: Boolean) = darkSitesPref.set(value)
     fun setSearchSuggestions(value: Boolean) = searchSuggestionsPref.set(value)
     fun setVpnKeepAlive(value: Boolean) = vpnKeepAlivePref.set(value)
+    fun setCustomSearchUrl(value: String) {
+        customSearchPref.set(value.trim())
+        com.gtarayici.browser.search.CustomSearch.template = value.trim()
+    }
+
+    init {
+        com.gtarayici.browser.search.CustomSearch.template = customSearchPref.flow.value
+    }
 
     /** Yedek için ayarların ham hali (anahtar → değer). */
     fun exportAll(): Map<String, Any?> = prefs.all.toMap()
@@ -196,6 +207,7 @@ class AppSettings(context: Context) {
             }
         }
         registry.forEach { it.reload() }
+        com.gtarayici.browser.search.CustomSearch.template = customSearchPref.flow.value
     }
 
     /** Bağlamsal ipuçlarının kalıcı durumu (bkz. ui/feedback/Hints). */

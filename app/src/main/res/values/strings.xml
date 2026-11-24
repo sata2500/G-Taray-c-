@@ -808,6 +808,11 @@
     <string name="background_playback_channel">Arka planda oynatma</string>
     <string name="background_playback_title">Arka planda oynatma açık</string>
     <string name="background_playback_text">Ekran kapalıyken sıradaki şarkıya geçilebilsin diye</string>
+    <string name="search_engine_custom">Özel arama motoru…</string>
+    <string name="search_engine_custom_help" formatted="false">Arama sonuçları sayfasının adresini yazın; aranan metnin yerine %s koyun. Bir sitede bir şey arayıp adres çubuğundaki adresi kopyalayabilir, aradığınız sözcüğü %s ile değiştirebilirsiniz.</string>
+    <string name="vpn_tile_label">Tarayıcı VPN</string>
+    <string name="vpn_tile_off">Kapalı</string>
+    <string name="vpn_tile_error">Bağlanamadı</string>
 </resources>
 
 

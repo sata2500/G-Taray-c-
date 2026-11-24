@@ -89,6 +89,7 @@ class GTarayiciApplication : Application() {
                 components.manifestStorage.warmUpScopes(System.currentTimeMillis())
             }
             allowMediaSiteAutoplay()
+            com.gtarayici.browser.ui.AppShortcuts.publish(this)
             components.tabUnloader.start()
             false
         }
