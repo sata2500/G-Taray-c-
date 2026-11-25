@@ -28,7 +28,6 @@
     <string name="menu_history">Geçmiş</string>
     <string name="menu_downloads">İndirilenler</string>
     <string name="menu_settings">Ayarlar</string>
-    <string name="menu_desktop_site">Masaüstü sitesi</string>
     <string name="menu_add_bookmark">Yer imlerine ekle</string>
     <string name="menu_remove_bookmark">Yer iminden kaldır</string>
     <string name="menu_copy_link">Bağlantıyı kopyala</string>
@@ -206,7 +205,6 @@
     <string name="webapp_open_in_browser">Tarayıcıda aç</string>
 
     <!-- Sayfada bul -->
-    <string name="menu_find_in_page">Sayfada bul</string>
     <string name="find_hint">Sayfada bul</string>
     <string name="find_previous">Önceki</string>
     <string name="find_next">Sonraki</string>
@@ -277,7 +275,6 @@
     <string name="reader_dark">Koyu</string>
 
     <!-- Çeviri -->
-    <string name="menu_translate">Sayfayı çevir</string>
     <string name="translate_title">Sayfayı çevir</string>
     <string name="translate_privacy">Çeviri tamamen cihazınızda yapılır; sayfa metni hiçbir sunucuya gönderilmez.</string>
     <string name="translate_first_time">Bir dil çiftini ilk kez kullanırken küçük bir dil modeli (birkaç MB) indirilir.</string>
@@ -578,7 +575,6 @@
     </plurals>
     <string name="dm_speed">%1$s/sn</string>
     <string name="dm_done">İndirildi · %1$s</string>
-    <string name="menu_page_downloads">Sayfadaki indirilebilirler</string>
     <string name="pd_title">Sayfadaki indirilebilirler</string>
     <string name="pd_scanning">Sayfa taranıyor…</string>
     <string name="pd_empty">İndirilebilir bir şey bulunamadı</string>
@@ -749,10 +745,7 @@
     <string name="tabs_search_empty">Bu aramayla eşleşen sekme yok</string>
     <plurals name="tabs_selected"><item quantity="one">%d seçildi</item><item quantity="other">%d seçildi</item></plurals>
     <plurals name="tabs_close_old"><item quantity="one">1 haftadır açılmayan %d sekmeyi kapat</item><item quantity="other">1 haftadır açılmayan %d sekmeyi kapat</item></plurals>
-    <string name="menu_save_for_later">Sonra oku (internetsiz)</string>
     <string name="menu_read_aloud">Sesli oku</string>
-    <string name="menu_screenshot">Ekran görüntüsü (tam sayfa)</string>
-    <string name="menu_save_pdf">PDF olarak kaydet</string>
     <string name="reading_list">Okuma listesi</string>
     <string name="reading_empty">Okuma listeniz boş. Bir makalede menüden "Sonra oku"ya dokunun; internet olmadan da okuyabilirsiniz.</string>
     <string name="reading_saved">Okuma listesine kaydedildi</string>
@@ -770,16 +763,11 @@
     <string name="screenshot_saved">Ekran görüntüsü Resimler/G-Tarayıcı klasörüne kaydedildi</string>
     <string name="screenshot_failed">Ekran görüntüsü alınamadı</string>
     <string name="pdf_saving">PDF hazırlanıyor; İndirilenler\'e kaydedilecek</string>
-    <string name="menu_more_page_actions">Diğer sayfa işlemleri</string>
-    <string name="menu_more_page_actions_summary">Sesli oku, ekran görüntüsü, PDF, bağlantıyı kopyala, uygulama olarak yükle</string>
     <string name="menu_tile_reading">Okuma listesi</string>
     <string name="menu_tile_qr">QR kod</string>
     <string name="menu_tile_report">Sorun bildir</string>
     <string name="pdf_saved">PDF hazır; İndirilenler\'e kaydediliyor</string>
     <string name="pdf_failed">PDF oluşturulamadı. Sayfa tam yüklendikten sonra tekrar deneyin.</string>
-    <string name="menu_all_options">Tüm seçenekler</string>
-    <string name="menu_section_page">Bu sayfa</string>
-    <string name="menu_section_app">Uygulama</string>
     <string name="vpn_notification_channel">VPN durumu</string>
     <string name="vpn_notification_title">G-Tarayıcı VPN açık</string>
     <string name="vpn_notification_connected">%1$s sunucusuna bağlı</string>
@@ -855,6 +843,21 @@
     <string name="onboarding_point_more">Gizli sekmeler, parolalar, VPN ve çeviri menüde.</string>
     <string name="settings_advanced">Gelişmiş</string>
     <string name="settings_page_advanced_summary">Veri tasarrufu, önbellek, tanılama</string>
+    <string name="menu_tile_download_video">Videoyu indir</string>
+    <string name="menu_tile_translate">Çevir</string>
+    <string name="menu_tile_reader_settings">Okuma ayarı</string>
+    <string name="menu_tile_find">Sayfada bul</string>
+    <string name="menu_tile_desktop">Masaüstü</string>
+    <string name="menu_tile_save_later">Sonra oku</string>
+    <string name="menu_tile_page_downloads">Sayfadaki dosyalar</string>
+    <string name="menu_tile_read_aloud">Sesli oku</string>
+    <string name="menu_tile_copy_link">Bağlantıyı kopyala</string>
+    <string name="menu_tile_screenshot">Ekran görüntüsü</string>
+    <string name="menu_tile_pdf">PDF kaydet</string>
+    <string name="menu_tile_install">Uygulama yap</string>
+    <string name="menu_tile_guide">Rehber</string>
+    <string name="menu_more">Daha fazla</string>
+    <string name="menu_less">Daha az</string>
 </resources>
 
 

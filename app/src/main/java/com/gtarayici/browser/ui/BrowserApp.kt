@@ -362,6 +362,9 @@ fun BrowserApp(
                         extensionActions = emptyList(),
                         readerActive = current?.readerActive == true,
                         canTranslate = translationSupported && current?.readerActive != true,
+                        url = pageUrl.orEmpty(),
+                        title = components.store.state.selectedTab?.content?.title.orEmpty(),
+                        private = private,
                     )
                 },
                 installable = current?.hasManifest == true,
