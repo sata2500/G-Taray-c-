@@ -876,6 +876,22 @@
     <string name="vpn_private_only_summary">VPN yalnızca gizli sekmelerde kullanılır; normal sekmeler doğrudan bağlanır</string>
     <string name="lock_leave_private">Normal sekmelere dön</string>
     <string name="lock_switch_profile">Başka profile geç</string>
+    <string name="dl_err_expired">Dosya bulunamadı (HTTP %1$d). Bağlantının süresi dolmuş olabilir: sayfayı yenileyip videoyu yeniden oynatın, sonra tekrar deneyin.</string>
+    <string name="dl_err_forbidden">Sunucu indirmeye izin vermedi (HTTP %1$d). Sayfayı yenileyip tekrar deneyin; bazı siteler dosyayı yalnızca kendi oynatıcısında açar.</string>
+    <string name="dl_err_rate">Sunucu çok fazla istek aldı. Biraz bekleyip tekrar deneyin.</string>
+    <string name="dl_err_server">Sunucu hatası (HTTP %1$d). Biraz sonra tekrar deneyin.</string>
+    <string name="dl_err_live">Canlı yayınlar indirilemez.</string>
+    <string name="dl_err_protected">Bu video korumalı (DRM); indirilemez.</string>
+    <string name="dl_err_page">Adres dosya yerine bir web sayfası verdi. Bağlantının süresi dolmuş ya da oturum gerekiyor olabilir.</string>
+    <string name="dl_err_storage">Telefonda yeterli boş yer yok.</string>
+    <string name="dl_err_network">Bağlantı koptu. İnternet bağlantınızı denetleyip tekrar deneyin.</string>
+    <string name="dl_err_other">İndirilemedi. Tekrar deneyin.</string>
+    <string name="downloads_private_title">Gizli indirmeler</string>
+    <string name="downloads_private_info">Gizli sekmelerde indirdiklerin yalnızca burada görünür, normal sekmelerin indirmelerinde görünmez. Liste uygulama kapanınca temizlenir; dosyalar telefonun İndirilenler klasöründe kalır.</string>
+    <string name="downloads_private_empty">Gizli sekmelerde henüz bir şey indirilmedi</string>
+    <string name="downloads_section_active">Sürüyor</string>
+    <string name="downloads_section_done">İndirilenler</string>
+    <string name="downloads_youtube_retry">Videoyu yeniden indirmek için videonun sayfasını açın</string>
 </resources>
 
 

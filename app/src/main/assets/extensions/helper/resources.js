@@ -8,9 +8,12 @@
  */
 (function () {
   const isTop = window.top === window;
-  const FILE_EXT = /\.(mp4|m4v|webm|mkv|mov|avi|3gp|flv|mpg|mpeg|wmv|ogv|mp3|m4a|aac|ogg|oga|opus|wav|flac|wma|weba|m3u8|pdf|docx?|xlsx?|pptx?|odt|ods|odp|rtf|csv|epub|mobi|djvu|zip|rar|7z|tar|gz|tgz|bz2|xz|zst|iso|apk|apks|xapk|exe|msi|dmg|deb|rpm|appimage)(?:$|[?#])/i;
-  const MEDIA_EXT = /\.(mp4|m4v|webm|mov|mp3|m4a|aac|ogg|opus|wav|flac)(?:$|[?#])/i;
-  const STREAM_EXT = /\.m3u8(?:$|[?#])/i;
+  const FILE_EXT = /\.(mp4|m4v|webm|mkv|mov|avi|3gp|flv|mpg|mpeg|wmv|ogv|mp3|m4a|aac|ogg|oga|opus|wav|flac|wma|weba|mid|midi|amr|m3u8|pdf|docx?|xlsx?|pptx?|odt|ods|odp|odg|rtf|csv|tsv|txt|md|json|xml|epub|mobi|azw3|fb2|djvu|cbz|cbr|srt|vtt|ass|ssa|sub|zip|rar|7z|tar|gz|tgz|bz2|xz|zst|lz|lzma|cab|iso|img|bin|apk|apks|xapk|aab|obb|exe|msi|dmg|pkg|deb|rpm|appimage|jar|ipa|torrent|ttf|otf|woff2?|psd|ai|eps|sketch|fig|xcf|raw|dng|cr2|nef|heic|stl|obj|fbx|3mf|gpx|kml|kmz|ics|vcf|sql|db|sqlite|bak|dat|ovpn|conf|mbtiles)(?:$|[?#])/i;
+  const MEDIA_EXT = /\.(mp4|m4v|webm|mkv|mov|mp3|m4a|aac|ogg|opus|wav|flac)(?:$|[?#])/i;
+  // Akış listesi: adı .m3u8 ile bitmese de (ör. /master.m3u8/index veya ?format=m3u8) adresinde m3u8 geçer.
+  const STREAM_EXT = /\.m3u8|[?&=\/]m3u8\b|mpegurl/i;
+  // Uzun oynatmada tarayıcının kaynak kaydı (varsayılan 250 kayıt) dolar ve akış listesi kaydedilmeyebilir.
+  try { performance.setResourceTimingBufferSize(2000); } catch (e) {}
   const MAX_ITEMS = 300;
 
   function abs(url) {
@@ -35,10 +38,13 @@
   function collect() {
     const items = new Map();
     let blobVideo = false;
+    // Her öğe bulunduğu çerçevenin adresini taşır: gömülü oynatıcıların dosyaları çoğu zaman yalnızca oynatıcının
+    // kendi adresinden (Referer) istenince verilir.
+    const ref = location.href;
     const add = (url, data) => {
       if (!usable(url) || items.size >= MAX_ITEMS) return;
       const before = items.get(url) || {};
-      items.set(url, Object.assign({ url }, before, data));
+      items.set(url, Object.assign({ url, ref }, before, data));
     };
 
     for (const v of document.querySelectorAll("video")) {
@@ -75,11 +81,21 @@
     }
     // Sayfanın oynatıcısının yüklediği akışlar ve medya dosyaları (ör. HLS listeleri).
     try {
-      for (const entry of performance.getEntriesByType("resource")) {
+      const entries = performance.getEntriesByType("resource");
+      let streamFound = false;
+      for (const entry of entries) {
         const url = entry.name;
-        if (!usable(url)) continue;
-        if (STREAM_EXT.test(url)) add(url, { type: "stream" });
-        else if ((entry.initiatorType === "video" || entry.initiatorType === "audio") && MEDIA_EXT.test(url)) add(url, { type: entry.initiatorType });
+        if (usable(url) && STREAM_EXT.test(url)) { add(url, { type: "stream" }); streamFound = true; }
+      }
+      for (const entry of entries) {
+        const url = entry.name;
+        if (!usable(url) || STREAM_EXT.test(url) || !MEDIA_EXT.test(url)) continue;
+        const media = entry.initiatorType === "video" || entry.initiatorType === "audio";
+        // Oynatıcının kendisinin (fetch/XHR) indirdiği medya dosyaları da alınır; ancak sayfada akış listesi varsa
+        // bunlar çoğu zaman listenin küçük parçalarıdır ve tek tek listelenmez.
+        const fetched = (entry.initiatorType === "xmlhttprequest" || entry.initiatorType === "fetch" || entry.initiatorType === "other") &&
+          !streamFound && (entry.decodedBodySize || entry.transferSize || 0) > 512 * 1024;
+        if (media || fetched) add(url, { type: /\.(mp3|m4a|aac|ogg|opus|wav|flac)(?:$|[?#])/i.test(url) ? "audio" : "video" });
       }
     } catch (e) {}
     return { items: Array.from(items.values()), blob: blobVideo };

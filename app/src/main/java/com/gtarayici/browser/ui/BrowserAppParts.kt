@@ -112,7 +112,7 @@ internal fun OverlayPage(
         )
         Overlay.HISTORY -> HistoryScreen(onOpen = { controller.loadUrl(it) }, onBack = { controller.closeOverlay() })
         Overlay.BOOKMARKS -> BookmarksScreen(onOpen = { controller.loadUrl(it) }, onBack = { controller.closeOverlay() })
-        Overlay.DOWNLOADS -> DownloadsScreen(onBack = { controller.closeOverlay() })
+        Overlay.DOWNLOADS -> DownloadsScreen(private = private, onBack = { controller.closeOverlay() })
         Overlay.SETTINGS -> SettingsScreen(
             startPage = remember { controller.settingsStartPage.also { controller.settingsStartPage = null } },
             onGuide = { controller.open(Overlay.GUIDE) },

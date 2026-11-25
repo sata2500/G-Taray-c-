@@ -45,13 +45,15 @@ import com.gtarayici.browser.ui.designsystem.OverlayScaffold
 import com.gtarayici.browser.ui.components.observe
 import mozilla.components.browser.state.state.content.DownloadState
 
+/** İndirilenler. [private]: gizli sekmelerdeyken yalnızca gizli sekmelerde indirilenler gösterilir (ve tersi). */
 @Composable
-fun DownloadsScreen(onBack: () -> Unit) {
+fun DownloadsScreen(private: Boolean = false, onBack: () -> Unit) {
     val context = LocalContext.current
     val components = context.components
     val downloads by components.store.observe { state ->
-        state.downloads.values.filter { !it.private }.sortedByDescending { it.createdTime }
+        state.downloads.values.filter { it.private == private }.sortedByDescending { it.createdTime }
     }
+    val youtubeProgress by com.gtarayici.browser.youtube.YouTubeDownloads.progress.collectAsState()
     var removing by remember { mutableStateOf<DownloadState?>(null) }
     val queue = components.downloadQueue
     val tasks by queue.tasks.collectAsState()
@@ -77,12 +79,40 @@ fun DownloadsScreen(onBack: () -> Unit) {
         )
     }
 
-    OverlayScaffold(title = stringResource(R.string.menu_downloads), onBack = onBack) { modifier ->
+    OverlayScaffold(
+        title = stringResource(if (private) R.string.downloads_private_title else R.string.menu_downloads),
+        onBack = onBack,
+    ) { modifier ->
         if (downloads.isEmpty()) {
-            EmptyState(stringResource(R.string.downloads_empty), modifier, icon = Icons.Rounded.Download)
+            EmptyState(
+                stringResource(if (private) R.string.downloads_private_empty else R.string.downloads_empty),
+                modifier,
+                icon = Icons.Rounded.Download,
+            )
         } else {
+            // Sürenler üstte, bitenler altta.
+            val active = downloads.filter { it.status.isActive() }
+            val finished = downloads.filterNot { it.status.isActive() }
             LazyColumn(modifier) {
-                items(downloads, key = { it.id }) { download ->
+                if (private) {
+                    item {
+                        Text(
+                            stringResource(R.string.downloads_private_info),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                        )
+                    }
+                }
+                if (active.isNotEmpty()) {
+                    item { com.gtarayici.browser.ui.designsystem.SectionHeader(stringResource(R.string.downloads_section_active)) }
+                }
+                val sections = listOf(active, finished)
+                sections.forEachIndexed { index, section ->
+                if (index == 1 && active.isNotEmpty() && finished.isNotEmpty()) {
+                    item { com.gtarayici.browser.ui.designsystem.SectionHeader(stringResource(R.string.downloads_section_done)) }
+                }
+                items(section, key = { it.id }) { download ->
                     val done = download.status == DownloadState.Status.COMPLETED
                     // Kalan süre: indirme boyunca aynı tahminci kullanılır (bayt sayısı değiştikçe güncellenir).
                     val estimator = remember(download.id) { com.gtarayici.browser.ui.feedback.ProgressEstimator() }
@@ -103,6 +133,7 @@ fun DownloadsScreen(onBack: () -> Unit) {
                             Column {
                                 val task = tasks.firstOrNull { it.id == download.id }
                                 val live = task?.takeIf { it.status == com.gtarayici.browser.downloads.manager.TaskStatus.RUNNING }
+                                val failure = task?.error?.takeIf { download.status == DownloadState.Status.FAILED }
                                 Text(
                                     listOfNotNull(
                                         downloadStatusText(download, live?.remainingMs ?: remaining),
@@ -113,11 +144,16 @@ fun DownloadsScreen(onBack: () -> Unit) {
                                     ).joinToString(" · "),
                                     maxLines = 2,
                                 )
+                                // Neden indirilemediği ve ne yapılabileceği.
+                                failure?.let {
+                                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, maxLines = 3)
+                                }
                                 if (download.status == DownloadState.Status.DOWNLOADING) {
-                                    val progress = download.progress
+                                    // Parça sayısıyla ilerleyen akışlar (HLS) ve YouTube indirmeleri kendi ilerlemesini verir.
+                                    val progress = live?.progress ?: youtubeProgress[download.id] ?: download.progress?.let { it / 100f }
                                     if (progress != null) {
                                         LinearProgressIndicator(
-                                            progress = { progress / 100f },
+                                            progress = { progress },
                                             modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                                         )
                                     } else {
@@ -129,7 +165,11 @@ fun DownloadsScreen(onBack: () -> Unit) {
                         trailing = {
                             Row {
                                 val owned = queue.owns(download.id)
+                                val youtube = com.gtarayici.browser.youtube.YouTubeDownloads.owns(download.id)
                                 when {
+                                    youtube && download.status == DownloadState.Status.FAILED -> IconButton(onClick = {
+                                        components.messenger.info(UiText.res(R.string.downloads_youtube_retry))
+                                    }) { Icon(Icons.Rounded.Refresh, stringResource(R.string.dm_retry)) }
                                     owned && download.status == DownloadState.Status.DOWNLOADING -> IconButton(onClick = { queue.pause(download.id) }) {
                                         Icon(Icons.Rounded.Pause, stringResource(R.string.dm_pause))
                                     }
@@ -147,6 +187,8 @@ fun DownloadsScreen(onBack: () -> Unit) {
                                         done -> removing = download
                                         // Süren indirme iptal edilir, yarım dosya silinir.
                                         owned -> queue.cancel(download.id)
+                                        youtube && download.status == DownloadState.Status.DOWNLOADING ->
+                                            com.gtarayici.browser.youtube.YouTubeDownloads.cancel(context, download.id)
                                         else -> components.downloadsUseCases.removeDownload(download.id)
                                     }
                                 }) {
@@ -165,6 +207,7 @@ fun DownloadsScreen(onBack: () -> Unit) {
                             }
                         },
                     )
+                }
                 }
             }
         }
@@ -195,3 +238,7 @@ private fun downloadStatusText(download: DownloadState, remainingMs: Long? = nul
     return listOfNotNull(status, size, left, UrlInput.host(download.url).ifBlank { null }).joinToString(" · ")
 }
 
+
+/** Süren (henüz bitmemiş) indirme mi? */
+private fun DownloadState.Status.isActive(): Boolean =
+    this == DownloadState.Status.DOWNLOADING || this == DownloadState.Status.PAUSED || this == DownloadState.Status.INITIATED

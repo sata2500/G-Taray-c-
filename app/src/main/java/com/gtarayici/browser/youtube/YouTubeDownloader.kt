@@ -48,8 +48,11 @@ class YouTubeDownloader(private val context: Context, private val components: Co
         }
     }
 
-    fun start(video: YouTubeVideo, option: YouTubeOption) {
+    /** [private]: gizli sekmeden indirilen dosya yalnızca gizli indirmelerde listelenir. */
+    fun start(video: YouTubeVideo, option: YouTubeOption, pageUrl: String? = null, private: Boolean = false) {
         val intent = Intent(context, YouTubeDownloadService::class.java)
+            .putExtra(YouTubeDownloadService.EXTRA_PRIVATE, private)
+            .putExtra(YouTubeDownloadService.EXTRA_PAGE_URL, pageUrl)
             .putExtra(YouTubeDownloadService.EXTRA_TITLE, video.title)
             .putExtra(YouTubeDownloadService.EXTRA_VIDEO_URL, option.videoUrl)
             .putExtra(YouTubeDownloadService.EXTRA_AUDIO_URL, option.audioUrl)

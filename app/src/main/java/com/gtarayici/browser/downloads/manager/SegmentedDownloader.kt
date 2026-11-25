@@ -87,10 +87,20 @@ class SegmentedDownloader(
         context: RequestContext,
         parts: List<SegmentProgress>,
         sink: DownloadSink,
+        /** Aynı anda açık bağlantı sayısı; parçalar bundan fazlaysa biten bağlantı sıradaki parçayı alır. */
+        parallel: Int = parts.size,
         onBytes: (Long) -> Unit,
     ) = coroutineScope {
+        val gate = kotlinx.coroutines.sync.Semaphore(parallel.coerceIn(1, parts.size.coerceAtLeast(1)))
         parts.filterNot { it.complete }.map { part ->
-            async(Dispatchers.IO) { downloadPart(url, context, part, sink, onBytes, single = parts.size == 1) }
+            async(Dispatchers.IO) {
+                gate.acquire()
+                try {
+                    downloadPart(url, context, part, sink, onBytes, single = parts.size == 1)
+                } finally {
+                    gate.release()
+                }
+            }
         }.awaitAll()
         Unit
     }

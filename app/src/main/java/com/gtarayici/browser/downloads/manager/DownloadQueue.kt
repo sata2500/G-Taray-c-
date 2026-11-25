@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import com.gtarayici.browser.diagnostics.Diagnostics
-import com.gtarayici.browser.ui.feedback.HumanErrors
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -180,9 +179,8 @@ class DownloadQueue(
                 throw e
             } catch (e: Exception) {
                 meter.cancel()
-                val detail = HumanErrors.detail(e)
-                Diagnostics.log("indirme başarısız: $detail", "indirme")
-                edit(id) { it.copy(status = TaskStatus.FAILED, speed = 0, error = detail) }
+                Diagnostics.log("indirme başarısız: ${DownloadErrors.code(e)}", "indirme")
+                edit(id) { it.copy(status = TaskStatus.FAILED, speed = 0, error = DownloadErrors.reason(context, e)) }
                 report(id)
             } finally {
                 withContext(kotlinx.coroutines.NonCancellable) { schedule() }
@@ -196,27 +194,7 @@ class DownloadQueue(
         val isStream = request.kind == MediaKind.STREAM || DownloadNames.extension(request.url) == "m3u8" ||
             request.mime?.contains("mpegurl", ignoreCase = true) == true
         when {
-            isStream -> {
-                val (_, media) = hls.resolve(request.url, ctx)
-                val name = DownloadNames.finalName(
-                    runtime.name?.substringBeforeLast('.')?.let { "$it.${if (media.initUrl != null) "mp4" else "ts"}" },
-                    request.url,
-                    null,
-                    MediaKind.VIDEO,
-                )
-                runtime.name = name
-                runtime.mime = if (media.initUrl != null) "video/mp4" else "video/mp2t"
-                // HLS kaldığı yerden sürdürülemez; her başlangıçta dosya baştan yazılır.
-                runtime.file?.discard()
-                val file = PublicFile.create(context, name, runtime.mime).also { runtime.file = it }
-                runtime.bytes.set(0)
-                edit(id) { it.copy(name = name, connections = 6, fraction = 0f) }
-                val count = media.segments.size
-                hls.download(media, ctx, file.outputStream()) { done, bytes ->
-                    runtime.bytes.set(bytes)
-                    edit(id) { it.copy(fraction = done.toFloat() / count) }
-                }
-            }
+            isStream -> downloadStream(id, runtime)
             request.response != null && runtime.parts == null && !worthSplitting(runtime) -> {
                 val file = runtime.file ?: PublicFile.create(context, runtime.name!!, runtime.mime).also { runtime.file = it }
                 file.reset()
@@ -243,7 +221,7 @@ class DownloadQueue(
                 // Adres beklenen dosya yerine bir web sayfası döndürüyorsa (ör. süresi dolmuş bağlantı, oturum
                 // gerektiren dosya, "PDF olarak kaydet") sayfanın HTML'i dosya diye kaydedilmez.
                 if (servesPageInsteadOf(request.mime, probe.mime)) {
-                    throw IllegalStateException("Adres dosya yerine bir web sayfası döndürdü")
+                    throw PageInsteadOfFileException()
                 }
                 Diagnostics.log("adresten indiriliyor (${probe.mime ?: "tür bilinmiyor"})", "indirme")
                 if (runtime.file == null) {
@@ -258,22 +236,100 @@ class DownloadQueue(
                     runtime.mime = probe.mime ?: request.mime
                     runtime.file = PublicFile.create(context, name, runtime.mime)
                 }
-                val parts = runtime.parts ?: SegmentPlanner.plan(probe.total, connections(), probe.rangesSupported)
+                // Bağlantı başına birkaç parça: hızlı biten bağlantı sıradaki parçayı alır, yavaş bir bağlantı dosyanın
+                // sonunu tek başına beklemez.
+                val parallel = connections()
+                val parts = runtime.parts ?: SegmentPlanner.plan(probe.total, parallel, probe.rangesSupported, PIECES_PER_CONNECTION)
                     .map(::SegmentProgress).also { runtime.parts = it }
                 runtime.bytes.set(parts.sumOf { it.done.get() })
-                edit(id) { it.copy(name = runtime.name!!, total = probe.total, connections = parts.size) }
+                edit(id) { it.copy(name = runtime.name!!, total = probe.total, connections = minOf(parts.size, parallel)) }
                 report(id)
                 try {
-                    segmented.download(probe.finalUrl, ctx, parts, runtime.file!!.sink) { runtime.bytes.addAndGet(it) }
+                    segmented.download(probe.finalUrl, ctx, parts, runtime.file!!.sink, onBytes = { runtime.bytes.addAndGet(it) }, parallel = parallel)
                 } catch (e: SegmentedDownloader.RangeNotHonoredException) {
                     // Sunucu parça isteğine uymadı: tek bağlantıyla baştan.
                     val single = listOf(SegmentProgress(Segment(0, 0, probe.total - 1)))
                     runtime.parts = single
                     runtime.bytes.set(0)
                     edit(id) { it.copy(connections = 1) }
-                    segmented.download(probe.finalUrl, ctx, single, runtime.file!!.sink) { runtime.bytes.addAndGet(it) }
+                    segmented.download(probe.finalUrl, ctx, single, runtime.file!!.sink, onBytes = { runtime.bytes.addAndGet(it) })
                 }
             }
+        }
+    }
+
+    /**
+     * HLS akışı: parçalar sırayla tek dosyaya yazılır. Ses ayrı bir listedeyse (birçok sitede kaliteler sessiz gelir,
+     * ses ayrı akar) ikisi de indirilip yeniden kodlamadan tek bir MP4'te birleştirilir.
+     */
+    private suspend fun downloadStream(id: String, runtime: Runtime) {
+        val request = runtime.request
+        val ctx = request.context
+        val resolved = hls.resolve(request.url, ctx)
+        val media = resolved.media
+        val parallel = connections().coerceIn(4, 12)
+        val baseName = runtime.name?.substringBeforeLast('.')
+        fun nameFor(ext: String) = DownloadNames.finalName(baseName?.let { "$it.$ext" }, request.url, null, MediaKind.VIDEO)
+        val videoExt = if (media.initUrl != null) "mp4" else "ts"
+        // HLS kaldığı yerden sürdürülemez; her başlangıçta dosya baştan yazılır.
+        runtime.file?.discard()
+        runtime.file = null
+        runtime.bytes.set(0)
+        edit(id) { it.copy(connections = parallel, fraction = 0f) }
+        val audio = resolved.audio
+        if (audio == null) {
+            val name = nameFor(videoExt)
+            runtime.name = name
+            runtime.mime = if (media.initUrl != null) "video/mp4" else "video/mp2t"
+            val file = PublicFile.create(context, name, runtime.mime).also { runtime.file = it }
+            edit(id) { it.copy(name = name) }
+            val count = media.segments.size
+            hls.download(media, ctx, file.outputStream(), parallel = parallel) { done, bytes ->
+                runtime.bytes.set(bytes)
+                edit(id) { it.copy(fraction = done.toFloat() / count) }
+            }
+            return
+        }
+        val work = java.io.File(context.cacheDir, "hls-$id").apply { deleteRecursively(); mkdirs() }
+        try {
+            val videoFile = java.io.File(work, "video.$videoExt")
+            val audioFile = java.io.File(work, "audio.${if (audio.initUrl != null) "mp4" else "ts"}")
+            val count = media.segments.size + audio.segments.size
+            var videoBytes = 0L
+            videoFile.outputStream().buffered().use { out ->
+                hls.download(media, ctx, out, parallel = parallel) { done, bytes ->
+                    videoBytes = bytes
+                    runtime.bytes.set(bytes)
+                    edit(id) { it.copy(fraction = done.toFloat() / count) }
+                }
+            }
+            audioFile.outputStream().buffered().use { out ->
+                hls.download(audio, ctx, out, parallel = parallel) { done, bytes ->
+                    runtime.bytes.set(videoBytes + bytes)
+                    edit(id) { it.copy(fraction = (media.segments.size + done).toFloat() / count) }
+                }
+            }
+            val merged = java.io.File(work, "out.mp4")
+            val (source, ext) = runCatching {
+                com.gtarayici.browser.media.TrackMuxer.mux(videoFile, audioFile, merged)
+                merged to "mp4"
+            }.getOrElse {
+                // Birleştirilemedi: en azından görüntü kaydedilir.
+                Diagnostics.log("ses ve görüntü birleştirilemedi; yalnızca görüntü kaydedildi", "indirme")
+                videoFile to videoExt
+            }
+            val name = nameFor(ext)
+            runtime.name = name
+            runtime.mime = if (ext == "mp4") "video/mp4" else "video/mp2t"
+            val file = PublicFile.create(context, name, runtime.mime).also { runtime.file = it }
+            edit(id) { it.copy(name = name) }
+            // Akış kapatılmaz: dosya kanalı tamamlama (commit) için açık kalmalı.
+            val out = file.outputStream()
+            source.inputStream().use { it.copyTo(out, 256 * 1024) }
+            out.flush()
+            runtime.bytes.set(source.length())
+        } finally {
+            work.deleteRecursively()
         }
     }
 
@@ -423,6 +479,7 @@ class DownloadQueue(
             return wanted == served
         }
         const val MAX_RUNNING = 3
+        const val PIECES_PER_CONNECTION = 3
         const val DEFAULT_CONNECTIONS = 8
     }
 }

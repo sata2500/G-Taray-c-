@@ -8,9 +8,6 @@ import android.app.Service
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.media.MediaCodec
-import android.media.MediaExtractor
-import android.media.MediaMuxer
 import android.os.Build
 import android.os.Environment
 import android.os.IBinder
@@ -25,7 +22,6 @@ import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +32,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.DownloadAction
+import kotlinx.coroutines.flow.update
 import mozilla.components.browser.state.state.content.DownloadState
 
 /**
@@ -56,9 +53,20 @@ class YouTubeDownloadService : Service() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
+    /** Süren (ve sırada bekleyen) işler: İndirilenler ekranından iptal için. */
+    private val active = java.util.concurrent.ConcurrentHashMap<String, kotlinx.coroutines.Job>()
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_CANCEL) {
+            intent.getStringExtra(EXTRA_ID)?.let { id -> active[id]?.cancel() }
+            if (active.isEmpty()) stopSelf()
+            return START_NOT_STICKY
+        }
         val title = intent?.getStringExtra(EXTRA_TITLE) ?: return START_NOT_STICKY
         val job = Job(
+            id = YouTubeDownloads.PREFIX + java.util.UUID.randomUUID(),
+            private = intent.getBooleanExtra(EXTRA_PRIVATE, false),
+            pageUrl = intent.getStringExtra(EXTRA_PAGE_URL) ?: "https://www.youtube.com/",
             title = title,
             videoUrl = intent.getStringExtra(EXTRA_VIDEO_URL),
             audioUrl = intent.getStringExtra(EXTRA_AUDIO_URL),
@@ -74,11 +82,23 @@ class YouTubeDownloadService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0,
         )
         running.incrementAndGet()
-        scope.launch {
-            queue.withLock { runJob(job) }
-            if (running.decrementAndGet() == 0) {
-                ServiceCompat.stopForeground(this@YouTubeDownloadService, ServiceCompat.STOP_FOREGROUND_REMOVE)
-                stopSelf()
+        // İndirilenler ekranında hemen görünür; ilerleme orada da izlenir.
+        scope.launch { record(job, DownloadState.Status.DOWNLOADING) }
+        active[job.id] = scope.launch {
+            try {
+                queue.withLock { runJob(job) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                withContext(kotlinx.coroutines.NonCancellable + Dispatchers.Main) {
+                    components.store.dispatch(DownloadAction.RemoveDownloadAction(job.id))
+                }
+                runCatching { notifications.cancel(job.notificationId) }
+            } finally {
+                active.remove(job.id)
+                YouTubeDownloads.progress.update { it - job.id }
+                if (running.decrementAndGet() == 0) {
+                    ServiceCompat.stopForeground(this@YouTubeDownloadService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
             }
         }
         return START_NOT_STICKY
@@ -90,6 +110,9 @@ class YouTubeDownloadService : Service() {
     }
 
     private data class Job(
+        val id: String,
+        val private: Boolean,
+        val pageUrl: String,
         val title: String,
         val videoUrl: String?,
         val audioUrl: String?,
@@ -117,11 +140,14 @@ class YouTubeDownloadService : Service() {
                 }
             }
             val (directory, savedName) = publish(output, job)
-            registerInDownloads(job, savedName, output.length(), directory)
+            record(job, DownloadState.Status.COMPLETED, savedName, output.length(), directory)
             done(job, success = true)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             val detail = com.gtarayici.browser.ui.feedback.HumanErrors.detail(e)
             com.gtarayici.browser.diagnostics.Diagnostics.log("indirme başarısız: $detail", "video")
+            record(job, DownloadState.Status.FAILED)
             done(job, success = false, message = detail)
         } finally {
             estimators.remove(job.notificationId)
@@ -186,35 +212,8 @@ class YouTubeDownloadService : Service() {
         return count
     }
 
-    /** Görüntü ve ses izlerini yeniden kodlamadan tek bir MP4'te birleştirir. */
-    @SuppressLint("WrongConstant")
-    private fun mux(videoFile: File, audioFile: File, output: File) {
-        val muxer = MediaMuxer(output.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-        val extractors = listOf(videoFile to "video/", audioFile to "audio/").map { (file, prefix) ->
-            val extractor = MediaExtractor().apply { setDataSource(file.absolutePath) }
-            val track = (0 until extractor.trackCount).first {
-                extractor.getTrackFormat(it).getString(android.media.MediaFormat.KEY_MIME).orEmpty().startsWith(prefix)
-            }
-            extractor.selectTrack(track)
-            Triple(extractor, extractor.getTrackFormat(track), muxer.addTrack(extractor.getTrackFormat(track)))
-        }
-        muxer.start()
-        val buffer = ByteBuffer.allocate(4 * 1024 * 1024)
-        val info = MediaCodec.BufferInfo()
-        extractors.forEach { (extractor, _, outTrack) ->
-            while (true) {
-                val size = extractor.readSampleData(buffer, 0)
-                if (size < 0) break
-                val flags = if (extractor.sampleFlags and MediaExtractor.SAMPLE_FLAG_SYNC != 0) MediaCodec.BUFFER_FLAG_KEY_FRAME else 0
-                info.set(0, size, extractor.sampleTime, flags)
-                muxer.writeSampleData(outTrack, buffer, info)
-                extractor.advance()
-            }
-            extractor.release()
-        }
-        muxer.stop()
-        muxer.release()
-    }
+    private fun mux(videoFile: File, audioFile: File, output: File) =
+        com.gtarayici.browser.media.TrackMuxer.mux(videoFile, audioFile, output)
 
     /** Dosyayı İndirilenler klasörüne yazar; klasörü ve gerçek dosya adını döndürür (aynı ad varsa sistem "(1)" ekler). */
     private fun publish(file: File, job: Job): Pair<String, String> {
@@ -239,20 +238,38 @@ class YouTubeDownloadService : Service() {
         return dir.absolutePath to job.fileName
     }
 
-    private suspend fun registerInDownloads(job: Job, fileName: String, size: Long, directory: String) = withContext(Dispatchers.Main) {
-        components.store.dispatch(
-            DownloadAction.AddDownloadAction(
-                DownloadState(
-                    url = "https://www.youtube.com/",
-                    fileName = fileName,
-                    contentType = job.mime,
-                    contentLength = size,
-                    currentBytesCopied = size,
-                    status = DownloadState.Status.COMPLETED,
-                    directoryPath = directory,
-                ),
-            ),
+    /**
+     * İndirme kaydı (İndirilenler ekranı). Mozilla'nın indirme ara katmanı "yeni indirme" görünce kendi hizmetiyle
+     * dosyayı yeniden indirmesin diye kayıt önce "başarısız" eklenir, hemen ardından gerçek durumuyla güncellenir.
+     */
+    private suspend fun record(
+        job: Job,
+        status: DownloadState.Status,
+        fileName: String = job.fileName,
+        size: Long? = null,
+        directory: String? = null,
+    ) = withContext(Dispatchers.Main + kotlinx.coroutines.NonCancellable) {
+        val store = components.store
+        val existing = store.state.downloads[job.id]
+        val state = (existing ?: DownloadState(
+            id = job.id,
+            url = job.pageUrl,
+            private = job.private,
+            skipConfirmation = true,
+        )).copy(
+            fileName = fileName,
+            contentType = job.mime,
+            contentLength = size,
+            currentBytesCopied = size ?: 0,
+            status = status,
+            directoryPath = directory ?: existing?.directoryPath ?: "",
         )
+        if (existing == null) {
+            store.dispatch(DownloadAction.AddDownloadAction(state.copy(status = DownloadState.Status.FAILED)))
+            if (status != DownloadState.Status.FAILED) store.dispatch(DownloadAction.UpdateDownloadAction(state))
+        } else {
+            store.dispatch(DownloadAction.UpdateDownloadAction(state))
+        }
     }
 
     private fun contentIntent(): PendingIntent = PendingIntent.getActivity(
@@ -275,6 +292,7 @@ class YouTubeDownloadService : Service() {
 
     @SuppressLint("MissingPermission")
     private fun update(job: Job, text: String, percent: Int, remainingMs: Long? = null) {
+        YouTubeDownloads.progress.update { it + (job.id to (percent / 100f).coerceIn(0f, 1f)) }
         // "İndiriliyor · %45 · yaklaşık 2 dk kaldı"
         val parts = listOfNotNull(text, "%$percent", remainingMs?.let { com.gtarayici.browser.ui.feedback.ProgressEstimator.remainingText(it).resolve(this) })
         runCatching { notifications.notify(FOREGROUND_ID, progressNotification(job, parts.joinToString(" · "), percent)) }
@@ -295,6 +313,10 @@ class YouTubeDownloadService : Service() {
     }
 
     companion object {
+        const val ACTION_CANCEL = "com.gtarayici.browser.YT_CANCEL"
+        const val EXTRA_ID = "id"
+        const val EXTRA_PRIVATE = "private"
+        const val EXTRA_PAGE_URL = "page_url"
         const val EXTRA_TITLE = "title"
         const val EXTRA_VIDEO_URL = "video_url"
         const val EXTRA_AUDIO_URL = "audio_url"
@@ -307,5 +329,24 @@ class YouTubeDownloadService : Service() {
 
         fun safeFileName(title: String): String =
             title.replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]"), " ").replace(Regex("\\s+"), " ").trim().take(120).ifBlank { "video" }
+    }
+}
+
+/** YouTube indirmelerinin ilerlemesi (İndirilenler ekranı bunu gösterir) ve iptali. */
+object YouTubeDownloads {
+    const val PREFIX = "yt-"
+
+    /** İndirme kimliği → ilerleme (0..1). */
+    val progress = kotlinx.coroutines.flow.MutableStateFlow<Map<String, Float>>(emptyMap())
+
+    fun owns(id: String): Boolean = id.startsWith(PREFIX)
+
+    fun cancel(context: android.content.Context, id: String) {
+        runCatching {
+            context.startService(
+                Intent(context, YouTubeDownloadService::class.java).setAction(YouTubeDownloadService.ACTION_CANCEL)
+                    .putExtra(YouTubeDownloadService.EXTRA_ID, id),
+            )
+        }
     }
 }

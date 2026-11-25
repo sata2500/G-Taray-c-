@@ -25,6 +25,8 @@ data class PageResource(
     val width: Int = 0,
     val height: Int = 0,
     val durationSeconds: Int = 0,
+    /** Öğenin bulunduğu çerçevenin adresi (gömülü oynatıcılarda sayfanın değil, oynatıcının adresi). */
+    val referer: String? = null,
 )
 
 /** Bir sayfanın tarama sonucu. */
@@ -66,6 +68,7 @@ data class PageScan(
                         width = o.optInt("w"),
                         height = o.optInt("h"),
                         durationSeconds = o.optInt("duration"),
+                        referer = o.optString("ref").takeIf { it.startsWith("http") },
                     )
                     // Aynı adres birden çok yoldan bulunduysa daha fazla bilgi içeren kayıt kalır.
                     val before = seen[url]
@@ -74,6 +77,7 @@ data class PageScan(
                         width = maxOf(before.width, resource.width),
                         height = maxOf(before.height, resource.height),
                         durationSeconds = maxOf(before.durationSeconds, resource.durationSeconds),
+                        referer = before.referer ?: resource.referer,
                         kind = if (before.kind == MediaKind.OTHER) resource.kind else before.kind,
                     )
                 }

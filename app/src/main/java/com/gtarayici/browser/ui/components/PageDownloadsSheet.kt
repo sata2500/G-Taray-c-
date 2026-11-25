@@ -115,7 +115,7 @@ fun PageDownloadsSheet(
             scan?.resources.orEmpty().filter { it.kind != MediaKind.IMAGE && it.kind != MediaKind.STREAM }.take(40).map { resource ->
                 async {
                     gate.withPermit {
-                        runCatching { downloader.probe(resource.url, ctx) }.getOrNull()?.total?.takeIf { it > 0 }?.let { sizes[resource.url] = it }
+                        runCatching { downloader.probe(resource.url, ctx.copy(referer = resource.referer ?: pageUrl)) }.getOrNull()?.total?.takeIf { it > 0 }?.let { sizes[resource.url] = it }
                     }
                 }
             }.awaitAll()
@@ -217,7 +217,8 @@ fun PageDownloadsSheet(
                                             url = resource.url,
                                             suggestedName = suggestedName(resource, result.title),
                                             kind = resource.kind,
-                                            context = ctx,
+                                            // Gömülü oynatıcıdaki dosya, oynatıcının adresiyle istenir.
+                                            context = ctx.copy(referer = resource.referer ?: pageUrl),
                                         ),
                                     )
                                 }

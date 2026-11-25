@@ -10,11 +10,11 @@ enum class MediaKind { VIDEO, AUDIO, STREAM, DOCUMENT, ARCHIVE, APP, IMAGE, OTHE
 /** Dosya adı, uzantı ve tür çıkarımı (Android'e bağlı değildir; birim testleriyle denetlenir). */
 object DownloadNames {
     private val VIDEO = setOf("mp4", "m4v", "webm", "mkv", "mov", "avi", "3gp", "flv", "ts", "mpg", "mpeg", "wmv", "ogv")
-    private val AUDIO = setOf("mp3", "m4a", "aac", "ogg", "oga", "opus", "wav", "flac", "wma", "weba")
+    private val AUDIO = setOf("mp3", "m4a", "aac", "ogg", "oga", "opus", "wav", "flac", "wma", "weba", "mid", "midi", "amr")
     private val STREAM = setOf("m3u8")
-    private val DOCUMENT = setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf", "txt", "csv", "epub", "mobi", "djvu")
-    private val ARCHIVE = setOf("zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz", "zst", "iso")
-    private val APP = setOf("apk", "apks", "xapk", "exe", "msi", "dmg", "deb", "rpm", "appimage")
+    private val DOCUMENT = setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf", "txt", "csv", "tsv", "md", "epub", "mobi", "azw3", "fb2", "djvu", "cbz", "cbr", "odg", "srt", "vtt", "ass", "ssa")
+    private val ARCHIVE = setOf("zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz", "zst", "lz", "lzma", "cab", "iso", "img")
+    private val APP = setOf("apk", "apks", "xapk", "aab", "obb", "exe", "msi", "dmg", "pkg", "deb", "rpm", "appimage", "jar", "ipa")
     private val IMAGE = setOf("jpg", "jpeg", "png", "gif", "webp", "avif", "bmp", "svg", "heic", "heif", "tif", "tiff")
 
     private val MIME_EXTENSIONS = mapOf(
@@ -25,6 +25,14 @@ object DownloadNames {
         "image/jpeg" to "jpg", "image/png" to "png", "image/gif" to "gif", "image/webp" to "webp", "image/avif" to "avif",
         "image/svg+xml" to "svg", "text/plain" to "txt", "application/epub+zip" to "epub",
         "application/vnd.apple.mpegurl" to "m3u8", "application/x-mpegurl" to "m3u8",
+        "application/x-rar-compressed" to "rar", "application/vnd.rar" to "rar", "application/x-7z-compressed" to "7z",
+        "application/gzip" to "gz", "application/x-tar" to "tar", "application/json" to "json", "text/csv" to "csv",
+        "application/msword" to "doc", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" to "docx",
+        "application/vnd.ms-excel" to "xls", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" to "xlsx",
+        "application/vnd.ms-powerpoint" to "ppt", "application/vnd.openxmlformats-officedocument.presentationml.presentation" to "pptx",
+        "application/x-bittorrent" to "torrent", "application/java-archive" to "jar", "text/vtt" to "vtt",
+        "application/x-subrip" to "srt", "font/ttf" to "ttf", "font/otf" to "otf", "font/woff2" to "woff2",
+        "audio/x-wav" to "wav", "audio/x-flac" to "flac", "video/x-msvideo" to "avi", "video/3gpp" to "3gp",
     )
 
     /** Adresin yolundaki uzantı (sorgu ve parça olmadan, küçük harf); yoksa boş. */
@@ -114,13 +122,13 @@ object SegmentPlanner {
     private const val MIN_SEGMENT_BYTES = 1L * 1024 * 1024
 
     /**
-     * [total] baytı en fazla [connections] parçaya böler; parçalar en az 1 MB'dir. Boyut bilinmiyorsa veya
+     * [total] baytı en fazla [connections] × [piecesPerConnection] parçaya böler; parçalar en az 1 MB'dir. Boyut bilinmiyorsa veya
      * sunucu aralık isteklerini desteklemiyorsa tek parça döner (boyut bilinmiyorsa uç -1).
      */
-    fun plan(total: Long, connections: Int, rangesSupported: Boolean): List<Segment> {
+    fun plan(total: Long, connections: Int, rangesSupported: Boolean, piecesPerConnection: Int = 1): List<Segment> {
         if (total <= 0) return listOf(Segment(0, 0, -1))
         if (!rangesSupported || total < MIN_SPLIT_BYTES || connections <= 1) return listOf(Segment(0, 0, total - 1))
-        val count = minOf(connections.toLong(), total / MIN_SEGMENT_BYTES).toInt().coerceAtLeast(1)
+        val count = minOf(connections.toLong() * piecesPerConnection.coerceAtLeast(1), total / MIN_SEGMENT_BYTES).toInt().coerceAtLeast(1)
         val size = total / count
         return (0 until count).map { i ->
             val start = i * size

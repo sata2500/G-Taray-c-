@@ -142,7 +142,12 @@ fun YouTubeDownloadSheet(pageUrl: String, onDismiss: () -> Unit) {
                             headline = { Text(option.label) },
                             supporting = { Text(option.detail) },
                             modifier = Modifier.clickable {
-                                downloader.start(current, option)
+                                downloader.start(
+                                    current,
+                                    option,
+                                    pageUrl = pageUrl,
+                                    private = context.components.store.state.selectedTab?.content?.private == true,
+                                )
                                 context.components.messenger.info(UiText.res(R.string.yt_started))
                                 onDismiss()
                             },
