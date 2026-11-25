@@ -334,7 +334,13 @@ fun BrowserApp(
             }
 
             if (controller.onboarding && !pictureInPicture) {
-                OnboardingScreen(onDone = { controller.finishOnboarding() })
+                OnboardingScreen(
+                    onDone = { controller.finishOnboarding() },
+                    onGuide = {
+                        controller.finishOnboarding()
+                        controller.open(Overlay.GUIDE)
+                    },
+                )
             }
 
             CrashPrompt(controller, blocked = lockKey != null || controller.onboarding || pictureInPicture)

@@ -265,9 +265,9 @@ internal fun settingsPages(
                 ),
             ),
         ),
-        SettingsPage.DATA to listOf(
+        SettingsPage.ADVANCED to listOf(
             SettingSection(
-                null,
+                s(R.string.settings_data_saver),
                 listOfNotNull(
                     SettingItem.Action(
                         s(R.string.settings_data_saver),
@@ -303,8 +303,6 @@ internal fun settingsPages(
                     },
                 ),
             ),
-        ),
-        SettingsPage.DIAGNOSTICS to listOf(
             SettingSection(
                 s(R.string.diag_section_report),
                 listOf(SettingItem.Action(s(R.string.report_title), s(R.string.report_summary), Icons.Rounded.ReportProblem, opensPage = true, onClick = onReport)),

@@ -93,7 +93,7 @@ fun GuideScreen(controller: BrowserController, onBack: () -> Unit) {
             R.string.guide_section_sites,
             listOf(
                 GuideItem(Icons.Rounded.Tune, R.string.guide_site_title, R.string.guide_site_text),
-                GuideItem(Icons.Rounded.DataSaverOn, R.string.guide_data_title, R.string.guide_data_text) { controller.openSettings(SettingsPage.DATA) },
+                GuideItem(Icons.Rounded.DataSaverOn, R.string.guide_data_title, R.string.guide_data_text) { controller.openSettings(SettingsPage.ADVANCED) },
                 GuideItem(Icons.Rounded.InstallMobile, R.string.guide_webapp_title, R.string.guide_webapp_text),
             ),
         ),

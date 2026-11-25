@@ -1,13 +1,8 @@
-## G-Tarayıcı 0.18.0
-
-**Neler yapabilirsin? (uygulama içi rehber)**
-- Göze hemen çarpmayan özelliklerin kısa rehberi: kaydırarak sekme değiştirme, uzun basma ve arama kısayolları,
-  parolalar, VPN, arka planda oynatma, okuma listesi, siteye özel ayarlar, yedekleme… Her madde tek cümle; "Aç"
-  ilgili ekranı açar. Menü → Tüm seçenekler ya da Ayarlar → Hakkında'dan açılır.
+## G-Tarayıcı 0.18.1
 
 **Daha sade**
-- Ayarlarda "Güncellemeler" ayrı sayfa olmaktan çıkıp "Hakkında" sayfasına taşındı (7 bölüm kaldı).
-- Ana sayfadaki koruma etiketi kısaldı ("Reklamlar ve izleyiciler engelleniyor"), tek satıra sığar.
-
-**Kod bakımı**
-- En büyük iki ekran (VPN ve Ayarlar) daha küçük, anlaşılır dosyalara bölündü; davranış değişmedi.
+- Ana sayfada tek arama yeri: ortadaki ikinci arama kutusu kaldırıldı; arama ve adres için alttaki çubuk kullanılır.
+- Ayarlar 6 bölüme indi: "Veri ve önbellek" ile "Tanılama" seyrek değiştirildikleri için tek bir "Gelişmiş" sayfasında
+  toplandı (veri tasarrufu, sayfa önbelleği, tanılama kaydı, sorun bildirme).
+- İlk açılış tanıtımı tek ekrana indi: dört kısa madde, varsayılan tarayıcı düğmesi ve "Başla"; isteyen
+  "Neler yapabilirsin?" rehberini açabilir.

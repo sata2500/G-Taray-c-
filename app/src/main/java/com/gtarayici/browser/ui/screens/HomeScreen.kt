@@ -165,9 +165,8 @@ fun HomeScreen(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(Spacing.xl))
-                SearchPill(private, onSearchClick, onScanQr)
-                Spacer(Modifier.height(Spacing.md))
+                // Arama için tek giriş noktası alttaki adres çubuğudur; ana sayfada ikinci bir arama kutusu yoktur.
+                Spacer(Modifier.height(Spacing.lg))
 
                 if (private) {
                     Surface(
@@ -231,34 +230,6 @@ private fun Emblem(private: Boolean) {
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.size(32.dp),
             )
-        }
-    }
-}
-
-@Composable
-private fun SearchPill(private: Boolean, onSearchClick: () -> Unit, onScanQr: () -> Unit) {
-    Surface(
-        shape = AppShape.full,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth().height(56.dp),
-    ) {
-        Row(
-            Modifier.clickable(onClick = onSearchClick).padding(start = Spacing.xl, end = Spacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Rounded.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.width(Spacing.md))
-            Text(
-                stringResource(if (private) R.string.private_search_hint else R.string.search_hint),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(onClick = onScanQr) {
-                Icon(Icons.Rounded.QrCodeScanner, stringResource(R.string.menu_scan_qr), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
         }
     }
 }

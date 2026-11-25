@@ -397,16 +397,8 @@
     <string name="settings_hide_toolbar_summary">Sayfayı aşağı kaydırınca çubuk iner, yukarı kaydırınca geri gelir</string>
     <string name="settings_unload_tabs">Kullanılmayan sekmeleri uyut</string>
     <string name="settings_unload_tabs_summary">30 dakikadır açılmayan sekmeler bellekten boşaltılır; dokununca yeniden yüklenir</string>
-    <string name="onboarding_privacy_title">Reklamsız ve izlenmeden</string>
-    <string name="onboarding_privacy_body">uBlock Origin hazır kurulu gelir. İzleyiciler, çerez pencereleri ve parmak izi takibi siz hiçbir ayar yapmadan engellenir.</string>
-    <string name="onboarding_ready_title">Her şey hazır</string>
-    <string name="onboarding_ready_body">YouTube arka planda çalar ve indirilebilir; video oynarken uygulamadan çıkınca küçük pencereye geçer. Profiller, kilitli gizli sekmeler, sayfa çevirisi ve tarayıcı VPN\'i menüde.</string>
-    <string name="onboarding_default_title">Varsayılan tarayıcı yapın</string>
-    <string name="onboarding_default_body">Diğer uygulamalardaki bağlantılar da G-Tarayıcı\'da, aynı korumayla açılsın.</string>
     <string name="onboarding_make_default">Varsayılan tarayıcı yap</string>
     <string name="onboarding_default_done">G-Tarayıcı varsayılan tarayıcınız</string>
-    <string name="onboarding_skip">Atla</string>
-    <string name="onboarding_next">İleri</string>
     <string name="onboarding_start">Başla</string>
     <string name="history_today">Bugün</string>
     <string name="history_yesterday">Dün</string>
@@ -492,8 +484,6 @@
     <string name="download_finished_message">İndirildi: %1$s</string>
     <string name="action_open">Aç</string>
     <!-- Tanılama ve sorun bildirme (diagnostics/) -->
-    <string name="diag_settings_title">Tanılama ve sorun bildirme</string>
-    <string name="diag_settings_summary">Sorun bildir, tanılama kaydı, çökme raporları</string>
     <string name="diag_log_enabled">Tanılama kaydı tut</string>
     <string name="diag_log_enabled_summary">Hataları ve önemli olayları yalnızca bu cihazda saklar. Adresler alan adına indirgenir; e-posta, IP ve kimlikler gizlenir.</string>
     <string name="diag_crash_prompt">Çökmeden sonra bildirmeyi öner</string>
@@ -631,8 +621,6 @@
     <string name="report_sent">Bildiriminiz alındı (#%1$d). Teşekkürler!</string>
     <string name="report_send_failed">Bildirim gönderilemedi. İnternet bağlantınızı denetleyip yeniden deneyin ya da dosya olarak paylaşın.</string>
     <string name="report_rate_limited">Kısa sürede çok fazla bildirim gönderildi. Biraz sonra yeniden deneyin.</string>
-    <string name="settings_data_saver_page">Veri ve önbellek</string>
-    <string name="settings_page_data_summary">Veri tasarrufu, sayfa önbelleği</string>
     <string name="settings_data_saver">Veri tasarrufu</string>
     <string name="data_saver_off">Kapalı</string>
     <string name="data_saver_auto">Mobil veride ve yavaş bağlantıda</string>
@@ -859,6 +847,14 @@
     <string name="guide_backup_text">Yer imleri, ayarlar, profiller ve (şifreli yedekte) parolalar tek dosyaya. Chrome ve Firefox\'tan yer imi aktarılabilir.</string>
     <string name="guide_report_title">Sorun bildir</string>
     <string name="guide_report_text">Bir şey ters giderse bildir; ekran görüntüsü ve tanılama kaydı eklenir, kişisel bilgiler maskelenir.</string>
+    <string name="onboarding_title">G-Tarayıcı\'ya hoş geldin</string>
+    <string name="onboarding_subtitle">Her şey hazır; hiçbir ayar yapman gerekmiyor.</string>
+    <string name="onboarding_point_block">Reklamlar, izleyiciler ve çerez pencereleri kendiliğinden engellenir.</string>
+    <string name="onboarding_point_media">Videolar ve müzik arka planda çalar; YouTube videoları indirilebilir.</string>
+    <string name="onboarding_point_swipe">Alttaki adres çubuğunu yana kaydırarak sekmeler arasında geçebilirsin.</string>
+    <string name="onboarding_point_more">Gizli sekmeler, parolalar, VPN ve çeviri menüde.</string>
+    <string name="settings_advanced">Gelişmiş</string>
+    <string name="settings_page_advanced_summary">Veri tasarrufu, önbellek, tanılama</string>
 </resources>
 
 

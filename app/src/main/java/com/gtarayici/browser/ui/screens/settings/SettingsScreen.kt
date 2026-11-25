@@ -37,8 +37,8 @@ enum class SettingsPage(val icon: ImageVector, val title: Int, val summary: Int)
     APPEARANCE(Icons.Rounded.Palette, R.string.settings_appearance, R.string.settings_page_appearance_summary),
     PRIVACY(Icons.Rounded.Shield, R.string.settings_privacy, R.string.settings_page_privacy_summary),
     MEDIA(Icons.Rounded.PlayCircle, R.string.settings_media, R.string.settings_page_media_summary),
-    DATA(Icons.Rounded.DataSaverOn, R.string.settings_data_saver_page, R.string.settings_page_data_summary),
-    DIAGNOSTICS(Icons.Rounded.BugReport, R.string.diag_settings_title, R.string.diag_settings_summary),
+    /** Seyrek değiştirilenler: veri tasarrufu, sayfa önbelleği, tanılama ve sorun bildirme. */
+    ADVANCED(Icons.Rounded.DataSaverOn, R.string.settings_advanced, R.string.settings_page_advanced_summary),
     ABOUT(Icons.Rounded.Info, R.string.settings_about, R.string.settings_page_about_summary),
 }
 
