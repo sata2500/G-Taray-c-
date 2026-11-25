@@ -89,6 +89,7 @@ class AppSettings(context: Context) {
     private val dnsStrictPref = bool("dns_strict", false)
     private val lockPrivatePref = bool("lock_private_tabs", false)
     private val securePrivatePref = bool("secure_private_tabs", true)
+    private val encryptPrivateDownloadsPref = bool("encrypt_private_downloads", false)
     private val backgroundPlayPref = bool("background_play", true)
     private val sponsorBlockPref = bool("sponsorblock", true)
     private val autoPipPref = bool("auto_pip", true)
@@ -125,6 +126,8 @@ class AppSettings(context: Context) {
     val dnsStrict get() = dnsStrictPref.flow
     val lockPrivateTabs get() = lockPrivatePref.flow
     val securePrivateTabs get() = securePrivatePref.flow
+    /** Gizli sekmelerde indirilenler gizli kasaya şifreli kaydedilir. */
+    val encryptPrivateDownloads get() = encryptPrivateDownloadsPref.flow
     val backgroundPlay get() = backgroundPlayPref.flow
     val sponsorBlock get() = sponsorBlockPref.flow
     val autoPictureInPicture get() = autoPipPref.flow
@@ -167,6 +170,7 @@ class AppSettings(context: Context) {
     fun setDnsStrict(value: Boolean) = dnsStrictPref.set(value)
     fun setLockPrivateTabs(value: Boolean) = lockPrivatePref.set(value)
     fun setSecurePrivateTabs(value: Boolean) = securePrivatePref.set(value)
+    fun setEncryptPrivateDownloads(value: Boolean) = encryptPrivateDownloadsPref.set(value)
     fun setBackgroundPlay(value: Boolean) = backgroundPlayPref.set(value)
     fun setSponsorBlock(value: Boolean) = sponsorBlockPref.set(value)
     fun setAutoPictureInPicture(value: Boolean) = autoPipPref.set(value)

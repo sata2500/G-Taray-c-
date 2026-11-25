@@ -16,6 +16,7 @@ biometric = "1.1.0"
 newpipe-extractor = "v0.27.1"
 camerax = "1.7.0"
 zxing = "3.5.4"
+media3 = "1.11.1"
 benchmark = "1.5.0"
 # Cihazda çalışan ölçüm kütüphanesi: 1.5.0, henüz yayımlanmamış profileinstaller 1.5'i bekliyor (SAVE_PROFILE
 # yayını 1.4.x'te yanıtsız kalıyor); profileinstaller 1.4.1 ile uyumlu 1.4.1 kullanılır. Gradle eklentisi 1.5.0 (AGP 9).
@@ -70,6 +71,8 @@ androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.r
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version = "1.2.0" }
+media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
+media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 newpipe-extractor = { module = "com.github.TeamNewPipe:NewPipeExtractor", version.ref = "newpipe-extractor" }

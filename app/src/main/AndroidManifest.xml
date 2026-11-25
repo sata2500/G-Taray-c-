@@ -182,6 +182,13 @@
             android:foregroundServiceType="dataSync" />
 
         <!-- Sorun bildirimi dosya olarak paylaşılırken rapor ve ekran görüntüsü buradan verilir. -->
+        <!-- Gizli kasa: şifresi anlık çözülen dosyalar yalnızca izin verilen uygulamaya geçici olarak verilir. -->
+        <provider
+            android:name=".vault.VaultProvider"
+            android:authorities="${applicationId}.vault"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
         <provider
             android:name=".diagnostics.ReportFileProvider"
             android:authorities="${applicationId}.reports"

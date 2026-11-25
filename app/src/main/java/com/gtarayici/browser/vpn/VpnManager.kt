@@ -249,8 +249,13 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         _status.value = VpnStatus.Off
     }
 
-    /** Java ağ istekleri (ör. YouTube indirici) için vekil; VPN kapalıysa doğrudan bağlantı. */
-    fun javaProxy(): Proxy {
+    /**
+     * Java ağ istekleri (ör. YouTube indirici) için vekil; VPN kapalıysa doğrudan bağlantı. [private]: istek gizli
+     * sekmeden mi geldi.
+     */
+    fun javaProxy(private: Boolean = true): Proxy {
+        // VPN yalnızca gizli sekmelerdeyse normal sekmeden başlatılan işler (ör. YouTube indirmesi) doğrudan bağlanır.
+        if (_privateOnly.value && !private) return Proxy.NO_PROXY
         val connected = status.value as? VpnStatus.Connected ?: return if (enabled) blackhole() else Proxy.NO_PROXY
         return Proxy(Proxy.Type.SOCKS, InetSocketAddress("127.0.0.1", connected.port))
     }

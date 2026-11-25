@@ -892,6 +892,37 @@
     <string name="downloads_section_active">Sürüyor</string>
     <string name="downloads_section_done">İndirilenler</string>
     <string name="downloads_youtube_retry">Videoyu yeniden indirmek için videonun sayfasını açın</string>
+    <string name="vault_title">Gizli kasa</string>
+    <string name="vault_add">Dosya ekle</string>
+    <string name="vault_empty">Kasa boş. Gizli sekmede indirdiğin dosyalar (ayar açıksa) ve eklediğin dosyalar burada şifreli saklanır.</string>
+    <string name="vault_importing">Dosyalar şifrelenip ekleniyor…</string>
+    <string name="vault_info">%1$s · Dosyalar bu cihaza özel bir anahtarla şifreli; kasa, gizli sekmelerin kilidiyle açılır. Şifreleri yalnızca açarken bellekte çözülür.</string>
+    <string name="vault_info_no_lock">%1$s · Dosyalar şifreli, ancak telefonda ekran kilidi ya da uygulama parolası olmadığı için kasa kilitlenemiyor. Ayarlar → Gizlilik bölümünden parola belirleyin.</string>
+    <string name="vault_filter_all">Tümü</string>
+    <string name="vault_filter_photos">Fotoğraflar</string>
+    <string name="vault_filter_videos">Videolar</string>
+    <string name="vault_filter_audio">Sesler</string>
+    <string name="vault_filter_documents">Belgeler</string>
+    <string name="vault_filter_other">Diğer</string>
+    <string name="vault_more">Diğer işlemler</string>
+    <string name="vault_open_with">Başka uygulamada aç</string>
+    <string name="vault_export">Şifresiz dışa aktar</string>
+    <string name="vault_export_warning">Dosyanın şifresi çözülüp telefonun İndirilenler klasörüne kaydedilecek. Orada diğer uygulamalar ve galeri onu görebilir.</string>
+    <string name="vault_exported">İndirilenler klasörüne kaydedildi: %1$s</string>
+    <string name="vault_export_failed">Dışa aktarılamadı</string>
+    <string name="vault_rename">Yeniden adlandır</string>
+    <string name="vault_delete_question">Dosya kasadan kalıcı olarak silinsin mi?</string>
+    <string name="vault_external_warning">Dosya, seçtiğin uygulamaya şifresi anlık çözülerek verilir; kasadaki dosya şifreli kalır. Ancak o uygulama dosyanın bir kopyasını kendisi saklayabilir.</string>
+    <string name="vault_continue">Devam</string>
+    <string name="vault_no_preview">Bu dosya türü uygulamanın içinde gösterilemiyor.</string>
+    <plurals name="vault_added">
+        <item quantity="one">%d dosya kasaya şifreli eklendi</item>
+        <item quantity="other">%d dosya kasaya şifreli eklendi</item>
+    </plurals>
+    <string name="settings_encrypt_private_downloads">Gizli indirmeleri şifrele</string>
+    <string name="settings_encrypt_private_downloads_summary">Gizli sekmelerde indirilenler telefonun İndirilenler klasörü yerine gizli kasaya şifreli kaydedilir ve uygulamanın içinde açılır</string>
+    <string name="menu_tile_vault">Gizli kasa</string>
+    <string name="downloads_in_vault">Kasada şifreli</string>
 </resources>
 
 

@@ -245,7 +245,21 @@ class Components(private val context: Context) {
     val youtube by lazy { YouTubeDownloader(context, this) }
     /** Çok bağlantılı indirme yöneticisi (sayfa taraması, indirme bağlantıları). */
     val resourceScanner by lazy { com.gtarayici.browser.downloads.manager.ResourceScanner(store, applicationScope) }
-    val downloadQueue by lazy { com.gtarayici.browser.downloads.manager.DownloadQueue(context, client, store, applicationScope) }
+    /** Gizli kasa: şifreli dosyalar (gizli sekme indirmeleri ve kullanıcının ekledikleri). */
+    val vault by lazy { com.gtarayici.browser.vault.Vault(context) }
+
+    val downloadQueue by lazy {
+        com.gtarayici.browser.downloads.manager.DownloadQueue(
+            context,
+            client,
+            store,
+            applicationScope,
+            vault = vault,
+            encryptPrivate = { settings.encryptPrivateDownloads.value },
+            // VPN yalnızca gizli sekmelerdeyse gizli sekme indirmeleri VPN'den, diğerleri doğrudan gider.
+            privateProxy = { vpn.privateProxyPort.value },
+        )
+    }
 
     val updater by lazy { com.gtarayici.browser.update.Updater(context, settings, applicationScope) }
 

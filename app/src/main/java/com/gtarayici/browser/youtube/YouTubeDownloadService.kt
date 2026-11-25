@@ -139,8 +139,9 @@ class YouTubeDownloadService : Service() {
                     download(job, job.videoUrl ?: job.audioUrl ?: error("Adres yok"), it, 0, 99)
                 }
             }
+            val size = output.length()
             val (directory, savedName) = publish(output, job)
-            record(job, DownloadState.Status.COMPLETED, savedName, output.length(), directory)
+            record(job, DownloadState.Status.COMPLETED, savedName, size, directory)
             done(job, success = true)
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
@@ -158,7 +159,7 @@ class YouTubeDownloadService : Service() {
     /** Parça parça (Range) indirir; YouTube tek parça büyük isteklerde hızı düşürebilir. */
     private suspend fun download(job: Job, url: String, target: File, fromPercent: Int, toPercent: Int) =
         withContext(Dispatchers.IO) {
-            val proxy = components.vpn.javaProxy()
+            val proxy = components.vpn.javaProxy(private = job.private)
             var downloaded = 0L
             var total = -1L
             target.outputStream().buffered().use { out ->
@@ -216,7 +217,12 @@ class YouTubeDownloadService : Service() {
         com.gtarayici.browser.media.TrackMuxer.mux(videoFile, audioFile, output)
 
     /** Dosyayı İndirilenler klasörüne yazar; klasörü ve gerçek dosya adını döndürür (aynı ad varsa sistem "(1)" ekler). */
-    private fun publish(file: File, job: Job): Pair<String, String> {
+    private suspend fun publish(file: File, job: Job): Pair<String, String> {
+        // Gizli sekmeden indirildiyse ve ayar açıksa gizli kasaya şifreli kaydedilir.
+        if (job.private && components.settings.encryptPrivateDownloads.value) {
+            val item = components.vault.import(file, job.fileName, job.mime)
+            return com.gtarayici.browser.vault.Vault.DOWNLOAD_PREFIX + item.id to item.name
+        }
         val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {

@@ -36,6 +36,9 @@ class PublicFile private constructor(
         }
     }
 
+    /** Uygulamanın kendi alanındaki geçici dosya (kasaya gidecek indirmeler); yoksa null. */
+    val localFile: File? get() = file
+
     /** Sırayla yazmak için (HLS). */
     fun outputStream(): OutputStream = Channels.newOutputStream(channel.position(0))
 
@@ -68,6 +71,10 @@ class PublicFile private constructor(
     }
 
     companion object {
+        /** Uygulamanın kendi alanında, diğer uygulamalara ve galeriye görünmeyen geçici dosya. */
+        fun createLocal(context: Context, target: File, name: String): PublicFile =
+            PublicFile(context, null, target, null, RandomAccessFile(target, "rw").channel, name)
+
         fun create(context: Context, name: String, mime: String?): PublicFile {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val values = ContentValues().apply {

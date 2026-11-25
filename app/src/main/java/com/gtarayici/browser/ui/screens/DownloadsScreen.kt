@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.EnhancedEncryption
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.res.pluralStringResource
 import com.gtarayici.browser.ui.feedback.UiText
@@ -47,7 +49,7 @@ import mozilla.components.browser.state.state.content.DownloadState
 
 /** İndirilenler. [private]: gizli sekmelerdeyken yalnızca gizli sekmelerde indirilenler gösterilir (ve tersi). */
 @Composable
-fun DownloadsScreen(private: Boolean = false, onBack: () -> Unit) {
+fun DownloadsScreen(private: Boolean = false, onOpenVault: (itemId: String?) -> Unit = {}, onBack: () -> Unit) {
     val context = LocalContext.current
     val components = context.components
     val downloads by components.store.observe { state ->
@@ -55,6 +57,7 @@ fun DownloadsScreen(private: Boolean = false, onBack: () -> Unit) {
     }
     val youtubeProgress by com.gtarayici.browser.youtube.YouTubeDownloads.progress.collectAsState()
     var removing by remember { mutableStateOf<DownloadState?>(null) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val queue = components.downloadQueue
     val tasks by queue.tasks.collectAsState()
     removing?.let { download ->
@@ -65,7 +68,13 @@ fun DownloadsScreen(private: Boolean = false, onBack: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     removing = null
-                    val deleted = DownloadedFiles.delete(context, download.fileName, download.directoryPath)
+                    val vaultItem = download.directoryPath?.takeIf { it.startsWith(com.gtarayici.browser.vault.Vault.DOWNLOAD_PREFIX) }
+                    val deleted = if (vaultItem != null) {
+                        scope.launch { components.vault.delete(vaultItem.removePrefix(com.gtarayici.browser.vault.Vault.DOWNLOAD_PREFIX)) }
+                        true
+                    } else {
+                        DownloadedFiles.delete(context, download.fileName, download.directoryPath)
+                    }
                     components.downloadsUseCases.removeDownload(download.id)
                     if (!deleted) context.components.messenger.error(UiText.res(R.string.download_delete_failed))
                 }) { Text(stringResource(R.string.download_delete_file), color = MaterialTheme.colorScheme.error) }
@@ -79,22 +88,34 @@ fun DownloadsScreen(private: Boolean = false, onBack: () -> Unit) {
         )
     }
 
+    val encrypt by components.settings.encryptPrivateDownloads.collectAsState()
     OverlayScaffold(
         title = stringResource(if (private) R.string.downloads_private_title else R.string.menu_downloads),
         onBack = onBack,
+        actions = {
+            if (private) {
+                IconButton(onClick = { onOpenVault(null) }) {
+                    Icon(Icons.Rounded.EnhancedEncryption, stringResource(R.string.vault_title))
+                }
+            }
+        },
     ) { modifier ->
         if (downloads.isEmpty()) {
-            EmptyState(
-                stringResource(if (private) R.string.downloads_private_empty else R.string.downloads_empty),
-                modifier,
-                icon = Icons.Rounded.Download,
-            )
+            Column(modifier) {
+                if (private) EncryptRow(encrypt) { components.settings.setEncryptPrivateDownloads(it) }
+                EmptyState(
+                    stringResource(if (private) R.string.downloads_private_empty else R.string.downloads_empty),
+                    Modifier.weight(1f),
+                    icon = Icons.Rounded.Download,
+                )
+            }
         } else {
             // Sürenler üstte, bitenler altta.
             val active = downloads.filter { it.status.isActive() }
             val finished = downloads.filterNot { it.status.isActive() }
             LazyColumn(modifier) {
                 if (private) {
+                    item { EncryptRow(encrypt) { components.settings.setEncryptPrivateDownloads(it) } }
                     item {
                         Text(
                             stringResource(R.string.downloads_private_info),
@@ -124,8 +145,12 @@ fun DownloadsScreen(private: Boolean = false, onBack: () -> Unit) {
                             null
                         }
                     }
+                    val vaultId = download.directoryPath?.takeIf { it.startsWith(com.gtarayici.browser.vault.Vault.DOWNLOAD_PREFIX) }
+                        ?.removePrefix(com.gtarayici.browser.vault.Vault.DOWNLOAD_PREFIX)
                     ListRow(
-                        leading = { Icon(Icons.AutoMirrored.Filled.InsertDriveFile, null) },
+                        leading = {
+                            Icon(if (vaultId != null) Icons.Rounded.EnhancedEncryption else Icons.AutoMirrored.Filled.InsertDriveFile, null)
+                        },
                         headline = {
                             Text(download.fileName ?: download.url, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         },
@@ -197,6 +222,10 @@ fun DownloadsScreen(private: Boolean = false, onBack: () -> Unit) {
                             }
                         },
                         modifier = Modifier.clickable(enabled = done) {
+                            if (vaultId != null) {
+                                onOpenVault(vaultId)
+                                return@clickable
+                            }
                             val opened = components.downloadFileUtils.openFile(
                                 fileName = download.fileName,
                                 directoryPath = download.directoryPath,
@@ -238,6 +267,18 @@ private fun downloadStatusText(download: DownloadState, remainingMs: Long? = nul
     return listOfNotNull(status, size, left, UrlInput.host(download.url).ifBlank { null }).joinToString(" · ")
 }
 
+
+/** Gizli indirmeler ekranında: "Gizli indirmeleri şifrele" anahtarı. */
+@Composable
+private fun EncryptRow(on: Boolean, onChange: (Boolean) -> Unit) {
+    ListRow(
+        leading = { Icon(Icons.Rounded.EnhancedEncryption, null) },
+        headline = { Text(stringResource(R.string.settings_encrypt_private_downloads)) },
+        supporting = { Text(stringResource(R.string.settings_encrypt_private_downloads_summary)) },
+        trailing = { androidx.compose.material3.Switch(checked = on, onCheckedChange = onChange) },
+        modifier = Modifier.clickable { onChange(!on) },
+    )
+}
 
 /** Süren (henüz bitmemiş) indirme mi? */
 private fun DownloadState.Status.isActive(): Boolean =

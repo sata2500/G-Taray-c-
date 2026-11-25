@@ -268,6 +268,7 @@ class HlsDownloader(private val client: Client) {
             originOf(referer)?.let { headers.set("Origin", it) }
         }
         range?.let { headers.set("Range", it.header) }
+        context.cookie?.takeIf { it.isNotBlank() }?.let { headers.set("Cookie", it) }
         val response = client.fetch(
             Request(
                 url = url,

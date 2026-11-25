@@ -108,7 +108,7 @@ fun PageDownloadsSheet(
         loading = false
         scan?.resources?.singleOrNull { it.kind == MediaKind.VIDEO || it.kind == MediaKind.STREAM }?.let { selected[it.url] = true }
         // Boyutlar sunucuya sorulur (görseller hariç, en fazla 40 öğe, aynı anda 4 istek).
-        val downloader = SegmentedDownloader(components.client, retries = 0)
+        val downloader = SegmentedDownloader(components.downloadQueue.clientFor(tab?.content?.private == true), retries = 0)
         val gate = Semaphore(4)
         val ctx = RequestContext(referer = pageUrl, private = tab?.content?.private == true)
         withContext(Dispatchers.IO) {

@@ -22,6 +22,8 @@ class BrowserUiState {
     var menuOpen by mutableStateOf(false)
     var findInPageOpen by mutableStateOf(false)
     var youtubeUrl by mutableStateOf<String?>(null)
+    /** Gizli kasa açılınca doğrudan gösterilecek dosya (ör. İndirilenler'den). */
+    var vaultOpenId by mutableStateOf<String?>(null)
     var profileSwitcherOpen by mutableStateOf(false)
     var installDialogOpen by mutableStateOf(false)
     var translateOpen by mutableStateOf(false)

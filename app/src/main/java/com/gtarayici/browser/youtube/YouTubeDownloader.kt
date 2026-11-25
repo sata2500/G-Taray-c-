@@ -37,12 +37,16 @@ data class YouTubeVideo(val title: String, val uploader: String, val options: Li
  */
 class YouTubeDownloader(private val context: Context, private val components: Components) {
     private val initialized by lazy {
-        init { components.vpn.javaProxy() }
+        init { components.vpn.javaProxy(private = privateRequest) }
         true
     }
 
-    suspend fun fetch(pageUrl: String): Result<YouTubeVideo> = withContext(Dispatchers.IO) {
+    /** Son çözümleme gizli sekmeden mi istendi (VPN yalnızca gizli sekmelerdeyse bağlantıyı belirler). */
+    @Volatile private var privateRequest = false
+
+    suspend fun fetch(pageUrl: String, private: Boolean = false): Result<YouTubeVideo> = withContext(Dispatchers.IO) {
         runCatching {
+            privateRequest = private
             check(initialized)
             extract(pageUrl)
         }

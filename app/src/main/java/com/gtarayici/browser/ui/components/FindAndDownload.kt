@@ -100,7 +100,7 @@ fun YouTubeDownloadSheet(pageUrl: String, onDismiss: () -> Unit) {
     var video by remember { mutableStateOf<YouTubeVideo?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(pageUrl) {
-        downloader.fetch(pageUrl).onSuccess { video = it }.onFailure {
+        downloader.fetch(pageUrl, private = context.components.store.state.selectedTab?.content?.private == true).onSuccess { video = it }.onFailure {
             error = com.gtarayici.browser.ui.feedback.HumanErrors.detail(it)
             com.gtarayici.browser.diagnostics.Diagnostics.log("video bilgisi alınamadı: $error", "video")
             // YouTube değiştiğinde çözümleyici bozulur; düzeltme yeni sürümle gelir. Varsa güncelleme hemen önerilir.

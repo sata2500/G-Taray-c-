@@ -72,15 +72,34 @@ class DownloadQueue(
     private val store: BrowserStore,
     private val scope: CoroutineScope,
     private val connections: () -> Int = { DEFAULT_CONNECTIONS },
+    /** Gizli sekme indirmeleri isteğe bağlı olarak buraya şifreli kaydedilir. */
+    private val vault: com.gtarayici.browser.vault.Vault? = null,
+    private val encryptPrivate: () -> Boolean = { false },
+    /** VPN yalnızca gizli sekmelerdeyse VPN'in yerel portu: gizli sekme indirmeleri bu porttan geçer. */
+    private val privateProxy: () -> Int? = { null },
 ) {
     private val _tasks = MutableStateFlow<List<DownloadTask>>(emptyList())
     val tasks: StateFlow<List<DownloadTask>> = _tasks.asStateFlow()
 
-    private val segmented = SegmentedDownloader(client)
-    private val hls = HlsDownloader(client)
+    /**
+     * İsteğin geçeceği ağ yolu. Normalde tarayıcı motoru (site çerezleri, tarayıcı VPN'i). VPN yalnızca gizli
+     * sekmelerdeyse motorun bağlantısı VPN'siz olduğundan gizli sekme indirmeleri doğrudan VPN'in yerel vekilinden
+     * gider; normal sekme indirmeleri hız için doğrudan bağlanır.
+     */
+    fun clientFor(private: Boolean): Client {
+        val port = privateProxy()
+        return if (private && port != null) ProxiedClient(port) else client
+    }
+
+    private fun segmentedFor(ctx: RequestContext) = SegmentedDownloader(clientFor(ctx.private))
+    private fun hlsFor(ctx: RequestContext) = HlsDownloader(clientFor(ctx.private))
+
+    /** Şifresiz dosya: kasaya gidecekse uygulamanın kendi alanında geçici, değilse telefonun İndirilenler klasöründe. */
+    private fun createFile(runtime: Runtime, name: String, mime: String?): PublicFile =
+        if (runtime.encrypt && vault != null) PublicFile.createLocal(context, vault.incomingFile(), name) else PublicFile.create(context, name, mime)
 
     /** Çalışma zamanı bilgisi: kayıt, dosya, parçalar (duraklatınca korunur). */
-    private class Runtime(val request: NewDownload) {
+    private class Runtime(val request: NewDownload, val encrypt: Boolean = false) {
         var job: Job? = null
         var file: PublicFile? = null
         var parts: List<SegmentProgress>? = null
@@ -96,7 +115,8 @@ class DownloadQueue(
         // Aynı indirme ikinci kez bildirilirse (ör. etkinlik yeniden oluşturulunca) süren iş bozulmasın.
         if (runtimes[request.id]?.job?.isActive == true) return request.id
         val name = DownloadNames.finalName(request.suggestedName, request.url, request.mime, request.kind)
-        runtimes[request.id] = Runtime(request).also { it.name = name }
+        val encrypt = request.context.private && vault != null && encryptPrivate()
+        runtimes[request.id] = Runtime(request, encrypt).also { it.name = name }
         _tasks.update { list ->
             list.filterNot { it.id == request.id } +
                 DownloadTask(request.id, name, request.url, request.kind, TaskStatus.QUEUED, private = request.context.private)
@@ -169,8 +189,15 @@ class DownloadQueue(
             try {
                 run(id, runtime)
                 meter.cancel()
-                val (directory, savedName) = runtime.file!!.commit()
+                val file = runtime.file!!
+                var (directory, savedName) = file.commit()
                 runtime.file = null
+                // Gizli kasaya: şifrelenir, şifresiz geçici dosya silinir.
+                if (runtime.encrypt && vault != null) {
+                    val item = vault.import(file.localFile!!, runtime.name ?: savedName, runtime.mime)
+                    directory = com.gtarayici.browser.vault.Vault.DOWNLOAD_PREFIX + item.id
+                    savedName = item.name
+                }
                 runtimes.remove(id)
                 edit(id) { it.copy(status = TaskStatus.COMPLETED, name = savedName, speed = 0, done = runtime.bytes.get(), fraction = null) }
                 complete(id, runtime, directory, savedName)
@@ -196,7 +223,7 @@ class DownloadQueue(
         when {
             isStream -> downloadStream(id, runtime)
             request.response != null && runtime.parts == null && !worthSplitting(runtime) -> {
-                val file = runtime.file ?: PublicFile.create(context, runtime.name!!, runtime.mime).also { runtime.file = it }
+                val file = runtime.file ?: createFile(runtime, runtime.name!!, runtime.mime).also { runtime.file = it }
                 file.reset()
                 runtime.bytes.set(0)
                 Diagnostics.log("hazır bağlantıdan yazılıyor (${request.mime ?: "tür bilinmiyor"})", "indirme")
@@ -217,7 +244,7 @@ class DownloadQueue(
                 }
             }
             else -> {
-                val probe = runtime.probe ?: segmented.probe(request.url, ctx).also { runtime.probe = it }
+                val probe = runtime.probe ?: segmentedFor(ctx).probe(request.url, ctx).also { runtime.probe = it }
                 // Adres beklenen dosya yerine bir web sayfası döndürüyorsa (ör. süresi dolmuş bağlantı, oturum
                 // gerektiren dosya, "PDF olarak kaydet") sayfanın HTML'i dosya diye kaydedilmez.
                 if (servesPageInsteadOf(request.mime, probe.mime)) {
@@ -234,7 +261,7 @@ class DownloadQueue(
                     )
                     runtime.name = name
                     runtime.mime = probe.mime ?: request.mime
-                    runtime.file = PublicFile.create(context, name, runtime.mime)
+                    runtime.file = createFile(runtime, name, runtime.mime)
                 }
                 // Bağlantı başına birkaç parça: hızlı biten bağlantı sıradaki parçayı alır, yavaş bir bağlantı dosyanın
                 // sonunu tek başına beklemez.
@@ -245,14 +272,14 @@ class DownloadQueue(
                 edit(id) { it.copy(name = runtime.name!!, total = probe.total, connections = minOf(parts.size, parallel)) }
                 report(id)
                 try {
-                    segmented.download(probe.finalUrl, ctx, parts, runtime.file!!.sink, onBytes = { runtime.bytes.addAndGet(it) }, parallel = parallel)
+                    segmentedFor(ctx).download(probe.finalUrl, ctx, parts, runtime.file!!.sink, onBytes = { runtime.bytes.addAndGet(it) }, parallel = parallel)
                 } catch (e: SegmentedDownloader.RangeNotHonoredException) {
                     // Sunucu parça isteğine uymadı: tek bağlantıyla baştan.
                     val single = listOf(SegmentProgress(Segment(0, 0, probe.total - 1)))
                     runtime.parts = single
                     runtime.bytes.set(0)
                     edit(id) { it.copy(connections = 1) }
-                    segmented.download(probe.finalUrl, ctx, single, runtime.file!!.sink, onBytes = { runtime.bytes.addAndGet(it) })
+                    segmentedFor(ctx).download(probe.finalUrl, ctx, single, runtime.file!!.sink, onBytes = { runtime.bytes.addAndGet(it) })
                 }
             }
         }
@@ -265,6 +292,7 @@ class DownloadQueue(
     private suspend fun downloadStream(id: String, runtime: Runtime) {
         val request = runtime.request
         val ctx = request.context
+        val hls = hlsFor(ctx)
         val resolved = hls.resolve(request.url, ctx)
         val media = resolved.media
         val parallel = connections().coerceIn(4, 12)
@@ -281,7 +309,7 @@ class DownloadQueue(
             val name = nameFor(videoExt)
             runtime.name = name
             runtime.mime = if (media.initUrl != null) "video/mp4" else "video/mp2t"
-            val file = PublicFile.create(context, name, runtime.mime).also { runtime.file = it }
+            val file = createFile(runtime, name, runtime.mime).also { runtime.file = it }
             edit(id) { it.copy(name = name) }
             val count = media.segments.size
             hls.download(media, ctx, file.outputStream(), parallel = parallel) { done, bytes ->
@@ -321,7 +349,7 @@ class DownloadQueue(
             val name = nameFor(ext)
             runtime.name = name
             runtime.mime = if (ext == "mp4") "video/mp4" else "video/mp2t"
-            val file = PublicFile.create(context, name, runtime.mime).also { runtime.file = it }
+            val file = createFile(runtime, name, runtime.mime).also { runtime.file = it }
             edit(id) { it.copy(name = name) }
             // Akış kapatılmaz: dosya kanalı tamamlama (commit) için açık kalmalı.
             val out = file.outputStream()
@@ -341,7 +369,7 @@ class DownloadQueue(
     private suspend fun worthSplitting(runtime: Runtime): Boolean {
         val request = runtime.request
         if (!request.url.startsWith("http")) return false
-        val probe = runtime.probe ?: runCatching { segmented.probe(request.url, request.context) }.getOrNull() ?: return false
+        val probe = runtime.probe ?: runCatching { segmentedFor(request.context).probe(request.url, request.context) }.getOrNull() ?: return false
         if (!shouldSplit(request.mime, probe, connections())) return false
         runtime.probe = probe
         runCatching { request.response?.close() }

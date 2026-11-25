@@ -85,6 +85,8 @@ class GTarayiciApplication : Application() {
                 kotlinx.coroutines.delay(1_500)
                 components.downloadQueue.markInterrupted()
             }
+            // Önceki oturumda yarım kalan, kasaya gidecek indirmelerin şifresiz geçici parçaları silinir.
+            components.applicationScope.launch(Dispatchers.IO) { components.vault.cleanIncoming() }
             components.applicationScope.launch(Dispatchers.IO) {
                 components.manifestStorage.warmUpScopes(System.currentTimeMillis())
             }

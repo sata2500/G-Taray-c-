@@ -1,23 +1,17 @@
-## G-Tarayıcı 0.22.0 — Daha güçlü indirme yöneticisi
+## G-Tarayıcı 0.23.0 — Gizli kasa
 
-### İndirilenler ekranı
-- YouTube indirmeleri artık başladığı anda İndirilenler'de görünür; ilerlemesini bildirim yerine buradan da izleyebilir, buradan iptal edebilirsin.
-- Süren indirmeler üstte "Sürüyor" bölümünde, bitenler altta.
-- Bir indirme başarısız olursa nedeni ve ne yapabileceğin yazılır (ör. "Bağlantının süresi dolmuş olabilir: sayfayı yenileyip tekrar deneyin", "Bu video korumalı (DRM)").
-- Parça parça yayınlanan videolarda (HLS) ilerleme çubuğu doğru ilerler.
+### Gizli kasa (yeni)
+- Gizli sekmelerde indirdiklerin istersen telefonun İndirilenler klasörü yerine **şifreli bir kasaya** kaydedilir. Açmak için: Ayarlar → Gizlilik → "Gizli indirmeleri şifrele" (ya da Gizli indirmeler ekranındaki anahtar).
+- Kasa bir galeri ve dosya yöneticisidir: fotoğraflar, videolar, sesler, belgeler ayrı filtrelerle; küçük resimler, video süreleri.
+- Dosyalar şifresi çözülmeden, uygulamanın içinde açılır:
+  - Fotoğraflar: iki parmakla yakınlaştırma, çift dokunuşla büyütme, yana kaydırarak sonraki dosya.
+  - Videolar ve sesler: ileri/geri sarmalı oynatıcı.
+  - PDF'ler sayfa sayfa, metin dosyaları (txt, srt, json…) doğrudan.
+- Telefondan dosya ekleyebilirsin ("Dosya ekle"); eklenen dosya kasaya şifreli kopyalanır.
+- Uzun basınca: başka uygulamada aç, paylaş, şifresiz dışa aktar, yeniden adlandır, sil.
+- Kasa, gizli sekmelerin kilidiyle (parola, parmak izi ya da ekran kilidi) açılır; ekran kapanınca yeniden kilitlenir. Menüye "Gizli kasa" kutucuğu da eklenebilir.
 
-### Gizli indirmeler gizli kalır
-- Gizli sekmelerde indirdiklerin yalnızca gizli sekmelerdeyken açılan "Gizli indirmeler" ekranında görünür; normal sekmelerin indirmeleri arasında görünmez (ve tersi).
+Nasıl korunuyor: her dosyanın kendi 256 bit anahtarı var ve dosya 64 KB'lık, ayrı ayrı doğrulanan AES-256-GCM parçaları halinde saklanıyor. Anahtarlar telefonun donanım destekli Anahtar Deposu'yla korunuyor. Dosya adları ve küçük resimler de şifreli. Açarken şifre yalnızca bellekte çözülüyor; video ileri sarılırken bile şifresiz kopya diske yazılmıyor. Kasa telefon yedeklerine girmiyor.
 
-### Daha fazla dosya, daha çok site
-- "Sayfadaki dosyalar" çok daha fazla dosya türünü tanır (altyazılar, e-kitaplar, yazı tipleri, torrent, arşivler, uygulama paketleri, ofis belgeleri ve daha fazlası).
-- Gömülü oynatıcılardaki dosyalar oynatıcının kendi adresiyle istenir; birçok sitede önceden "HTTP 403/404" veren indirmeler artık çalışır.
-- Adı .m3u8 ile bitmeyen video akışları ve oynatıcının kendisinin yüklediği büyük medya dosyaları da bulunur.
-
-### Daha hızlı
-- Çok bağlantılı indirmede dosya, bağlantı sayısından fazla parçaya bölünür: işini bitiren bağlantı sıradaki parçayı alır, yavaş bir bağlantı indirmenin sonunu bekletmez.
-- HLS videolarında parçalar daha fazla eşzamanlı bağlantıyla indirilir.
-- Görüntüsü ve sesi ayrı akan videolar (birçok sitede yüksek kaliteler böyledir) ikisi birden indirilip tek bir MP4'te birleştirilir; artık sessiz video inmez.
-- Bölüm bölüm (byte-range) yayınlanan akışlar desteklenir.
-
-Not: Telif korumalı (DRM) yayınlar ve canlı yayınlar indirilemez.
+### VPN ve indirmeler
+- "VPN yalnızca gizli sekmelerde" açıkken indirmeler de sekmeyi izler: gizli sekmeden başlatılan indirmeler (YouTube dahil) VPN'den, normal sekmeden başlatılanlar hız için doğrudan bağlantıyla iner.

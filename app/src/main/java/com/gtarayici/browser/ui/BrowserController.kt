@@ -19,7 +19,7 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.feature.readerview.ReaderViewFeature
 
 /** Tam ekran kaplayan ikincil ekranlar. */
-enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR, REPORT, PASSWORDS, READING, GUIDE }
+enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR, REPORT, PASSWORDS, READING, GUIDE, VAULT }
 
 /**
  * Arayüzün tarayıcı üzerinde yaptığı işlemlerin tek giriş noktası. İşin kendisi parçalara ayrılmıştır
@@ -55,6 +55,15 @@ class BrowserController private constructor(
     var youtubeUrl: String?
         get() = ctx.ui.youtubeUrl
         set(value) { ctx.ui.youtubeUrl = value }
+    var vaultOpenId: String?
+        get() = ctx.ui.vaultOpenId
+        set(value) { ctx.ui.vaultOpenId = value }
+
+    /** Gizli kasayı açar; [itemId] verilirse o dosya doğrudan gösterilir. */
+    fun openVault(itemId: String? = null) {
+        vaultOpenId = itemId
+        open(Overlay.VAULT)
+    }
     var profileSwitcherOpen: Boolean
         get() = ctx.ui.profileSwitcherOpen
         set(value) { ctx.ui.profileSwitcherOpen = value }
