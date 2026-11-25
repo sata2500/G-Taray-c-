@@ -222,6 +222,8 @@ class PipController(
         if (inPip) {
             // Geçiş başarıyla PiP'e döndü; sonradan pencere kapatılınca bu "başarısız geçiş" sayılmamalı.
             leaving = false
+            // Pencere oranı son bilinen video boyutuyla bir kez daha ayarlanır (geçiş sırasında güncellenmiş olabilir).
+            runCatching { activity.setPictureInPictureParams(buildParams(autoEnter = false)) }
             if (tab != null && !native.enter()) Diagnostics.pip("PiP: kaynak görünüm bulunamadı")
         } else {
             // Pencere kapatıldıysa etkinlik artık görünür değildir; büyütüldüyse tarayıcıya dönülür.
@@ -241,7 +243,11 @@ class PipController(
         val info = media
         val builder = PictureInPictureParams.Builder()
         val hint = sourceRectHint()
+        // Önce videonun sayfadaki gerçek boyutu: motorun bildirdiği boyut sıradaki videoya (ör. yatay videodan sonra
+        // açılan dikey Shorts) geçince eski kalabiliyor ve dikey video yatay pencerede siyah kenarlarla görünüyordu.
+        val natural = components.extensions.videoRect.value?.takeIf { it.naturalWidth > 0 && it.naturalHeight > 0 }
         val ratio = when {
+            natural != null -> Rational(natural.naturalWidth, natural.naturalHeight)
             info != null && info.width > 0 && info.height > 0 -> Rational(info.width.toInt(), info.height.toInt())
             hint != null -> Rational(hint.width(), hint.height())
             else -> Rational(16, 9)

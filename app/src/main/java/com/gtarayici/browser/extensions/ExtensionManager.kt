@@ -211,6 +211,7 @@ class ExtensionManager(
                     _videoRect.value = VideoRect(
                         json.optDouble("x"), json.optDouble("y"), json.optDouble("w"), json.optDouble("h"),
                         json.optDouble("vw"), json.optDouble("vh"),
+                        json.optInt("nw"), json.optInt("nh"),
                     )
                 }
             }
@@ -281,7 +282,17 @@ class ExtensionManager(
 }
 
 /** Videonun görünür alan (viewport) içindeki konumu, CSS pikseli cinsinden. */
-data class VideoRect(val x: Double, val y: Double, val w: Double, val h: Double, val viewportWidth: Double, val viewportHeight: Double) {
+data class VideoRect(
+    val x: Double,
+    val y: Double,
+    val w: Double,
+    val h: Double,
+    val viewportWidth: Double,
+    val viewportHeight: Double,
+    /** Videonun gerçek piksel boyutu (bilinmiyorsa 0); küçük pencerenin en-boy oranı bundan alınır. */
+    val naturalWidth: Int = 0,
+    val naturalHeight: Int = 0,
+) {
     /** Bu dikdörtgeni, genişliği [viewWidth] piksel olan motor görünümünün piksel koordinatlarına çevirir. */
     fun toViewPixels(viewWidth: Int, viewHeight: Int): android.graphics.Rect? {
         if (viewportWidth <= 0 || viewWidth <= 0) return null

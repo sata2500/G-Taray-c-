@@ -80,11 +80,15 @@
       return;
     }
     const r = video.getBoundingClientRect();
-    const key = [r.left, r.top, r.width, r.height, window.innerWidth].map(Math.round).join(",");
+    // Videonun gerçek piksel boyutu (Shorts gibi dikey videolarda küçük pencere dikey açılsın diye).
+    const nw = video.videoWidth || 0;
+    const nh = video.videoHeight || 0;
+    const key = [r.left, r.top, r.width, r.height, window.innerWidth, nw, nh].map(Math.round).join(",");
     send({
       type: "video-rect",
       x: r.left, y: r.top, w: r.width, h: r.height,
       vw: window.innerWidth, vh: window.innerHeight,
+      nw: nw, nh: nh,
     }, key);
   }
 
@@ -94,6 +98,9 @@
     pending = setTimeout(report, delay);
   }
   document.addEventListener("playing", (e) => { if (e.target instanceof HTMLVideoElement) schedule(300); }, true);
+  // Aynı öğede yeni video (ör. sıradaki Shorts) başlayınca boyutu değişir.
+  document.addEventListener("resize", (e) => { if (e.target instanceof HTMLVideoElement) schedule(100); }, true);
+  document.addEventListener("loadedmetadata", (e) => { if (e.target instanceof HTMLVideoElement) schedule(200); }, true);
   window.addEventListener("resize", () => schedule(300), true);
   window.addEventListener("scroll", () => schedule(250), true);
   setInterval(report, 2000);

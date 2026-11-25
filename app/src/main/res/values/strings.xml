@@ -858,6 +858,16 @@
     <string name="menu_tile_guide">Rehber</string>
     <string name="menu_more">Daha fazla</string>
     <string name="menu_less">Daha az</string>
+    <string name="menu_group_page">Bu sayfa</string>
+    <string name="menu_group_app">Uygulama</string>
+    <string name="menu_edit">Menüyü düzenle</string>
+    <string name="menu_edit_done">Bitti</string>
+    <string name="menu_edit_reset">Varsayılana dön</string>
+    <string name="menu_edit_help">"−" olanlar ana menüden çıkar, "+" olanlar eklenir. Bir simgeye uzun basmak da aynı işi görür.</string>
+    <string name="menu_pin">Ana menüye ekle</string>
+    <string name="menu_unpin">Ana menüden çıkar</string>
+    <string name="menu_pinned">Ana menüye eklendi</string>
+    <string name="menu_unpinned">"Daha fazla"ya taşındı</string>
 </resources>
 
 

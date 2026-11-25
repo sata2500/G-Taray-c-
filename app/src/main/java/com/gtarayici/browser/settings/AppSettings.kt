@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.asStateFlow
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** Menünün ana ızgarasında varsayılan olarak duran öğeler (en sık kullanılanlar). */
+const val DEFAULT_MENU_PINS = "find,desktop,page_files,save_later,bookmarks,history,downloads,settings"
+
 /** Veri tasarrufu: kapalı, ölçülü/yavaş bağlantıda kendiliğinden ya da her zaman açık. */
 enum class DataSaverMode { OFF, AUTO, ON }
 
@@ -108,6 +111,7 @@ class AppSettings(context: Context) {
     private val searchSuggestionsPref = bool("search_suggestions", true)
     private val vpnKeepAlivePref = bool("vpn_keep_alive", true)
     private val customSearchPref = string("custom_search_url", "")
+    private val menuPinsPref = string("menu_pins", DEFAULT_MENU_PINS)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow
@@ -147,6 +151,8 @@ class AppSettings(context: Context) {
     val vpnKeepAlive get() = vpnKeepAlivePref.flow
     /** Özel arama motorunun adres kalıbı (%s aranan metin). */
     val customSearchUrl get() = customSearchPref.flow
+    /** Menünün ana ızgarasındaki öğeler (sırasıyla, virgülle ayrılmış kimlikler); diğerleri "Daha fazla"da. */
+    val menuPins get() = menuPinsPref.flow
 
     fun setSearchEngine(value: SearchEngine) = searchEnginePref.set(value)
     fun setTheme(value: ThemeMode) = themePref.set(value)
@@ -180,6 +186,7 @@ class AppSettings(context: Context) {
     fun setDarkSites(value: Boolean) = darkSitesPref.set(value)
     fun setSearchSuggestions(value: Boolean) = searchSuggestionsPref.set(value)
     fun setVpnKeepAlive(value: Boolean) = vpnKeepAlivePref.set(value)
+    fun setMenuPins(ids: List<String>) = menuPinsPref.set(ids.joinToString(","))
     fun setCustomSearchUrl(value: String) {
         customSearchPref.set(value.trim())
         com.gtarayici.browser.search.CustomSearch.template = value.trim()

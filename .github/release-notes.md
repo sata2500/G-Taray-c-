@@ -1,10 +1,10 @@
-## G-Tarayıcı 0.19.0
+## G-Tarayıcı 0.19.1
 
-**Yeni menü tasarımı**
-- Üstte sayfa kartı: sitenin simgesi, başlığı ve adresi; yanında uBlock Origin rozeti; altında geri, ileri, yenile,
-  yer imi ve paylaş.
-- Uzun listeler yerine iki simge ızgarası: "Bu sayfa" (videoyu indir ve çevir gerektiğinde vurgulu en başta; sayfada
-  bul, masaüstü, sonra oku…) ve uygulamanın bölümleri (yeni sekme, gizli sekme, yer imleri, geçmiş, indirmeler,
-  okuma listesi, VPN, ayarlar).
-- Ayrı "Tüm seçenekler" sayfası yok: "Daha fazla" kalan seçenekleri aynı yerde açar.
-- Masaüstü görünümü açıkken simgesi dolu renkle görünür.
+### Menüyü kendine göre düzenle
+- Menünün ön tarafında artık en çok kullanılanlar duruyor: Sayfada bul, Masaüstü görünümü, Sayfadaki dosyalar, Sonra oku, Yer imleri, Geçmiş, İndirilenler ve Ayarlar.
+- O an işe yarayan kısayollar (videoyu indir, çevir, okuma ayarları) gerektiğinde yine en önde çıkar.
+- Gerisi "Daha fazla"nın altında, "Bu sayfa" ve "Uygulama" diye iki grupta. Yeni sekme ve gizli sekme de buraya taşındı; ikisi Sekmeler ekranından da açılabiliyor.
+- "Menüyü düzenle" ile istediğin öğeyi ana menüye ekleyip (+) çıkarabilirsin (−). Bir simgeye uzun basmak da aynı işi görür. "Varsayılana dön" ilk düzeni geri getirir.
+
+### Düzeltme
+- Shorts gibi dikey videolar küçük pencerede (resim içinde resim) artık doğru oranda, dikey görünüyor.
