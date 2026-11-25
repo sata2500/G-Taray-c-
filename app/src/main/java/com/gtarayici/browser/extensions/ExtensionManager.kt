@@ -40,6 +40,8 @@ class ExtensionManager(
     private val scope: CoroutineScope,
     /** Veri tasarrufu açıkken yardımcı eklenti sitelere `Save-Data: on` başlığını gönderir. */
     private val saveData: StateFlow<Boolean> = MutableStateFlow(false),
+    /** VPN yalnızca gizli sekmelerde kullanılıyorsa yerel vekil portu: yardımcı eklenti gizli sekmeleri oraya yönlendirir. */
+    private val privateProxy: StateFlow<Int?> = MutableStateFlow(null),
 ) {
     private val logger = Logger("ExtensionManager")
     private val prefs = context.getSharedPreferences("gtarayici_extensions", Context.MODE_PRIVATE)
@@ -189,12 +191,20 @@ class ExtensionManager(
         runCatching { port?.postMessage(JSONObject().put("type", "save-data").put("on", saveData.value)) }
     }
 
+    private fun postPrivateProxy(port: Port? = helperPort) {
+        runCatching {
+            port?.postMessage(JSONObject().put("type", "private-proxy").put("port", privateProxy.value ?: JSONObject.NULL))
+        }
+    }
+
     private fun registerHelperMessages(extension: WebExtension) {
         scope.launch { saveData.collect { postSaveData() } }
+        scope.launch { privateProxy.collect { postPrivateProxy() } }
         val handler = object : MessageHandler {
             override fun onPortConnected(port: Port) {
                 helperPort = port
                 postSaveData(port)
+                postPrivateProxy(port)
             }
 
             override fun onPortDisconnected(port: Port) {

@@ -1,5 +1,7 @@
 package com.gtarayici.browser.ui.screens
 
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.foundation.clickable
 import android.content.ClipboardManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -145,6 +147,7 @@ fun VpnScreen(onBack: () -> Unit) {
                     onAdd = { step = AddStep.Choose },
                 )
             }
+            item { PrivateOnlyRow(vpn) }
             if (servers.isNotEmpty()) {
                 item { SectionHeader(stringResource(R.string.vpn_my_servers), Modifier.padding(top = 8.dp)) }
                 items(servers, key = { it.id }) { server ->
@@ -277,4 +280,17 @@ fun VpnScreen(onBack: () -> Unit) {
             dismissButton = { TextButton(onClick = { renaming = null }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
+}
+
+/** "Yalnızca gizli sekmelerde": VPN normal sekmelere uygulanmaz. */
+@Composable
+private fun PrivateOnlyRow(vpn: com.gtarayici.browser.vpn.VpnManager) {
+    val privateOnly by vpn.privateOnly.collectAsState()
+    com.gtarayici.browser.ui.designsystem.ListRow(
+        leading = { Icon(androidx.compose.material.icons.Icons.Rounded.VisibilityOff, null) },
+        headline = { Text(stringResource(R.string.vpn_private_only)) },
+        supporting = { Text(stringResource(R.string.vpn_private_only_summary)) },
+        trailing = { androidx.compose.material3.Switch(checked = privateOnly, onCheckedChange = { vpn.setPrivateOnly(it) }) },
+        modifier = Modifier.clickable { vpn.setPrivateOnly(!privateOnly) },
+    )
 }

@@ -20,6 +20,7 @@ function connectNative() {
     nativePort = browser.runtime.connectNative("gtarayici");
     nativePort.onMessage.addListener((message) => {
       if (message && message.type === "save-data") setSaveData(message.on === true);
+      if (message && message.type === "private-proxy") setPrivateProxy(message.port);
     });
     nativePort.onDisconnect.addListener(() => {
       nativePort = null;
@@ -61,4 +62,23 @@ function setSaveData(on) {
   dnr
     .updateSessionRules({ removeRuleIds: [SAVE_DATA_RULE], addRules: on ? [rule] : [] })
     .catch(() => {});
+}
+
+// Yalnızca gizli sekmelerde VPN: gizli sekmelerin istekleri uygulamanın yerel VPN vekiline (SOCKS5) gider, normal
+// sekmeler doğrudan bağlanır. Dinleyici yalnızca bu ayar açıkken kayıtlıdır; kapalıyken isteklere hiç uğranmaz.
+let privateProxyPort = null;
+function onProxyRequest(info) {
+  if (!info.incognito || privateProxyPort === null) return { type: "direct" };
+  return { type: "socks", host: "127.0.0.1", port: privateProxyPort, proxyDNS: true };
+}
+function setPrivateProxy(port) {
+  privateProxyPort = typeof port === "number" && port > 0 ? port : null;
+  const proxy = browser.proxy;
+  if (!proxy || !proxy.onRequest) return;
+  const listening = proxy.onRequest.hasListener(onProxyRequest);
+  if (privateProxyPort !== null && !listening) {
+    proxy.onRequest.addListener(onProxyRequest, { urls: ["<all_urls>"] });
+  } else if (privateProxyPort === null && listening) {
+    proxy.onRequest.removeListener(onProxyRequest);
+  }
 }

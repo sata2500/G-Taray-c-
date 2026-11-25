@@ -105,6 +105,7 @@ fun BrowserApp(
     val profile by components.profiles.active.collectAsState()
     val profiles by components.profiles.profiles.collectAsState()
     val vpnStatus by components.vpn.status.collectAsState()
+    val vpnPrivateOnly by components.vpn.privateOnly.collectAsState()
     val lockPrivate by components.settings.lockPrivateTabs.collectAsState()
 
     val selected by store.observe { state ->
@@ -249,7 +250,8 @@ fun BrowserApp(
                         tabCount = profileTabs.count { it.content.private == private },
                         private = private,
                         profile = profile.takeIf { profiles.size > 1 },
-                        vpn = when (vpnStatus) {
+                        // VPN yalnızca gizli sekmelerdeyse normal sekmede "kapalı" görünür.
+                        vpn = if (vpnPrivateOnly && !private) VpnIndicator.OFF else when (vpnStatus) {
                             is VpnStatus.Connected -> VpnIndicator.ON
                             is VpnStatus.Error -> VpnIndicator.ERROR
                             VpnStatus.Connecting -> VpnIndicator.ON

@@ -14,6 +14,9 @@ interface TabActions {
     /** Gruba yeni boş sekme ekler ve adres girişini açar. */
     fun newTabInGroup(groupId: String)
     fun selectTab(id: String)
+
+    /** Gizli sekmelerden çıkar: bu profilin son normal sekmesine döner, yoksa boş bir normal sekme açar. */
+    fun leavePrivate()
     fun closeTab(id: String)
     fun closeCurrentTab()
     fun closeAllTabs(private: Boolean)
@@ -65,6 +68,19 @@ class TabController(private val ctx: ControllerContext) : TabActions {
         val id = components.tabsUseCases.addTab("about:blank", selectTab = true, private = false, contextId = ctx.profile.contextId)
         components.tabGroups.addTab(groupId, id)
         ctx.ui.overlay = Overlay.SEARCH
+    }
+
+    override fun leavePrivate() {
+        val last = store.state.tabs
+            .filter { it.contextId == ctx.profile.contextId && !it.content.private }
+            .maxByOrNull { it.lastAccess }
+        ctx.ui.privateMode = false
+        if (last != null) {
+            components.tabsUseCases.selectTab(last.id)
+        } else {
+            components.tabsUseCases.addTab("about:blank", selectTab = true, private = false, contextId = ctx.profile.contextId)
+        }
+        ctx.ui.closeOverlay()
     }
 
     override fun selectTab(id: String) {

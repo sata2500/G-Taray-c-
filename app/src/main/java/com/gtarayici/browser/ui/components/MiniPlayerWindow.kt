@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -82,11 +83,24 @@ fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
     }
     var offset by remember { mutableStateOf<Offset?>(null) }
     val shape = RoundedCornerShape(16.dp)
+    // Açılış: pencere köşesinden büyüyerek ve belirerek gelir (her yeni videoda yeniden).
+    val appear = remember(tabId) { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(tabId) {
+        appear.animateTo(
+            1f,
+            androidx.compose.animation.core.spring(
+                dampingRatio = 0.75f,
+                stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+            ),
+        )
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp)) {
         val density = LocalDensity.current
-        val width = if (ratio >= 1f) (maxWidth * 0.55f).coerceIn(180.dp, 340.dp) else (maxWidth * 0.34f).coerceIn(120.dp, 200.dp)
-        val height = width / ratio
+        val targetWidth = if (ratio >= 1f) (maxWidth * 0.55f).coerceIn(180.dp, 340.dp) else (maxWidth * 0.34f).coerceIn(120.dp, 200.dp)
+        // Video oranı değişince (ör. yatay videodan dikey Shorts'a) pencere yumuşakça yeniden boyutlanır.
+        val width by androidx.compose.animation.core.animateDpAsState(targetWidth, label = "mini-width")
+        val height by androidx.compose.animation.core.animateDpAsState(targetWidth / ratio, label = "mini-height")
         val maxX = with(density) { (maxWidth - width).toPx() }.coerceAtLeast(0f)
         val maxY = with(density) { (maxHeight - height).toPx() }.coerceAtLeast(0f)
         // İlk konum: sağ alt köşe, alttaki adres çubuğunun üstü.
@@ -100,6 +114,13 @@ fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
             Modifier
                 .offset { IntOffset(position.x.roundToInt(), position.y.roundToInt()) }
                 .size(width, height)
+                .graphicsLayer {
+                    val p = appear.value
+                    alpha = p.coerceIn(0f, 1f)
+                    scaleX = 0.6f + 0.4f * p
+                    scaleY = 0.6f + 0.4f * p
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 1f)
+                }
                 .shadow(8.dp, shape)
                 .clip(shape)
                 .background(Color.Black),

@@ -299,7 +299,13 @@ fun ProfileSwitcherSheet(controller: BrowserController) {
 
 /** Kilitli profil veya gizli sekmeler için içeriği tamamen örten kilit ekranı. */
 @Composable
-fun LockScreen(title: String, lockKey: String, onBiometric: () -> Unit) {
+fun LockScreen(
+    title: String,
+    lockKey: String,
+    /** Kilidi açmadan çıkış: gizli sekmelerde "Normal sekmelere dön", profilde "Başka profile geç". */
+    leave: Pair<Int, () -> Unit>? = null,
+    onBiometric: () -> Unit,
+) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val lock = context.components.appLock
@@ -355,6 +361,10 @@ fun LockScreen(title: String, lockKey: String, onBiometric: () -> Unit) {
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
+            }
+            leave?.let { (label, onLeave) ->
+                Spacer(Modifier.height(8.dp))
+                TextButton(onClick = onLeave) { Text(stringResource(label)) }
             }
         }
     }

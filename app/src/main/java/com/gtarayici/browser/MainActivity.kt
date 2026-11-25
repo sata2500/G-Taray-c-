@@ -42,6 +42,10 @@ import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.color.MaterialColors
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.lib.state.ext.flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action
@@ -75,6 +79,13 @@ class MainActivity : AppCompatActivity() {
 
     /** Kaydırmayı izleyip adres çubuğunu gizleyen/gösteren en dış kap. */
     private lateinit var scrollContainer: ScrollTrackingLayout
+
+    /** Ekran kapanınca kilitli profiller ve gizli sekmeler hemen kilitlenir (küçük pencere açık olsa bile). */
+    private val screenOffReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_SCREEN_OFF) components.appLock.lockAll()
+        }
+    }
 
     private var pendingPermissionFeature: (() -> PermissionsFeature?)? = null
     private val permissionLauncher =
@@ -127,6 +138,19 @@ class MainActivity : AppCompatActivity() {
             engineView = { miniPlayer.backgroundSourceView() ?: engineView.asView() },
         ).also { it.start() }
         miniPlayer.start()
+        // Gizli sekmeden normal sekmeye geçer geçmez gizli sekmeler yeniden kilitlenir.
+        lifecycleScope.launch {
+            components.store.flow()
+                .map { state -> state.selectedTab?.content?.private == true }
+                .distinctUntilChanged()
+                .collect { inPrivate -> if (!inPrivate) components.appLock.lock(com.gtarayici.browser.security.AppLock.PRIVATE) }
+        }
+        ContextCompat.registerReceiver(
+            this,
+            screenOffReceiver,
+            android.content.IntentFilter(Intent.ACTION_SCREEN_OFF),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
         lifecycleScope.launch {
             androidx.compose.runtime.snapshotFlow { controller.overlay }
                 .collect { miniPlayer.setOverlayOpen(it != Overlay.NONE) }
@@ -187,6 +211,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         engineView.setActivityContext(null)
         pip.stop()
+        runCatching { unregisterReceiver(screenOffReceiver) }
     }
 
     /** Uygulamadan ayrılırken video oynuyorsa resim içinde resme geçilir. */

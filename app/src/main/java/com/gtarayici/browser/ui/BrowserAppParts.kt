@@ -224,7 +224,15 @@ internal fun LockOverlay(lockKey: String, profileName: String, controller: Brows
     LaunchedEffect(lockKey) { controller.unlock(lockKey, title) }
     // Surface: başlık ve metinler içerik rengini alır (önceden koyu zeminde siyah kalıyordu).
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-        Box(Modifier.systemBarsPadding().imePadding()) { LockScreen(title, lockKey) { controller.unlock(lockKey, title) } }
+        val components = LocalContext.current.components
+        val profileCount by components.profiles.profiles.collectAsState()
+        // Parolayı bilmeyen biri kilit ekranında mahsur kalmasın: gizli sekmelerden çıkılabilir, başka profile geçilebilir.
+        val leave: Pair<Int, () -> Unit>? = when {
+            lockKey == AppLock.PRIVATE -> R.string.lock_leave_private to { controller.leavePrivate() }
+            profileCount.size > 1 -> R.string.lock_switch_profile to { controller.profileSwitcherOpen = true }
+            else -> null
+        }
+        Box(Modifier.systemBarsPadding().imePadding()) { LockScreen(title, lockKey, leave) { controller.unlock(lockKey, title) } }
     }
 }
 

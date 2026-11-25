@@ -54,6 +54,11 @@ class AppLock(context: Context) {
 
     fun lockAll() = unlocked.clear()
 
+    /** Tek bir alanı yeniden kilitler (ör. gizli sekmelerden çıkınca gizli sekmeler). */
+    fun lock(key: String) {
+        unlocked.remove(key)
+    }
+
     fun hasBiometrics(context: Context): Boolean =
         BiometricManager.from(context).canAuthenticate(BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
 

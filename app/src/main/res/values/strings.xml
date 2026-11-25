@@ -872,6 +872,10 @@
     <string name="settings_in_app_pip_summary">Video oynarken başka sekmeye geçince veya ayarlar gibi bir menü açınca video küçük bir pencerede oynamaya devam eder</string>
     <string name="mini_player_close">Küçük pencereyi kapat</string>
     <string name="mini_player_expand">Videonun sekmesine dön</string>
+    <string name="vpn_private_only">Yalnızca gizli sekmelerde</string>
+    <string name="vpn_private_only_summary">VPN yalnızca gizli sekmelerde kullanılır; normal sekmeler doğrudan bağlanır</string>
+    <string name="lock_leave_private">Normal sekmelere dön</string>
+    <string name="lock_switch_profile">Başka profile geç</string>
 </resources>
 
 

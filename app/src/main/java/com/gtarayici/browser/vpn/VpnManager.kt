@@ -77,6 +77,28 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
 
     val enabled: Boolean get() = prefs.getBoolean(KEY_ENABLED, false)
 
+    private val _privateOnly = MutableStateFlow(prefs.getBoolean(KEY_PRIVATE_ONLY, false))
+
+    /** true ise VPN yalnızca gizli sekmelerde kullanılır; normal sekmeler doğrudan bağlanır. */
+    val privateOnly: StateFlow<Boolean> = _privateOnly.asStateFlow()
+
+    private val _privateProxyPort = MutableStateFlow<Int?>(null)
+
+    /**
+     * Yalnızca gizli sekmelere uygulanacak vekil portu (yardımcı eklenti gizli sekmelerin isteklerini buraya
+     * yönlendirir). null: gizli sekmeler için ayrı yönlendirme yok.
+     */
+    val privateProxyPort: StateFlow<Int?> = _privateProxyPort.asStateFlow()
+
+    /** Uygulanan vekil portu (bağlıysa VPN'in yerel portu, bağlantı koptuysa ölü port); kapalıyken null. */
+    private var proxyPort: Int? = null
+
+    fun setPrivateOnly(on: Boolean) {
+        prefs.edit { putBoolean(KEY_PRIVATE_ONLY, on) }
+        _privateOnly.value = on
+        routeProxy()
+    }
+
     @Volatile private var process: Process? = null
 
     /** Uygulama açılışında, kullanıcı VPN'i açık bıraktıysa yeniden bağlanır. */
@@ -349,6 +371,28 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
     }
 
     private fun applyProxy(port: Int) {
+        proxyPort = port
+        routeProxy()
+    }
+
+    /** Vekili tüm tarayıcıya ya da (ayara göre) yalnızca gizli sekmelere uygular. */
+    private fun routeProxy() {
+        val port = proxyPort
+        if (port == null) {
+            _privateProxyPort.value = null
+            GeckoPrefs.set("network.proxy.type", PROXY_NONE)
+            return
+        }
+        if (_privateOnly.value) {
+            GeckoPrefs.set("network.proxy.type", PROXY_NONE)
+            _privateProxyPort.value = port
+        } else {
+            _privateProxyPort.value = null
+            setGlobalProxy(port)
+        }
+    }
+
+    private fun setGlobalProxy(port: Int) {
         GeckoPrefs.set("network.proxy.socks", "127.0.0.1")
         GeckoPrefs.set("network.proxy.socks_port", port)
         GeckoPrefs.set("network.proxy.socks_version", 5)
@@ -359,7 +403,8 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
     }
 
     private fun clearProxy() {
-        GeckoPrefs.set("network.proxy.type", PROXY_NONE)
+        proxyPort = null
+        routeProxy()
     }
 
     private fun blackhole() = Proxy(Proxy.Type.SOCKS, InetSocketAddress("127.0.0.1", DEAD_PORT))
@@ -407,6 +452,7 @@ class VpnManager(private val context: Context, private val scope: CoroutineScope
         private const val KEY_ACTIVE = "active"
         private const val KEY_TESTS = "last_tests"
         private const val KEY_ENABLED = "enabled"
+        private const val KEY_PRIVATE_ONLY = "private_only"
         private const val MAX_LOG_LINES = 200
         private const val PROXY_NONE = 0
         private const val PROXY_MANUAL = 1
