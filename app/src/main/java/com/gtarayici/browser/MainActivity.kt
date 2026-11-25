@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity() {
     private var fullscreen by mutableStateOf(false)
     private var inPictureInPicture by mutableStateOf(false)
     private lateinit var pip: com.gtarayici.browser.media.PipController
+    private lateinit var miniPlayer: com.gtarayici.browser.media.InAppMiniPlayer
 
     private val sessionFeature = ViewBoundFeatureWrapper<SessionFeature>()
     private val fullScreenFeature = ViewBoundFeatureWrapper<FullScreenFeature>()
@@ -94,7 +95,11 @@ class MainActivity : AppCompatActivity() {
         controller = BrowserController(this, components) {
             thumbnailsFeature.get()?.requestScreenshot(BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK)
         }
-        engineView = components.engine.createView(this)
+        // Ana motor görünümünün arkasında, başka sekmeye geçilince videosu küçük pencerede süren sayfa çizilir.
+        val keeperHolder = android.widget.FrameLayout(this)
+        val gecko = components.engine.createView(this)
+        miniPlayer = com.gtarayici.browser.media.InAppMiniPlayer(this, components, keeperHolder, mainView = { gecko.asView() })
+        engineView = com.gtarayici.browser.media.SwitchAwareEngineView(gecko) { if (::miniPlayer.isInitialized) miniPlayer else null }
         engineView.setActivityContext(this)
         swipeRefresh = SwipeRefreshLayout(this).apply {
             addView(engineView.asView(), ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -102,7 +107,11 @@ class MainActivity : AppCompatActivity() {
         }
         controller.dynamicToolbar.engineView = engineView
         controller.captureScreenshot = { onResult -> engineView.captureThumbnail { onResult(it) } }
-        scrollContainer = ScrollTrackingLayout(this, engineView, controller.dynamicToolbar, swipeRefresh)
+        val pageStack = android.widget.FrameLayout(this).apply {
+            addView(keeperHolder, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            addView(swipeRefresh, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        }
+        scrollContainer = ScrollTrackingLayout(this, engineView, controller.dynamicToolbar, pageStack)
         setupFeatures()
         com.gtarayici.browser.diagnostics.StartupTimer.watch(this, components.store, lifecycleScope)
         // Tam ekran videoda ekran videonun yönüne döner (yatay video → yatay, dikey video → dikey).
@@ -111,7 +120,17 @@ class MainActivity : AppCompatActivity() {
             components.settings.pullToRefresh.collect { updatePullToRefresh() }
         }
 
-        pip = com.gtarayici.browser.media.PipController(this, components, engineView = { engineView.asView() }).also { it.start() }
+        // Video başka bir sekmede arka planda sürüyorsa sistem penceresi de onu gösterir.
+        pip = com.gtarayici.browser.media.PipController(
+            this,
+            components,
+            engineView = { miniPlayer.backgroundSourceView() ?: engineView.asView() },
+        ).also { it.start() }
+        miniPlayer.start()
+        lifecycleScope.launch {
+            androidx.compose.runtime.snapshotFlow { controller.overlay }
+                .collect { miniPlayer.setOverlayOpen(it != Overlay.NONE) }
+        }
         com.gtarayici.browser.media.BackgroundPlayGuard(this, components).start()
         // Gizli sekmede ekran görüntüsü engeli: ayar değişince uygulamayı yeniden başlatmadan uygulanır.
         lifecycleScope.launch {
@@ -137,6 +156,7 @@ class MainActivity : AppCompatActivity() {
                 fullscreen || inPictureInPicture,
                 inPictureInPicture,
                 pipView = pip.pipView,
+                miniPlayer = miniPlayer,
             )
         }
 
@@ -197,7 +217,10 @@ class MainActivity : AppCompatActivity() {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPictureInPicture = isInPictureInPictureMode
         updatePullToRefresh()
+        // Uygulama içi pencere sistem penceresine yer açar (aynı video ikisinde birden kopyalanamaz).
+        if (isInPictureInPictureMode) miniPlayer.setSystemPip(true)
         pip.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        if (!isInPictureInPictureMode) miniPlayer.setSystemPip(false)
         // Küçük pencere kapatıldıysa uygulama arka plandadır: kilitler yeniden devreye girer.
         if (!isInPictureInPictureMode && !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
             components.appLock.lockAll()
@@ -368,6 +391,7 @@ class MainActivity : AppCompatActivity() {
     private fun onFullScreenChanged(enabled: Boolean) {
         fullscreen = enabled
         updatePullToRefresh()
+        miniPlayer.setFullscreen(enabled)
         val insets = WindowCompat.getInsetsController(window, window.decorView)
         if (enabled) {
             insets.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE

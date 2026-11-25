@@ -30,6 +30,7 @@ import androidx.compose.material.icons.rounded.OpenInBrowser
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Password
 import androidx.compose.material.icons.rounded.PictureInPictureAlt
+import androidx.compose.material.icons.rounded.PictureInPicture
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.ReportProblem
 import androidx.compose.material.icons.rounded.ScreenLockPortrait
@@ -93,6 +94,7 @@ internal fun settingsPages(
     val backgroundPlay by settings.backgroundPlay.collectAsState()
     val sponsorBlock by settings.sponsorBlock.collectAsState()
     val autoPip by settings.autoPictureInPicture.collectAsState()
+    val inAppPip by settings.inAppPictureInPicture.collectAsState()
     val autoUpdate by settings.autoUpdateCheck.collectAsState()
     val hideToolbar by settings.hideToolbarOnScroll.collectAsState()
     val unloadTabs by settings.unloadInactiveTabs.collectAsState()
@@ -255,6 +257,9 @@ internal fun settingsPages(
                     },
                     SettingItem.Toggle(s(R.string.settings_auto_pip), s(R.string.settings_auto_pip_summary), Icons.Rounded.PictureInPictureAlt, autoPip) {
                         settings.setAutoPictureInPicture(it)
+                    },
+                    SettingItem.Toggle(s(R.string.settings_in_app_pip), s(R.string.settings_in_app_pip_summary), Icons.Rounded.PictureInPicture, inAppPip) {
+                        settings.setInAppPictureInPicture(it)
                     },
                     SettingItem.Toggle(
                         s(R.string.settings_video_download_button),

@@ -95,6 +95,8 @@ fun BrowserApp(
     pictureInPicture: Boolean = false,
     /** Yerel video PiP görünümü: küçük pencerede sayfanın üstünde yalnızca video gösterilir. */
     pipView: View? = null,
+    /** Uygulama içi küçük pencere (başka sekmeye ya da bir menüye geçince video burada sürer). */
+    miniPlayer: com.gtarayici.browser.media.InAppMiniPlayer? = null,
 ) {
     val components = LocalContext.current.components
     val store = components.store
@@ -379,6 +381,13 @@ fun BrowserApp(
                         bottom = if (controller.overlay in PAGES_WITH_FAB) 88.dp else 72.dp,
                     ),
                 )
+            }
+
+            if (miniPlayer != null && !pictureInPicture && lockKey == null && !controller.onboarding) {
+                com.gtarayici.browser.ui.components.MiniPlayerWindow(miniPlayer) { tabId ->
+                    controller.closeOverlay()
+                    components.tabsUseCases.selectTab(tabId)
+                }
             }
 
             // Küçük pencerede yalnızca video (Gecko'nun kopyaladığı PiP oturumu) gösterilir.

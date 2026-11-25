@@ -868,6 +868,10 @@
     <string name="menu_unpin">Ana menüden çıkar</string>
     <string name="menu_pinned">Ana menüye eklendi</string>
     <string name="menu_unpinned">"Daha fazla"ya taşındı</string>
+    <string name="settings_in_app_pip">Uygulama içinde küçük pencere</string>
+    <string name="settings_in_app_pip_summary">Video oynarken başka sekmeye geçince veya ayarlar gibi bir menü açınca video küçük bir pencerede oynamaya devam eder</string>
+    <string name="mini_player_close">Küçük pencereyi kapat</string>
+    <string name="mini_player_expand">Videonun sekmesine dön</string>
 </resources>
 
 

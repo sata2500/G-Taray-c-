@@ -1,10 +1,9 @@
-## G-Tarayıcı 0.19.1
+## G-Tarayıcı 0.20.0
 
-### Menüyü kendine göre düzenle
-- Menünün ön tarafında artık en çok kullanılanlar duruyor: Sayfada bul, Masaüstü görünümü, Sayfadaki dosyalar, Sonra oku, Yer imleri, Geçmiş, İndirilenler ve Ayarlar.
-- O an işe yarayan kısayollar (videoyu indir, çevir, okuma ayarları) gerektiğinde yine en önde çıkar.
-- Gerisi "Daha fazla"nın altında, "Bu sayfa" ve "Uygulama" diye iki grupta. Yeni sekme ve gizli sekme de buraya taşındı; ikisi Sekmeler ekranından da açılabiliyor.
-- "Menüyü düzenle" ile istediğin öğeyi ana menüye ekleyip (+) çıkarabilirsin (−). Bir simgeye uzun basmak da aynı işi görür. "Varsayılana dön" ilk düzeni geri getirir.
-
-### Düzeltme
-- Shorts gibi dikey videolar küçük pencerede (resim içinde resim) artık doğru oranda, dikey görünüyor.
+### Uygulama içinde küçük pencere (yeni, isteğe bağlı)
+- Video oynarken başka bir sekmeye geçince video durmaz; sayfanın üstünde yüzen küçük bir pencerede oynamaya devam eder.
+- Aynısı uygulamanın kendi ekranlarında da geçerli: Ayarlar, Sekmeler, Geçmiş, İndirilenler gibi bir ekran açıkken video küçük pencerede sürer.
+- Pencereyi parmağınla istediğin yere taşıyabilirsin. Dokununca oynat/duraklat, kapat ve "sekmeye dön" düğmeleri çıkar; çift dokunmak da videonun sekmesine döndürür.
+- Videonun sekmesine dönünce pencere kendiliğinden kapanır. Kapat düğmesi videoyu da duraklatır.
+- Müzik sitelerinde (ör. YouTube Müzik) site ayarına uyar ve varsayılan olarak açılmaz.
+- Açmak için: Ayarlar → Medya → "Uygulama içinde küçük pencere".

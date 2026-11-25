@@ -92,6 +92,7 @@ class AppSettings(context: Context) {
     private val backgroundPlayPref = bool("background_play", true)
     private val sponsorBlockPref = bool("sponsorblock", true)
     private val autoPipPref = bool("auto_pip", true)
+    private val inAppPipPref = bool("in_app_pip", false)
     private val autoUpdatePref = bool("auto_update_check", true)
     private val videoDownloadButtonPref = bool("video_download_button", true)
     private val pullToRefreshPref = bool("pull_to_refresh", true)
@@ -127,6 +128,7 @@ class AppSettings(context: Context) {
     val backgroundPlay get() = backgroundPlayPref.flow
     val sponsorBlock get() = sponsorBlockPref.flow
     val autoPictureInPicture get() = autoPipPref.flow
+    val inAppPictureInPicture get() = inAppPipPref.flow
     val autoUpdateCheck get() = autoUpdatePref.flow
     val videoDownloadButton get() = videoDownloadButtonPref.flow
     val pullToRefresh get() = pullToRefreshPref.flow
@@ -168,6 +170,7 @@ class AppSettings(context: Context) {
     fun setBackgroundPlay(value: Boolean) = backgroundPlayPref.set(value)
     fun setSponsorBlock(value: Boolean) = sponsorBlockPref.set(value)
     fun setAutoPictureInPicture(value: Boolean) = autoPipPref.set(value)
+    fun setInAppPictureInPicture(value: Boolean) = inAppPipPref.set(value)
     fun setAutoUpdateCheck(value: Boolean) = autoUpdatePref.set(value)
     fun setVideoDownloadButton(value: Boolean) = videoDownloadButtonPref.set(value)
     fun setPullToRefresh(value: Boolean) = pullToRefreshPref.set(value)
