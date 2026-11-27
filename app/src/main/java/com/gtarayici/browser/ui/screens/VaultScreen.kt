@@ -90,6 +90,7 @@ private enum class VaultFilter(val label: Int) {
     PHOTOS(R.string.vault_filter_photos),
     VIDEOS(R.string.vault_filter_videos),
     AUDIO(R.string.vault_filter_audio),
+    BOOKS(R.string.vault_filter_books),
     DOCUMENTS(R.string.vault_filter_documents),
     OTHER(R.string.vault_filter_other);
 
@@ -98,7 +99,8 @@ private enum class VaultFilter(val label: Int) {
         PHOTOS -> item.kind == MediaKind.IMAGE
         VIDEOS -> item.kind == MediaKind.VIDEO || item.kind == MediaKind.STREAM
         AUDIO -> item.kind == MediaKind.AUDIO
-        DOCUMENTS -> item.kind == MediaKind.DOCUMENT
+        BOOKS -> com.gtarayici.browser.viewer.FileKind.of(item.name, item.mime).isBookFormat
+        DOCUMENTS -> item.kind == MediaKind.DOCUMENT && !com.gtarayici.browser.viewer.FileKind.of(item.name, item.mime).isBookFormat
         OTHER -> item.kind !in setOf(MediaKind.IMAGE, MediaKind.VIDEO, MediaKind.STREAM, MediaKind.AUDIO, MediaKind.DOCUMENT)
     }
 }
@@ -164,7 +166,13 @@ private fun VaultContent(openId: String?, canLock: Boolean, onBack: () -> Unit) 
     val shown = items.filter(filter::matches).sortedByDescending { it.added }
     viewing?.let { id ->
         val list = shown.takeIf { list -> list.any { it.id == id } } ?: items
-        VaultViewer(id, list, onClose = { viewing = null }, onActions = { actionsFor = it })
+        val sources = list.map { com.gtarayici.browser.viewer.VaultSource(vault, it) }
+        com.gtarayici.browser.ui.viewer.FileViewer(
+            sources,
+            list.indexOfFirst { it.id == id }.coerceAtLeast(0),
+            onClose = { viewing = null },
+            onActions = { source -> (source as? com.gtarayici.browser.viewer.VaultSource)?.let { actionsFor = it.item } },
+        )
         actionsFor?.let { item -> VaultActions(item, onDismiss = { actionsFor = null }, onDeleted = { viewing = null }) }
         return
     }

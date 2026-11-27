@@ -19,7 +19,7 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.feature.readerview.ReaderViewFeature
 
 /** Tam ekran kaplayan ikincil ekranlar. */
-enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR, REPORT, PASSWORDS, READING, GUIDE, VAULT }
+enum class Overlay { NONE, SEARCH, TABS, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, PROFILES, EXTENSIONS, VPN, QR, REPORT, PASSWORDS, READING, GUIDE, VAULT, LIBRARY, VIEWER }
 
 /**
  * Arayüzün tarayıcı üzerinde yaptığı işlemlerin tek giriş noktası. İşin kendisi parçalara ayrılmıştır
@@ -58,6 +58,14 @@ class BrowserController private constructor(
     var vaultOpenId: String?
         get() = ctx.ui.vaultOpenId
         set(value) { ctx.ui.vaultOpenId = value }
+
+    val viewer: Pair<List<com.gtarayici.browser.viewer.FileSource>, Int>? get() = ctx.ui.viewer
+
+    /** Dosyaları uygulamanın görüntüleyicisinde açar. */
+    fun openViewer(sources: List<com.gtarayici.browser.viewer.FileSource>, start: Int = 0) {
+        ctx.ui.viewer = sources to start
+        open(Overlay.VIEWER)
+    }
 
     /** Gizli kasayı açar; [itemId] verilirse o dosya doğrudan gösterilir. */
     fun openVault(itemId: String? = null) {

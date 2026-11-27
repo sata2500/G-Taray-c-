@@ -85,6 +85,8 @@ class GTarayiciApplication : Application() {
                 kotlinx.coroutines.delay(1_500)
                 components.downloadQueue.markInterrupted()
             }
+            // Normal sekmelerde indirilen kitaplar kitaplığa kendiliğinden eklenir.
+            components.library.start(components.store, components.applicationScope)
             // Önceki oturumda yarım kalan, kasaya gidecek indirmelerin şifresiz geçici parçaları silinir.
             components.applicationScope.launch(Dispatchers.IO) { components.vault.cleanIncoming() }
             components.applicationScope.launch(Dispatchers.IO) {

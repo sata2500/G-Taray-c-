@@ -245,6 +245,9 @@ class Components(private val context: Context) {
     val youtube by lazy { YouTubeDownloader(context, this) }
     /** Çok bağlantılı indirme yöneticisi (sayfa taraması, indirme bağlantıları). */
     val resourceScanner by lazy { com.gtarayici.browser.downloads.manager.ResourceScanner(store, applicationScope) }
+    /** Kitaplık: e-kitaplar, çizgi romanlar, kitap gibi uzun PDF'ler. */
+    val library by lazy { com.gtarayici.browser.library.Library(context) }
+
     /** Gizli kasa: şifreli dosyalar (gizli sekme indirmeleri ve kullanıcının ekledikleri). */
     val vault by lazy { com.gtarayici.browser.vault.Vault(context) }
 

@@ -49,7 +49,13 @@ import mozilla.components.browser.state.state.content.DownloadState
 
 /** İndirilenler. [private]: gizli sekmelerdeyken yalnızca gizli sekmelerde indirilenler gösterilir (ve tersi). */
 @Composable
-fun DownloadsScreen(private: Boolean = false, onOpenVault: (itemId: String?) -> Unit = {}, onBack: () -> Unit) {
+fun DownloadsScreen(
+    private: Boolean = false,
+    onOpenVault: (itemId: String?) -> Unit = {},
+    /** Dosyaları uygulamanın görüntüleyicisinde açar (yana kaydırınca diğer indirilenlere geçilir). */
+    onOpenFiles: (List<com.gtarayici.browser.viewer.FileSource>, Int) -> Unit = { _, _ -> },
+    onBack: () -> Unit,
+) {
     val context = LocalContext.current
     val components = context.components
     val downloads by components.store.observe { state ->
@@ -224,6 +230,25 @@ fun DownloadsScreen(private: Boolean = false, onOpenVault: (itemId: String?) -> 
                         modifier = Modifier.clickable(enabled = done) {
                             if (vaultId != null) {
                                 onOpenVault(vaultId)
+                                return@clickable
+                            }
+                            // Uygulamanın açabildiği dosyalar kendi görüntüleyicisinde açılır.
+                            if (com.gtarayici.browser.viewer.FileKind.of(download.fileName.orEmpty(), download.contentType) != com.gtarayici.browser.viewer.FileKind.OTHER) {
+                                scope.launch {
+                                    val viewable = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        downloads.filter {
+                                            it.status == DownloadState.Status.COMPLETED && it.directoryPath?.startsWith(com.gtarayici.browser.vault.Vault.DOWNLOAD_PREFIX) != true &&
+                                                com.gtarayici.browser.viewer.FileKind.of(it.fileName.orEmpty(), it.contentType) != com.gtarayici.browser.viewer.FileKind.OTHER
+                                        }.mapNotNull { d ->
+                                            DownloadedFiles.uri(context, d.fileName, d.directoryPath)?.let { uri ->
+                                                d.id to com.gtarayici.browser.viewer.UriSource(context, uri, d.fileName.orEmpty(), d.contentType, d.contentLength ?: -1)
+                                            }
+                                        }
+                                    }
+                                    val index = viewable.indexOfFirst { it.first == download.id }
+                                    if (index >= 0) onOpenFiles(viewable.map { it.second }, index)
+                                    else context.components.messenger.warning(UiText.res(R.string.download_open_failed))
+                                }
                                 return@clickable
                             }
                             val opened = components.downloadFileUtils.openFile(

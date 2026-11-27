@@ -37,6 +37,7 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EnhancedEncryption
+import androidx.compose.material.icons.rounded.LocalLibrary
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.runtime.collectAsState
@@ -317,6 +318,7 @@ private fun appItems(controller: BrowserController): List<MenuItem> = listOf(
     MenuItem("extensions", Icons.Rounded.Extension, R.string.menu_extensions, page = false) { controller.open(Overlay.EXTENSIONS) },
     MenuItem("profiles", Icons.Rounded.ManageAccounts, R.string.menu_profiles, page = false) { controller.open(Overlay.PROFILES) },
     MenuItem("qr", Icons.Rounded.QrCodeScanner, R.string.menu_tile_qr, page = false) { controller.openQrScanner() },
+    MenuItem("library", Icons.Rounded.LocalLibrary, R.string.menu_tile_library, page = false) { controller.open(Overlay.LIBRARY) },
     MenuItem("vault", Icons.Rounded.EnhancedEncryption, R.string.menu_tile_vault, page = false) { controller.openVault() },
     MenuItem("guide", Icons.Rounded.Lightbulb, R.string.menu_tile_guide, page = false) { controller.open(Overlay.GUIDE) },
     MenuItem("report", Icons.Rounded.BugReport, R.string.menu_tile_report, page = false) { controller.openReport() },

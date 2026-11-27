@@ -1,5 +1,6 @@
 package com.gtarayici.browser.ui
 
+import kotlinx.coroutines.launch
 import com.gtarayici.browser.ui.components.PageDownloadsSheet
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -115,8 +116,22 @@ internal fun OverlayPage(
         Overlay.DOWNLOADS -> DownloadsScreen(
             private = private,
             onOpenVault = { controller.openVault(it) },
+            onOpenFiles = { sources, start -> controller.openViewer(sources, start) },
             onBack = { controller.closeOverlay() },
         )
+        Overlay.LIBRARY -> {
+            val context = LocalContext.current
+            com.gtarayici.browser.ui.screens.LibraryScreen(
+                onOpen = { book ->
+                    context.components.applicationScope.launch { context.components.library.opened(book) }
+                    controller.openViewer(listOf(book.source(context)))
+                },
+                onBack = { controller.closeOverlay() },
+            )
+        }
+        Overlay.VIEWER -> controller.viewer?.let { (sources, start) ->
+            com.gtarayici.browser.ui.viewer.FileViewer(sources, start, onClose = { controller.closeOverlay() })
+        }
         Overlay.VAULT -> com.gtarayici.browser.ui.screens.VaultScreen(openId = controller.vaultOpenId, onBack = { controller.closeOverlay() })
         Overlay.SETTINGS -> SettingsScreen(
             startPage = remember { controller.settingsStartPage.also { controller.settingsStartPage = null } },

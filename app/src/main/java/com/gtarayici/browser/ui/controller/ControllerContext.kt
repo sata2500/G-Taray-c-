@@ -24,6 +24,8 @@ class BrowserUiState {
     var youtubeUrl by mutableStateOf<String?>(null)
     /** Gizli kasa açılınca doğrudan gösterilecek dosya (ör. İndirilenler'den). */
     var vaultOpenId by mutableStateOf<String?>(null)
+    /** Uygulamanın görüntüleyicisinde açılacak dosyalar ve ilk gösterilecek dosya. */
+    var viewer by mutableStateOf<Pair<List<com.gtarayici.browser.viewer.FileSource>, Int>?>(null)
     var profileSwitcherOpen by mutableStateOf(false)
     var installDialogOpen by mutableStateOf(false)
     var translateOpen by mutableStateOf(false)
