@@ -63,6 +63,7 @@ import com.gtarayici.browser.ui.theme.isDarkTheme
 import com.gtarayici.browser.vpn.VpnStatus
 import com.gtarayici.browser.youtube.YouTubeDownloader
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.SecurityInfo
 
@@ -98,7 +99,8 @@ fun BrowserApp(
     /** Uygulama içi küçük pencere (başka sekmeye ya da bir menüye geçince video burada sürer). */
     miniPlayer: com.gtarayici.browser.media.InAppMiniPlayer? = null,
 ) {
-    val components = LocalContext.current.components
+    val context = LocalContext.current
+    val components = context.components
     val store = components.store
     val themeMode by components.settings.theme.collectAsState()
     val searchEngine by components.settings.searchEngine.collectAsState()
@@ -305,6 +307,10 @@ fun BrowserApp(
                                 onHideFrequent = { controller.hideFrequentSite(it.url) },
                                 onRemoveBookmark = { controller.removeBookmark(it.url) },
                                 onProtectionClick = { controller.open(Overlay.SETTINGS) },
+                                onOpenBook = { book ->
+                                    components.applicationScope.launch { components.library.opened(book) }
+                                    controller.openViewer(listOf(book.source(context)))
+                                },
                             )
                         }
                     }

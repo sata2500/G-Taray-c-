@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Shield
@@ -31,6 +32,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import com.gtarayici.browser.components
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -140,6 +143,8 @@ fun HomeScreen(
     onHideFrequent: (HomeSite) -> Unit,
     onRemoveBookmark: (HomeSite) -> Unit,
     onProtectionClick: () -> Unit = {},
+    /** Kitaplıkta yarım kalan bir kitabı açar. */
+    onOpenBook: (com.gtarayici.browser.library.Book) -> Unit = {},
 ) {
     // Surface içerik rengini (onSurface) de sağlar: renk belirtilmeyen metinler koyu temada siyah kalmaz.
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
@@ -152,31 +157,27 @@ fun HomeScreen(
                     .padding(horizontal = Spacing.screen),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(Modifier.height(if (frequent.isEmpty() && bookmarks.isEmpty()) 96.dp else Spacing.huge))
+                Spacer(Modifier.height(if (frequent.isEmpty() && bookmarks.isEmpty()) 88.dp else 56.dp))
                 Emblem(private)
                 Spacer(Modifier.height(Spacing.md))
                 Text(
-                    stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.headlineMedium,
+                    if (private) stringResource(R.string.home_private_title) else greeting(),
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
                 )
-                Text(
-                    stringResource(R.string.app_tagline),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                // Arama için tek giriş noktası alttaki adres çubuğudur; ana sayfada ikinci bir arama kutusu yoktur.
+                Spacer(Modifier.height(Spacing.lg))
+                // Büyük arama kutusu: dokununca arama açılır (alttaki adres çubuğuyla aynı yer).
+                SearchPill(private, onSearchClick, onScanQr)
                 Spacer(Modifier.height(Spacing.lg))
 
                 if (private) {
                     Surface(
                         shape = AppShape.lg,
                         color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.fillMaxWidth().padding(top = Spacing.md),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(Modifier.padding(Spacing.xl)) {
-                            Text(stringResource(R.string.home_private_title), style = MaterialTheme.typography.titleMedium)
-                            Spacer(Modifier.height(Spacing.sm))
                             Text(
                                 stringResource(R.string.home_private_body),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -187,6 +188,7 @@ fun HomeScreen(
                 } else {
                     StatusChip(stringResource(R.string.home_protection_on), Icons.Rounded.Shield, onClick = onProtectionClick)
                     Spacer(Modifier.height(Spacing.xl))
+                    ContinueReading(onOpenBook)
                     if (frequent.isEmpty() && bookmarks.isEmpty()) {
                         Text(
                             stringResource(R.string.home_empty_hint),
@@ -217,6 +219,83 @@ fun HomeScreen(
             }
         }
     }
+}
+
+/** Günün saatine göre selamlama. */
+@Composable
+private fun greeting(): String {
+    val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+    return stringResource(
+        when (hour) {
+            in 5..11 -> R.string.home_greeting_morning
+            in 12..17 -> R.string.home_greeting_day
+            in 18..22 -> R.string.home_greeting_evening
+            else -> R.string.home_greeting_night
+        },
+    )
+}
+
+/** Ana sayfanın arama kutusu: büyük, yuvarlak; sağda QR kod okuyucu. */
+@Composable
+private fun SearchPill(private: Boolean, onClick: () -> Unit, onScanQr: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+    ) {
+        Row(Modifier.padding(start = 20.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                stringResource(if (private) R.string.private_search_hint else R.string.search_hint),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onScanQr) { Icon(Icons.Rounded.QrCodeScanner, stringResource(R.string.menu_tile_qr)) }
+        }
+    }
+}
+
+/** Kitaplıkta yarım kalan kitaplar: en son açılan üçü. */
+@Composable
+private fun ContinueReading(onOpen: (com.gtarayici.browser.library.Book) -> Unit) {
+    val library = androidx.compose.ui.platform.LocalContext.current.components.library
+    val books by library.books.collectAsState()
+    val reading = books.filter { it.opened > 0 && library.progress(it) in 0.005f..0.98f }.sortedByDescending { it.opened }.take(3)
+    if (reading.isEmpty()) return
+    Text(
+        stringResource(R.string.library_continue),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.fillMaxWidth().padding(start = Spacing.xs, bottom = Spacing.sm),
+    )
+    Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        reading.forEach { book ->
+            val progress = library.progress(book)
+            Surface(onClick = { onOpen(book) }, shape = AppShape.lg, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.size(40.dp)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(androidx.compose.material.icons.Icons.Rounded.MenuBook, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                        }
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(book.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        androidx.compose.material3.LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Text("%${(progress * 100).toInt()}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(Spacing.xl))
 }
 
 /** Uygulama amblemi: ton dairesinde kalkan (gizli modda kapalı göz). */

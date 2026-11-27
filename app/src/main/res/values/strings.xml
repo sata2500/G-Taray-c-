@@ -984,6 +984,10 @@
     <string name="site_protection_off_short">Koruma kapalı</string>
     <string name="site_clear_short">Verileri temizle</string>
     <string name="site_reset_short">İzinleri sıfırla</string>
+    <string name="home_greeting_morning">Günaydın</string>
+    <string name="home_greeting_day">İyi günler</string>
+    <string name="home_greeting_evening">İyi akşamlar</string>
+    <string name="home_greeting_night">İyi geceler</string>
 </resources>
 
 
