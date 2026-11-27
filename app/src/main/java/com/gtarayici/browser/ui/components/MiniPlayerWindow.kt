@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.OpenInFull
+import androidx.compose.material.icons.rounded.OpenWith
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
@@ -59,7 +61,8 @@ import kotlin.math.roundToInt
 fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
     val tabId = mini.tabId ?: return
     if (!mini.visible) return
-    val components = LocalContext.current.components
+    val context = LocalContext.current
+    val components = context.components
     val playing by components.store.observe { state ->
         state.tabs.firstOrNull { it.id == tabId }?.mediaSessionState?.playbackState == MediaSession.PlaybackState.PLAYING
     }
@@ -85,6 +88,15 @@ fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
     }
     var offset by remember { mutableStateOf<Offset?>(null) }
     val shape = RoundedCornerShape(16.dp)
+    // Kullanıcının seçtiği boyut (iki parmakla ya da köşedeki tutamaçla); saklanır.
+    val prefs = remember { context.getSharedPreferences("gtarayici_state", android.content.Context.MODE_PRIVATE) }
+    var sizeScale by remember { mutableStateOf(prefs.getFloat(KEY_SCALE, 1f).coerceIn(MIN_SCALE, MAX_SCALE)) }
+    var resizing by remember { mutableStateOf(false) }
+    LaunchedEffect(sizeScale) {
+        delay(400)
+        prefs.edit().putFloat(KEY_SCALE, sizeScale).apply()
+        resizing = false
+    }
     // Açılış: pencere köşesinden büyüyerek ve belirerek gelir (her yeni videoda yeniden).
     val appear = remember(tabId) { androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(tabId) {
@@ -99,10 +111,16 @@ fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
 
     BoxWithConstraints(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp)) {
         val density = LocalDensity.current
-        val targetWidth = if (ratio >= 1f) (maxWidth * 0.46f).coerceIn(170.dp, 300.dp) else (maxWidth * 0.34f).coerceIn(120.dp, 200.dp)
-        // Video oranı değişince (ör. yatay videodan dikey Shorts'a) pencere yumuşakça yeniden boyutlanır.
-        val width by androidx.compose.animation.core.animateDpAsState(targetWidth, label = "mini-width")
-        val height by androidx.compose.animation.core.animateDpAsState(targetWidth / ratio, label = "mini-height")
+        val base = if (ratio >= 1f) maxWidth * 0.6f else maxWidth * 0.38f
+        // Pencere ekrandan taşmaz: genişlik de yükseklik de sınırlıdır.
+        val targetWidth = (base * sizeScale).coerceIn(140.dp, minOf(maxWidth, maxHeight * ratio))
+        // Video oranı değişince (ör. yatay videodan dikey Shorts'a) pencere yumuşakça yeniden boyutlanır; parmakla
+        // boyutlandırırken parmağı gecikmesiz izler.
+        val spec: androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.unit.Dp> =
+            if (resizing) androidx.compose.animation.core.snap() else androidx.compose.animation.core.spring()
+        val width by androidx.compose.animation.core.animateDpAsState(targetWidth, spec, label = "mini-width")
+        val height by androidx.compose.animation.core.animateDpAsState(targetWidth / ratio, spec, label = "mini-height")
+        val basePx = with(density) { base.toPx() }.coerceAtLeast(1f)
         val maxX = with(density) { (maxWidth - width).toPx() }.coerceAtLeast(0f)
         val maxY = with(density) { (maxHeight - height).toPx() }.coerceAtLeast(0f)
         // İlk konum: sağ alt köşe, alttaki adres çubuğunun üstü.
@@ -135,10 +153,14 @@ fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
             Box(
                 Modifier
                     .fillMaxSize()
+                    // Tek parmak: taşı. İki parmak: büyüt/küçült.
                     .pointerInput(Unit) {
-                        detectDragGestures { change, drag ->
-                            change.consume()
-                            offset = clampNow(currentPosition + drag)
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            if (zoom != 1f) {
+                                resizing = true
+                                sizeScale = (sizeScale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
+                            }
+                            offset = clampNow(currentPosition + pan)
                         }
                     }
                     .pointerInput(tabId) {
@@ -152,6 +174,32 @@ fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
                     }
                     IconButton(onClick = { mini.close() }, modifier = Modifier.align(Alignment.TopEnd)) {
                         Icon(Icons.Rounded.Close, stringResource(R.string.mini_player_close), tint = Color.White)
+                    }
+                    // Boyutlandırma tutamacı (sol alt köşe): sola/yukarı çekince büyür, sağa/aşağı itince küçülür.
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .size(44.dp)
+                            .pointerInput(Unit) {
+                                detectDragGestures(onDragEnd = { resizing = false }) { change, drag ->
+                                    change.consume()
+                                    resizing = true
+                                    val delta = (-drag.x + drag.y * -0.5f) / basePx
+                                    val before = sizeScale
+                                    sizeScale = (sizeScale + delta).coerceIn(MIN_SCALE, MAX_SCALE)
+                                    // Sağ alt köşe yerinde kalsın: pencere sola/yukarı doğru büyür.
+                                    val grown = (sizeScale - before) * basePx
+                                    offset = clampNow(currentPosition - Offset(grown, grown / ratio))
+                                }
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Rounded.OpenWith,
+                            stringResource(R.string.mini_player_resize),
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp),
+                        )
                     }
                     IconButton(onClick = { mini.togglePlayback() }, modifier = Modifier.align(Alignment.Center).size(56.dp)) {
                         Icon(
@@ -168,3 +216,6 @@ fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
 }
 
 private const val CONTROLS_TIMEOUT_MS = 3_000L
+private const val KEY_SCALE = "mini_player_scale"
+private const val MIN_SCALE = 0.55f
+private const val MAX_SCALE = 1.65f
