@@ -57,6 +57,16 @@ class ReadingController(
         if (components.speaker.unavailable) ctx.messenger.error(UiText.res(R.string.speaker_unavailable))
     }
 
+    /** Android'in yazdırma penceresi (yazıcıya gönder ya da "PDF olarak kaydet"). */
+    fun print() {
+        ctx.ui.menuOpen = false
+        val session = ctx.selectedTab?.engineState?.engineSession ?: return
+        runCatching { session.requestPrintContent() }.onFailure {
+            Diagnostics.error("print", it)
+            ctx.messenger.error(UiText.res(R.string.print_failed))
+        }
+    }
+
     fun saveAsPdf() {
         ctx.ui.menuOpen = false
         val session = ctx.selectedTab?.engineState?.engineSession ?: return

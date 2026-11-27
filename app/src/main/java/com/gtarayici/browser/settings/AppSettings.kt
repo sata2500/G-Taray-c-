@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 /** Menünün ana ızgarasında varsayılan olarak duran öğeler (en sık kullanılanlar). */
-const val DEFAULT_MENU_PINS = "find,desktop,page_files,save_later,bookmarks,history,downloads,settings"
+const val DEFAULT_MENU_PINS = "find,desktop,save_later,bookmarks,history,downloads,vpn,print,settings"
 
 /** Veri tasarrufu: kapalı, ölçülü/yavaş bağlantıda kendiliğinden ya da her zaman açık. */
 enum class DataSaverMode { OFF, AUTO, ON }
@@ -113,7 +113,7 @@ class AppSettings(context: Context) {
     private val searchSuggestionsPref = bool("search_suggestions", true)
     private val vpnKeepAlivePref = bool("vpn_keep_alive", true)
     private val customSearchPref = string("custom_search_url", "")
-    private val menuPinsPref = string("menu_pins", DEFAULT_MENU_PINS)
+    private val menuPinsPref = string("menu_pins_v2", DEFAULT_MENU_PINS)
 
     val searchEngine get() = searchEnginePref.flow
     val theme get() = themePref.flow

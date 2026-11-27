@@ -309,18 +309,6 @@ private fun TabCounter(
                 fontWeight = FontWeight.Bold,
             )
         }
-        // Birden çok profil varsa etkin profilin rengi sayacın köşesinde küçük bir nokta olarak görünür.
-        profile?.let {
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 9.dp, end = 9.dp)
-                    .size(9.dp)
-                    .clip(CircleShape)
-                    .background(com.gtarayici.browser.ui.screens.profileColor(it))
-                    .border(1.5.dp, MaterialTheme.colorScheme.surfaceContainer, CircleShape),
-            )
-        }
         // Uzun basınca: yeni sekme, yeni gizli sekme, bu sekmeyi kapat
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
@@ -333,13 +321,6 @@ private fun TabCounter(
                 leadingIcon = { Icon(Icons.Filled.VisibilityOff, null) },
                 onClick = { menu = false; actions.onNewTab(true) },
             )
-            if (profile != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.profile_switch) + " · " + profile.name) },
-                    leadingIcon = { ProfileAvatar(profile, 22.dp) },
-                    onClick = { menu = false; onProfileClick() },
-                )
-            }
             if (hasPage) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.toolbar_close_tab)) },

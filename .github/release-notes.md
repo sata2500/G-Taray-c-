@@ -1,15 +1,13 @@
-## G-Tarayıcı 0.25.0 — Daha sade görünüm
+## G-Tarayıcı 0.25.1 — Daha akıllı menü, yeni site bilgisi
 
-### Adres çubuğu
-- Adres alanında artık yalnızca sitenin adı görünür (ör. "m.youtube.com"); tam adres dokununca açılan alanda.
-- Yenile düğmesi kalktı (aşağı çekerek ya da menüden yenilenir); sayfa yüklenirken yerinde "durdur" düğmesi çıkar.
-- Profil rozeti çubuktan kalktı: birden çok profil varsa etkin profilin rengi sekme sayacının köşesinde küçük bir nokta olarak görünür. Profil değiştirmek için sekme sayacına uzun basın.
-- VPN simgesi ayrı bir düğme olmaktan çıktı, adres alanının içinde küçük bir işaret oldu.
-- Güvenli bağlantıdaki kilit simgesi sakinleşti; yalnızca güvensiz bağlantı renkle uyarır.
+### Menü
+- Varsayılan düzen yenilendi: Sayfada bul, Masaüstü, Sonra oku, Yer imleri, Geçmiş, İndirilenler, VPN, Yazdır ve Ayarlar. (Menüyü daha önce düzenlediyseniz yeni varsayılan düzen bir kez uygulanır; "Menüyü düzenle" ile yine değiştirebilirsiniz.)
+- "Videoyu indir" yalnızca sayfada video varken ve en önde görünür; artık YouTube dışındaki sitelerde de çıkar (sayfadaki video dosyalarını açar).
+- "Sayfadaki dosyalar" "Daha fazla"ya taşındı; böylece indirmeyle ilgili üç ayrı kutucuk aynı anda görünmez.
+- Yeni "Yazdır": yazıcıya gönderebilir ya da "PDF olarak kaydet"i seçebilirsiniz.
 
-### Site menüsü
-- Kutucuklar küçüldü ve sıkılaştı: aynı menü ekranın çok daha azını kaplar, öğeler bir bakışta görünür.
+### Profiller
+- Birden çok profil varsa menünün altında etkin profilin adı ve simgesi görünür; dokununca profil seçici açılır. (Sekme düğmesine uzun basma ve köşedeki nokta kaldırıldı.)
 
-### Diğer
-- İndirilenler'de her dosyanın türüne göre simgesi var (video, ses, resim, PDF, kitap, tablo, arşiv, uygulama…).
-- Uygulama içi küçük pencere biraz daha küçük açılır; listeleri daha az kapatır.
+### Site bilgisi
+- Yeni tasarım: üstte sitenin simgesi ve adı; "Güvenli" ve "İzleyici koruması" yan yana renkli durum kartları; bu siteye özel ayarlar tek bir kartta; "Verileri temizle" ve "İzinleri sıfırla" altta iki düğme.

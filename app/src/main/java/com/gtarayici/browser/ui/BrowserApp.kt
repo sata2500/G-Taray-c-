@@ -362,6 +362,7 @@ fun BrowserApp(
                         bookmarked = bookmarked,
                         desktopMode = current?.desktopMode == true,
                         isYouTubeVideo = pageUrl?.let(YouTubeDownloader::isVideoPage) == true,
+                        hasVideo = components.store.state.selectedTab?.mediaSessionState != null,
                         installableWebApp = current?.hasManifest == true && components.webAppUseCases.isInstallable(),
                         extensionActions = emptyList(),
                         readerActive = current?.readerActive == true,

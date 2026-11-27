@@ -36,6 +36,7 @@ import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Print
 import androidx.compose.material.icons.rounded.EnhancedEncryption
 import androidx.compose.material.icons.rounded.LocalLibrary
 import androidx.compose.material.icons.rounded.Remove
@@ -107,6 +108,8 @@ data class MenuState(
     val bookmarked: Boolean,
     val desktopMode: Boolean,
     val isYouTubeVideo: Boolean,
+    /** Sayfada oynatılan/oynatılabilir bir video var (YouTube dışındaki siteler). */
+    val hasVideo: Boolean = false,
     val installableWebApp: Boolean,
     val readerActive: Boolean = false,
     val canTranslate: Boolean = false,
@@ -204,6 +207,26 @@ fun MenuSheet(state: MenuState, controller: BrowserController) {
                     Pill(R.string.menu_edit_reset, null) { components.settings.setMenuPins(com.gtarayici.browser.settings.DEFAULT_MENU_PINS.split(',')) }
                     Pill(R.string.menu_edit_done, null, primary = true) { editing = false }
                 } else {
+                    // Profil: birden çok profil varsa menünün altında, adıyla görünür (dokununca profil seçici).
+                    val profiles by components.profiles.profiles.collectAsState()
+                    val profile by components.profiles.active.collectAsState()
+                    if (profiles.size > 1 && !expanded) {
+                        Surface(
+                            onClick = {
+                                controller.menuOpen = false
+                                controller.profileSwitcherOpen = true
+                            },
+                            shape = RoundedCornerShape(50),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        ) {
+                            Row(Modifier.padding(start = 6.dp, end = Spacing.md, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                com.gtarayici.browser.ui.screens.ProfileAvatar(profile, 24.dp)
+                                Spacer(Modifier.width(8.dp))
+                                Text(profile.name, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                                Icon(Icons.Rounded.ExpandMore, stringResource(R.string.profile_switch), modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
                     Pill(if (expanded) R.string.menu_less else R.string.menu_more, if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore) {
                         expanded = !expanded
                     }
@@ -288,7 +311,15 @@ private fun ExtensionBadge(action: Action, controller: BrowserController) {
 
 /** Bu sayfaya ait işlemler. Videoyu indir ve çevir yalnızca işe yaradığında vardır ve hep en öndedir. */
 private fun pageItems(state: MenuState, controller: BrowserController): List<MenuItem> = buildList {
-    if (state.isYouTubeVideo) add(MenuItem("video", Icons.Rounded.OndemandVideo, R.string.menu_tile_download_video, page = true, highlighted = true) { controller.openYouTubeDownload() })
+    // Videoyu indir: yalnızca sayfada video varken ve en önde. YouTube'da kalite seçimi, diğer sitelerde sayfadaki dosyalar.
+    if (state.isYouTubeVideo) {
+        add(MenuItem("video", Icons.Rounded.OndemandVideo, R.string.menu_tile_download_video, page = true, highlighted = true) { controller.openYouTubeDownload() })
+    } else if (state.hasVideo) {
+        add(MenuItem("video", Icons.Rounded.OndemandVideo, R.string.menu_tile_download_video, page = true, highlighted = true) {
+            controller.menuOpen = false
+            controller.pageDownloadsOpen = true
+        })
+    }
     if (state.canTranslate) add(MenuItem("translate", Icons.Rounded.Translate, R.string.menu_tile_translate, page = true, highlighted = true) { controller.openTranslate() })
     if (state.readerActive) add(MenuItem("reader", Icons.Rounded.TextFields, R.string.menu_tile_reader_settings, page = true, highlighted = true) { controller.openReaderSettings() })
     add(MenuItem("find", Icons.Rounded.FindInPage, R.string.menu_tile_find, page = true) { controller.openFindInPage() })
@@ -301,6 +332,7 @@ private fun pageItems(state: MenuState, controller: BrowserController): List<Men
     if (!state.readerActive) add(MenuItem("read_aloud", Icons.Rounded.RecordVoiceOver, R.string.menu_tile_read_aloud, page = true) { controller.reading.readAloud() })
     add(MenuItem("copy_link", Icons.Rounded.ContentCopy, R.string.menu_tile_copy_link, page = true) { controller.copyLink() })
     add(MenuItem("screenshot", Icons.Rounded.Screenshot, R.string.menu_tile_screenshot, page = true) { controller.reading.captureFullPage() })
+    add(MenuItem("print", Icons.Rounded.Print, R.string.menu_tile_print, page = true) { controller.reading.print() })
     add(MenuItem("pdf", Icons.Rounded.PictureAsPdf, R.string.menu_tile_pdf, page = true) { controller.reading.saveAsPdf() })
     add(MenuItem("install", Icons.Rounded.InstallMobile, R.string.menu_tile_install, page = true) { controller.openInstallDialog() })
 }

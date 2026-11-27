@@ -976,6 +976,14 @@
     <string name="reader_theme_sepia">Sepya</string>
     <string name="reader_theme_dark">Koyu</string>
     <string name="reader_theme_black">Siyah</string>
+    <string name="menu_tile_print">Yazdır</string>
+    <string name="print_failed">Yazdırma başlatılamadı</string>
+    <string name="site_secure_short">Güvenli</string>
+    <string name="site_insecure_short">Güvenli değil</string>
+    <string name="site_protection_short">İzleyici koruması</string>
+    <string name="site_protection_off_short">Koruma kapalı</string>
+    <string name="site_clear_short">Verileri temizle</string>
+    <string name="site_reset_short">İzinleri sıfırla</string>
 </resources>
 
 
