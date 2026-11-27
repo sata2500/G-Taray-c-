@@ -4,6 +4,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Surface
+import androidx.compose.material.icons.rounded.FolderZip
+import androidx.compose.material.icons.rounded.Android
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Slideshow
+import androidx.compose.material.icons.rounded.TableChart
+import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.Audiotrack
+import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.EnhancedEncryption
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
@@ -155,7 +168,21 @@ fun DownloadsScreen(
                         ?.removePrefix(com.gtarayici.browser.vault.Vault.DOWNLOAD_PREFIX)
                     ListRow(
                         leading = {
-                            Icon(if (vaultId != null) Icons.Rounded.EnhancedEncryption else Icons.AutoMirrored.Filled.InsertDriveFile, null)
+                            // Dosya türüne göre simge, renkli küçük bir kutuda.
+                            Surface(
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                modifier = Modifier.size(40.dp),
+                            ) {
+                                Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                                    Icon(
+                                        if (vaultId != null) Icons.Rounded.EnhancedEncryption else typeIcon(download.fileName.orEmpty(), download.contentType),
+                                        null,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.size(22.dp),
+                                    )
+                                }
+                            }
                         },
                         headline = {
                             Text(download.fileName ?: download.url, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -292,6 +319,26 @@ private fun downloadStatusText(download: DownloadState, remainingMs: Long? = nul
     return listOfNotNull(status, size, left, UrlInput.host(download.url).ifBlank { null }).joinToString(" · ")
 }
 
+
+/** Dosya türünün simgesi. */
+private fun typeIcon(name: String, mime: String?): androidx.compose.ui.graphics.vector.ImageVector {
+    val r = androidx.compose.material.icons.Icons.Rounded
+    return when (com.gtarayici.browser.viewer.FileKind.of(name, mime)) {
+        com.gtarayici.browser.viewer.FileKind.IMAGE -> r.Image
+        com.gtarayici.browser.viewer.FileKind.VIDEO -> r.Movie
+        com.gtarayici.browser.viewer.FileKind.AUDIO -> r.Audiotrack
+        com.gtarayici.browser.viewer.FileKind.PDF -> r.PictureAsPdf
+        com.gtarayici.browser.viewer.FileKind.EPUB, com.gtarayici.browser.viewer.FileKind.FB2, com.gtarayici.browser.viewer.FileKind.COMIC -> r.MenuBook
+        com.gtarayici.browser.viewer.FileKind.SHEET -> r.TableChart
+        com.gtarayici.browser.viewer.FileKind.SLIDES -> r.Slideshow
+        com.gtarayici.browser.viewer.FileKind.WORD, com.gtarayici.browser.viewer.FileKind.TEXT -> r.Description
+        com.gtarayici.browser.viewer.FileKind.OTHER -> when {
+            name.endsWith(".apk", true) -> r.Android
+            Regex("""\.(zip|rar|7z|tar|gz)$""", RegexOption.IGNORE_CASE).containsMatchIn(name) -> r.FolderZip
+            else -> androidx.compose.material.icons.Icons.AutoMirrored.Filled.InsertDriveFile
+        }
+    }
+}
 
 /** Gizli indirmeler ekranında: "Gizli indirmeleri şifrele" anahtarı. */
 @Composable

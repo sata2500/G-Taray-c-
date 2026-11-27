@@ -97,7 +97,7 @@ fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
 
     BoxWithConstraints(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp)) {
         val density = LocalDensity.current
-        val targetWidth = if (ratio >= 1f) (maxWidth * 0.55f).coerceIn(180.dp, 340.dp) else (maxWidth * 0.34f).coerceIn(120.dp, 200.dp)
+        val targetWidth = if (ratio >= 1f) (maxWidth * 0.46f).coerceIn(170.dp, 300.dp) else (maxWidth * 0.34f).coerceIn(120.dp, 200.dp)
         // Video oranı değişince (ör. yatay videodan dikey Shorts'a) pencere yumuşakça yeniden boyutlanır.
         val width by androidx.compose.animation.core.animateDpAsState(targetWidth, label = "mini-width")
         val height by androidx.compose.animation.core.animateDpAsState(targetWidth / ratio, label = "mini-height")

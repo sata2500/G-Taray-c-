@@ -129,21 +129,15 @@ fun BottomToolbar(
                             }
                         },
                     )
-                    .padding(start = 8.dp, end = 2.dp, top = 6.dp, bottom = 6.dp),
+                    .padding(start = 12.dp, end = 2.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                state.profile?.let { profile ->
-                    // Rozet yalnızca baş harfi gösterir; ekran okuyucu profilin adını ve düğmenin işini okusun.
-                    val label = "${stringResource(R.string.profile_switch)}: ${profile.name}"
-                    IconButton(onClick = onProfileClick, modifier = Modifier.semantics { contentDescription = label }) {
-                        Box(Modifier.clearAndSetSemantics { }) { ProfileAvatar(profile, 28.dp) }
-                    }
-                }
                 UrlPill(
                     state,
                     onUrlClick,
                     onReloadOrStop,
                     onReaderClick,
+                    onVpnClick,
                     actions,
                     Modifier.weight(1f).graphicsLayer {
                         // Adres alanı sayfayla birlikte kayar ve geçiş noktasına yaklaştıkça soluklaşır.
@@ -153,16 +147,7 @@ fun BottomToolbar(
                         alpha = 1f - (abs(shift) / size.width.coerceAtLeast(1f)).coerceAtMost(0.6f)
                     },
                 )
-                if (state.vpn != VpnIndicator.OFF) {
-                    IconButton(onClick = onVpnClick) {
-                        Icon(
-                            Icons.Filled.VpnKey,
-                            contentDescription = stringResource(R.string.menu_vpn),
-                            tint = if (state.vpn == VpnIndicator.ON) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
-                TabCounter(state.tabCount, state.displayUrl.isNotEmpty(), onTabsClick, actions)
+                TabCounter(state.tabCount, state.displayUrl.isNotEmpty(), onTabsClick, actions, state.profile, onProfileClick)
                 IconButton(onClick = onMenuClick) {
                     Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.action_menu))
                 }
@@ -177,6 +162,7 @@ private fun UrlPill(
     onClick: () -> Unit,
     onReloadOrStop: () -> Unit,
     onReaderClick: () -> Unit,
+    onVpnClick: () -> Unit,
     actions: ToolbarActions,
     modifier: Modifier,
 ) {
@@ -185,8 +171,8 @@ private fun UrlPill(
     var menu by remember { mutableStateOf(false) }
     Row(
         modifier
-            .height(44.dp)
-            .clip(RoundedCornerShape(22.dp))
+            .height(42.dp)
+            .clip(RoundedCornerShape(21.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .combinedClickable(
                 onClick = onClick,
@@ -220,7 +206,8 @@ private fun UrlPill(
                 stringResource(R.string.insecure_connection),
                 MaterialTheme.colorScheme.error,
             )
-            else -> Triple(Icons.Filled.Lock, stringResource(R.string.secure_connection), MaterialTheme.colorScheme.primary)
+            // Güvenli bağlantı olağan durumdur: simge sakin; yalnızca güvensiz bağlantı renkle uyarır.
+            else -> Triple(Icons.Filled.Lock, stringResource(R.string.secure_connection), MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (isHome) {
             Icon(icon, contentDescription = description, tint = tint, modifier = Modifier.size(18.dp))
@@ -231,15 +218,15 @@ private fun UrlPill(
                 Modifier.size(36.dp).clip(CircleShape).clickable(onClick = actions.onSiteInfo),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = stringResource(R.string.site_info), tint = tint, modifier = Modifier.size(18.dp))
+                Icon(icon, contentDescription = stringResource(R.string.site_info), tint = tint, modifier = Modifier.size(16.dp))
             }
-            Spacer(Modifier.width(4.dp))
         }
         Text(
+            // Sade adres: yalnızca site adı (tam adres dokununca açılan arama alanında görünür).
             text = if (isHome) {
                 stringResource(if (state.private) R.string.private_search_hint else R.string.search_hint)
             } else {
-                state.displayUrl
+                state.displayUrl.substringBefore('/').removePrefix("www.").ifBlank { state.displayUrl }
             },
             color = if (isHome) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
@@ -247,6 +234,17 @@ private fun UrlPill(
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),
         )
+        // VPN: adres alanının içinde küçük bir işaret (bağlıyken sakin, hatada kırmızı).
+        if (state.vpn != VpnIndicator.OFF) {
+            Box(Modifier.size(32.dp).clip(CircleShape).clickable(onClick = onVpnClick), contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Filled.VpnKey,
+                    contentDescription = stringResource(R.string.menu_vpn),
+                    tint = if (state.vpn == VpnIndicator.ON) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
         if (!isHome && state.reader != ReaderIndicator.NONE) {
             IconButton(onClick = onReaderClick) {
                 Icon(
@@ -259,13 +257,10 @@ private fun UrlPill(
                 )
             }
         }
-        if (!isHome) {
+        // Yenileme: aşağı çekerek ya da menüden; yalnızca yüklenirken "durdur" düğmesi görünür.
+        if (!isHome && state.loading) {
             IconButton(onClick = onReloadOrStop) {
-                Icon(
-                    if (state.loading) Icons.Filled.Close else Icons.Filled.Refresh,
-                    contentDescription = stringResource(if (state.loading) R.string.action_stop else R.string.action_reload),
-                    modifier = Modifier.size(20.dp),
-                )
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_stop), modifier = Modifier.size(20.dp))
             }
         } else {
             Spacer(Modifier.width(14.dp))
@@ -274,7 +269,14 @@ private fun UrlPill(
 }
 
 @Composable
-private fun TabCounter(count: Int, hasPage: Boolean, onClick: () -> Unit, actions: ToolbarActions) {
+private fun TabCounter(
+    count: Int,
+    hasPage: Boolean,
+    onClick: () -> Unit,
+    actions: ToolbarActions,
+    profile: Profile? = null,
+    onProfileClick: () -> Unit = {},
+) {
     val haptics = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
     Box(
@@ -307,6 +309,18 @@ private fun TabCounter(count: Int, hasPage: Boolean, onClick: () -> Unit, action
                 fontWeight = FontWeight.Bold,
             )
         }
+        // Birden çok profil varsa etkin profilin rengi sayacın köşesinde küçük bir nokta olarak görünür.
+        profile?.let {
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 9.dp, end = 9.dp)
+                    .size(9.dp)
+                    .clip(CircleShape)
+                    .background(com.gtarayici.browser.ui.screens.profileColor(it))
+                    .border(1.5.dp, MaterialTheme.colorScheme.surfaceContainer, CircleShape),
+            )
+        }
         // Uzun basınca: yeni sekme, yeni gizli sekme, bu sekmeyi kapat
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
@@ -319,6 +333,13 @@ private fun TabCounter(count: Int, hasPage: Boolean, onClick: () -> Unit, action
                 leadingIcon = { Icon(Icons.Filled.VisibilityOff, null) },
                 onClick = { menu = false; actions.onNewTab(true) },
             )
+            if (profile != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.profile_switch) + " · " + profile.name) },
+                    leadingIcon = { ProfileAvatar(profile, 22.dp) },
+                    onClick = { menu = false; onProfileClick() },
+                )
+            }
             if (hasPage) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.toolbar_close_tab)) },

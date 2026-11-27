@@ -266,7 +266,7 @@ private fun NavButton(icon: ImageVector, label: Int, enabled: Boolean = true, ti
         onClick = onClick,
         enabled = enabled,
         colors = tint?.let { IconButtonDefaults.iconButtonColors(contentColor = it) } ?: IconButtonDefaults.iconButtonColors(),
-        modifier = Modifier.size(52.dp),
+        modifier = Modifier.size(48.dp),
     ) { Icon(icon, stringResource(label)) }
 }
 
@@ -332,7 +332,7 @@ private fun MenuGrid(
     onTap: (MenuItem) -> Unit,
     onLongPress: (MenuItem) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         items.chunked(GRID_COLUMNS).forEach { row ->
             Row(Modifier.fillMaxWidth()) {
                 row.forEach { item ->
@@ -368,12 +368,13 @@ private fun MenuTile(item: MenuItem, modifier: Modifier, addMark: Boolean?, onTa
                 role = Role.Button
                 if (item.active) selected = true
             }
-            .padding(vertical = Spacing.sm, horizontal = 2.dp),
+            .padding(vertical = 6.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box {
-            Surface(shape = RoundedCornerShape(18.dp), color = container, modifier = Modifier.size(56.dp)) {
-                Box(contentAlignment = Alignment.Center) { Icon(item.icon, null, tint = content, modifier = Modifier.size(24.dp)) }
+            // Sade, sıkı kutucuk: yatay hap biçimli simge alanı (Material 3 gezinme çubuğu gibi), küçük etiket.
+            Surface(shape = RoundedCornerShape(16.dp), color = container, modifier = Modifier.size(width = 56.dp, height = 40.dp)) {
+                Box(contentAlignment = Alignment.Center) { Icon(item.icon, null, tint = content, modifier = Modifier.size(22.dp)) }
             }
             if (addMark != null) {
                 Surface(
@@ -390,15 +391,15 @@ private fun MenuTile(item: MenuItem, modifier: Modifier, addMark: Boolean?, onTa
                 }
             }
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             stringResource(item.label),
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
             color = colors.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.heightIn(min = 32.dp),
+            modifier = Modifier.heightIn(min = 28.dp),
         )
     }
 }
