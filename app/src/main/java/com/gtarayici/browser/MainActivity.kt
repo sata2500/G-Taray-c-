@@ -413,10 +413,41 @@ class MainActivity : AppCompatActivity() {
         swipeRefresh.isEnabled = components.settings.pullToRefresh.value && !fullscreen && !inPictureInPicture
     }
 
+    /** Tam ekranda ekranı videonun yönüne biz döndürdük mü (çıkınca geri bırakmak için). */
+    private var rotatedForVideo = false
+
+    /**
+     * Sayfa tam ekrana geçince oynayan video varsa ekran videonun yönüne döner. Motorun kendi döndürmesi yalnızca video
+     * öğesinin kendisi tam ekrana alınınca çalışır; birçok site (özellikle gömülü oynatıcılar) oynatıcının kapsayıcısını
+     * tam ekrana alır ve ekran dönmez.
+     */
+    private fun rotateForVideo() {
+        val tab = components.store.state.selectedTab ?: return
+        val media = tab.mediaSessionState ?: return
+        val natural = components.extensions.videoRectFor(tab.content.url)?.takeIf { it.naturalWidth > 0 && it.naturalHeight > 0 }
+        val (w, h) = natural?.let { it.naturalWidth.toLong() to it.naturalHeight.toLong() }
+            ?: media.elementMetadata?.let { it.width to it.height }
+            ?: (0L to 0L)
+        requestedOrientation = if (w > 0 && h > w) {
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+        } else {
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        }
+        rotatedForVideo = true
+    }
+
     private fun onFullScreenChanged(enabled: Boolean) {
         fullscreen = enabled
         updatePullToRefresh()
         miniPlayer.setFullscreen(enabled)
+        if (enabled) {
+            rotateForVideo()
+            // Video bilgisi (boyut) tam ekrana geçişten biraz sonra gelebilir: bir kez daha bakılır.
+            window.decorView.postDelayed({ if (fullscreen) rotateForVideo() }, 800)
+        } else if (rotatedForVideo) {
+            rotatedForVideo = false
+            requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
         val insets = WindowCompat.getInsetsController(window, window.decorView)
         if (enabled) {
             insets.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE

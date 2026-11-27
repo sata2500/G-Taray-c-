@@ -1,6 +1,6 @@
 "use strict";
 /*
- * Video konumu bildirimi (tüm siteler, yalnızca ana çerçeve).
+ * Video konumu bildirimi (tüm siteler, tüm çerçeveler).
  *
  * Oynayan videonun ekrandaki konumu uygulamaya bildirilir. Uygulama bunu resim içinde resim için kullanır:
  * - geçiş animasyonu tüm sayfadan değil videonun yerinden başlar (sourceRectHint),
@@ -8,7 +8,33 @@
  * Sayfaya veya oynatıcıya hiçbir müdahalede bulunulmaz.
  */
 (function () {
-  if (window.top !== window) return;
+  const isTop = window.top === window;
+  // Gömülü oynatıcılar (iframe): alt çerçeve bulduğu videoyu üst çerçeveye iletir; her üst çerçeve kendi içindeki
+  // iframe'in konumunu ekleyerek bir üste aktarır. Ana çerçeve sonucu uygulamaya bildirir.
+  let childReport = null;
+  let childReportAt = 0;
+  window.addEventListener("message", (event) => {
+    const data = event.data && event.data.gtVideoRect;
+    if (!data) return;
+    let frame = null;
+    for (const f of document.querySelectorAll("iframe, frame")) {
+      try { if (f.contentWindow === event.source) { frame = f; break; } } catch (e) {}
+    }
+    if (!frame) return;
+    const fr = frame.getBoundingClientRect();
+    const moved = data.hidden ? data : Object.assign({}, data, {
+      x: data.x + fr.left + frame.clientLeft,
+      y: data.y + fr.top + frame.clientTop,
+    });
+    childReport = moved;
+    childReportAt = Date.now();
+    if (isTop) schedule(50);
+    else forward(moved);
+  });
+
+  function forward(rect) {
+    try { window.parent.postMessage({ gtVideoRect: rect }, "*"); } catch (e) {}
+  }
 
   let port = null;
   let lastReport = "";
@@ -59,6 +85,7 @@
   function send(message, key) {
     if (key === lastReport) return;
     try {
+      if (!isTop) return;
       if (!port) {
         port = browser.runtime.connect({ name: "gt-media" });
         port.onDisconnect.addListener(() => (port = null));
@@ -70,25 +97,46 @@
     }
   }
 
-  function report() {
+  /** Bu çerçevedeki oynayan videonun durumu (yoksa null). */
+  function measure() {
     const video = playingVideo();
-    // Bu çerçevede oynayan video yoksa bir şey söylenmez (video bir iç çerçevede olabilir).
-    if (!video) return;
+    if (!video) return null;
     // Oynayan video var ama görünmüyor: yalnızca ses; uygulama küçük pencereye (PiP) geçmez.
-    if (youtubeMusicAudioOnly() || !visible(video)) {
-      send({ type: "video-rect", hidden: true }, "hidden");
-      return;
-    }
+    if (youtubeMusicAudioOnly() || !visible(video)) return { hidden: true };
     const r = video.getBoundingClientRect();
     // Videonun gerçek piksel boyutu (Shorts gibi dikey videolarda küçük pencere dikey açılsın diye).
     const nw = video.videoWidth || 0;
     const nh = video.videoHeight || 0;
-    const key = [r.left, r.top, r.width, r.height, window.innerWidth, nw, nh].map(Math.round).join(",");
+    // Görüntünün öğe içinde gerçekten çizildiği alan (oran korunur; üst/alt ya da yan siyah boşluklar dışarıda).
+    let x = r.left, y = r.top, w = r.width, h = r.height;
+    const fit = (getComputedStyle(video).objectFit || "contain");
+    if (nw > 0 && nh > 0 && (fit === "contain" || fit === "scale-down")) {
+      const scale = Math.min(w / nw, h / nh);
+      const cw = nw * scale, ch = nh * scale;
+      x += (w - cw) / 2; y += (h - ch) / 2; w = cw; h = ch;
+    }
+    return { x: x, y: y, w: w, h: h, nw: nw, nh: nh };
+  }
+
+  function report() {
+    const own = measure();
+    if (!isTop) {
+      if (own) forward(own);
+      return;
+    }
+    // Ana çerçevede video yoksa iç çerçeveden gelen (son birkaç saniyedeki) bilgi kullanılır.
+    const rect = own || (Date.now() - childReportAt < 5000 ? childReport : null);
+    if (!rect) return;
+    if (rect.hidden) {
+      send({ type: "video-rect", hidden: true }, "hidden");
+      return;
+    }
+    const key = [rect.x, rect.y, rect.w, rect.h, window.innerWidth, rect.nw, rect.nh].map(Math.round).join(",");
     send({
       type: "video-rect",
-      x: r.left, y: r.top, w: r.width, h: r.height,
+      x: rect.x, y: rect.y, w: rect.w, h: rect.h,
       vw: window.innerWidth, vh: window.innerHeight,
-      nw: nw, nh: nh,
+      nw: rect.nw, nh: rect.nh,
     }, key);
   }
 

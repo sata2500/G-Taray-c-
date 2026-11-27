@@ -66,7 +66,9 @@ fun MiniPlayerWindow(mini: InAppMiniPlayer, onExpand: (tabId: String) -> Unit) {
     val size by components.store.observe { state ->
         state.tabs.firstOrNull { it.id == tabId }?.mediaSessionState?.elementMetadata?.let { it.width to it.height }
     }
-    val rect by components.extensions.videoRect.collectAsState()
+    val latest by components.extensions.videoRect.collectAsState()
+    val tabUrl = components.store.state.tabs.firstOrNull { it.id == tabId }?.content?.url
+    val rect = latest?.takeIf { com.gtarayici.browser.extensions.samePage(it.page, tabUrl) }
     // Önce videonun gerçek boyutu (dikey Shorts gibi), sonra motorun bildirdiği boyut; yoksa 16:9.
     val ratio = (
         rect?.takeIf { it.naturalWidth > 0 && it.naturalHeight > 0 }?.let { it.naturalWidth.toFloat() / it.naturalHeight }

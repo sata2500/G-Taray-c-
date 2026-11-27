@@ -37,7 +37,9 @@ browser.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener((message) => {
     if (message && message.type === "video-rect" && nativePort) {
       try {
-        nativePort.postMessage(message);
+        // Hangi sayfadan geldiği: uygulama bilgiyi o sayfanın sekmesine bağlar (başka sekmenin videosu karışmaz).
+        const page = port.sender && port.sender.tab && port.sender.tab.url;
+        nativePort.postMessage(page ? Object.assign({}, message, { page: page }) : message);
       } catch (e) {}
     }
   });

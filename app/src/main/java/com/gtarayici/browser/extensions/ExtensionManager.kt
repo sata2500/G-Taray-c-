@@ -67,6 +67,18 @@ class ExtensionManager(
      */
     val videoHidden: StateFlow<Boolean> = _videoHidden.asStateFlow()
 
+    /** "Yalnızca ses" bildiren sayfa. */
+    @Volatile private var hiddenPage: String? = null
+
+    /**
+     * [url] sayfasındaki videonun konumu. Bilgi başka bir sekmenin sayfasından geldiyse null: video bilgisi tek bir
+     * değer olarak tutulduğundan, ör. arka plandaki YouTube Müzik sekmesi başka sitedeki videoyu etkilemesin.
+     */
+    fun videoRectFor(url: String?): VideoRect? = _videoRect.value?.takeIf { samePage(it.page, url) }
+
+    /** [url] sayfasında oynayan video yalnızca ses mi (görüntü gizli)? */
+    fun videoHiddenFor(url: String?): Boolean = _videoHidden.value && samePage(hiddenPage, url)
+
     /** Yardımcı eklenti kurulunca çağrılır (ör. sayfa taraması için sekme bağlantıları). */
     var onHelperReady: (WebExtension) -> Unit = {}
 
@@ -213,15 +225,19 @@ class ExtensionManager(
 
             override fun onPortMessage(message: Any, port: Port) {
                 val json = message as? JSONObject ?: return
+                val page = json.optString("page").ifEmpty { null }
                 if (json.optString("type") == "video-rect" && json.optBoolean("hidden")) {
+                    hiddenPage = page
                     _videoHidden.value = true
                     _videoRect.value = null
                 } else if (json.optString("type") == "video-rect") {
+                    hiddenPage = null
                     _videoHidden.value = false
                     _videoRect.value = VideoRect(
                         json.optDouble("x"), json.optDouble("y"), json.optDouble("w"), json.optDouble("h"),
                         json.optDouble("vw"), json.optDouble("vh"),
                         json.optInt("nw"), json.optInt("nh"),
+                        page = page,
                     )
                 }
             }
@@ -291,6 +307,12 @@ class ExtensionManager(
     }
 }
 
+/** İki sayfa adresi aynı sayfa mı (# sonrası yok sayılır); adreslerden biri bilinmiyorsa eşit sayılır. */
+internal fun samePage(a: String?, b: String?): Boolean {
+    if (a == null || b == null) return true
+    return a.substringBefore('#') == b.substringBefore('#')
+}
+
 /** Videonun görünür alan (viewport) içindeki konumu, CSS pikseli cinsinden. */
 data class VideoRect(
     val x: Double,
@@ -302,6 +324,8 @@ data class VideoRect(
     /** Videonun gerçek piksel boyutu (bilinmiyorsa 0); küçük pencerenin en-boy oranı bundan alınır. */
     val naturalWidth: Int = 0,
     val naturalHeight: Int = 0,
+    /** Bilginin geldiği sayfanın adresi (bilinmiyorsa null). */
+    val page: String? = null,
 ) {
     /** Bu dikdörtgeni, genişliği [viewWidth] piksel olan motor görünümünün piksel koordinatlarına çevirir. */
     fun toViewPixels(viewWidth: Int, viewHeight: Int): android.graphics.Rect? {

@@ -50,7 +50,7 @@ class PipController(
         activity,
         components.runtime,
         sourceView = { NativeVideoPip.findGeckoView(engineView()) },
-        videoRect = { view -> components.extensions.videoRect.value?.toViewPixels(view.width, view.height) },
+        videoRect = { view -> components.extensions.videoRectFor(mediaUrl())?.toViewPixels(view.width, view.height) },
     )
 
     /** Küçük pencerede gösterilen, yalnızca videoyu içeren görünüm (arayüz bunu sayfanın üstüne yerleştirir). */
@@ -70,7 +70,7 @@ class PipController(
     private val supported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
     /** Küçük pencere yalnızca görünür bir video oynarken anlamlıdır; yalnızca ses varsa arka planda çalmak yeterli. */
     private val enabled get() = supported && components.settings.autoPictureInPicture.value &&
-        !components.extensions.videoHidden.value && media?.pipAllowed != false
+        !components.extensions.videoHiddenFor(mediaUrl()) && media?.pipAllowed != false
 
     /** Küçük penceredeki önceki / oynat-duraklat / sonraki düğmeleri. */
     private val receiver = object : BroadcastReceiver() {
@@ -245,7 +245,7 @@ class PipController(
         val hint = sourceRectHint()
         // Önce videonun sayfadaki gerçek boyutu: motorun bildirdiği boyut sıradaki videoya (ör. yatay videodan sonra
         // açılan dikey Shorts) geçince eski kalabiliyor ve dikey video yatay pencerede siyah kenarlarla görünüyordu.
-        val natural = components.extensions.videoRect.value?.takeIf { it.naturalWidth > 0 && it.naturalHeight > 0 }
+        val natural = components.extensions.videoRectFor(mediaUrl())?.takeIf { it.naturalWidth > 0 && it.naturalHeight > 0 }
         val ratio = when {
             natural != null -> Rational(natural.naturalWidth, natural.naturalHeight)
             info != null && info.width > 0 && info.height > 0 -> Rational(info.width.toInt(), info.height.toInt())
@@ -269,7 +269,7 @@ class PipController(
     private fun sourceRectHint(): android.graphics.Rect? {
         if (activity.isInPictureInPictureMode) return null
         val view = NativeVideoPip.findGeckoView(engineView()) ?: return null
-        val rect = components.extensions.videoRect.value?.toViewPixels(view.width, view.height) ?: return null
+        val rect = components.extensions.videoRectFor(mediaUrl())?.toViewPixels(view.width, view.height) ?: return null
         val location = IntArray(2)
         view.getLocationInWindow(location)
         rect.offset(location[0], location[1])
@@ -304,6 +304,9 @@ class PipController(
         val label = activity.getString(title)
         return RemoteAction(Icon.createWithResource(activity, icon), label, label, pending)
     }
+
+    /** Videonun oynadığı sekmenin adresi. */
+    private fun mediaUrl(): String? = mediaTab()?.content?.url
 
     private fun mediaTab(): SessionState? {
         val id = media?.tabId ?: return null

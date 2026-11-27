@@ -65,7 +65,10 @@ class InAppMiniPlayer(
         activity,
         components.runtime,
         sourceView = { NativeVideoPip.findGeckoView(if (keeperTabId != null && keeperTabId == tabId) keeper?.asView() else mainView()) },
-        videoRect = { view -> components.extensions.videoRect.value?.toViewPixels(view.width, view.height) },
+        videoRect = { view ->
+            val url = components.store.state.tabs.firstOrNull { it.id == tabId }?.content?.url
+            components.extensions.videoRectFor(url)?.toViewPixels(view.width, view.height)
+        },
     )
 
     /** Küçük pencerede gösterilen video görünümü. */
